@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { FakePage } from "../cdp/fake-page.js";
-import { SELECTION_PROBE } from "../cdp/selection-probe.js";
 import { REGION_PROBE } from "../cdp/overlay-script.js";
-import { screenshotTool } from "./screenshot-tool.js";
 import type { RawSelection } from "../cdp/selection-probe.js";
+import { SELECTION_PROBE } from "../cdp/selection-probe.js";
 import type { Rect } from "../types.js";
+import { screenshotTool } from "./screenshot-tool.js";
 
 const VIEWPORT_PNG = Buffer.from("vp-data");
 const CLIP_PNG = Buffer.from("clip-data");

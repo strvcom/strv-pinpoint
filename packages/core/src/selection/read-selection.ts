@@ -1,6 +1,6 @@
 import type { BridgePage } from "../cdp/page.js";
+import { type RawSelection, SELECTION_PROBE } from "../cdp/selection-probe.js";
 import type { SelectionResult } from "../types.js";
-import { SELECTION_PROBE, type RawSelection } from "../cdp/selection-probe.js";
 
 const NONE = "No element selected. Use the Pick tool in the overlay, then ask again.";
 

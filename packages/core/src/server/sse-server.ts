@@ -19,9 +19,7 @@ export function startSseServer(port: number, deps: ToolDeps): Server {
       return;
     }
     if (req.method === "POST" && req.url?.startsWith("/messages")) {
-      const sessionId =
-        new URL(req.url, "http://localhost").searchParams.get("sessionId") ??
-        "";
+      const sessionId = new URL(req.url, "http://localhost").searchParams.get("sessionId") ?? "";
       const t = transports.get(sessionId);
       if (!t) {
         res.writeHead(400).end("unknown sessionId");

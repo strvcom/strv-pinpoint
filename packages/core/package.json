@@ -2,7 +2,9 @@
   "name": "@frontman-flow/core",
   "version": "0.0.0",
   "type": "module",
-  "bin": { "frontman-flow": "./dist/cli.js" },
+  "bin": {
+    "frontman-flow": "./dist/cli.js"
+  },
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",

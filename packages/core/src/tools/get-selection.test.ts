@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { FakePage } from "../cdp/fake-page.js";
+import type { RawSelection } from "../cdp/selection-probe.js";
 import { SELECTION_PROBE } from "../cdp/selection-probe.js";
 import { getSelectionTool } from "./get-selection.js";
-import type { RawSelection } from "../cdp/selection-probe.js";
 
 const SAMPLE_RAW: RawSelection = {
   selector: "main > p",

@@ -6,7 +6,10 @@ export interface CaptureDeps {
   rectOfRegion: () => Promise<Rect | null>;
 }
 
-const img = (png: Buffer): CapturedImage => ({ mimeType: "image/png", base64: png.toString("base64") });
+const img = (png: Buffer): CapturedImage => ({
+  mimeType: "image/png",
+  base64: png.toString("base64"),
+});
 
 export async function capture(
   page: BridgePage,

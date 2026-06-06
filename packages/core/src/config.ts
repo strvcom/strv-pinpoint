@@ -4,9 +4,7 @@ export interface BridgeConfig {
   appUrl: string;
 }
 
-export function parseConfig(
-  env: Record<string, string | undefined>,
-): BridgeConfig {
+export function parseConfig(env: Record<string, string | undefined>): BridgeConfig {
   return {
     mcpPort: env.FF_MCP_PORT ? Number(env.FF_MCP_PORT) : 7331,
     cdpUrl: env.FF_CDP_URL ?? "http://localhost:9222",

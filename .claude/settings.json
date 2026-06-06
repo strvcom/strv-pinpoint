@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true \"$CLAUDE_FILE_PATHS\" 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm typecheck && pnpm lint && pnpm test"
+          }
+        ]
+      }
+    ]
+  }
+}

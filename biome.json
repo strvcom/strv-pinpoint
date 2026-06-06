@@ -1,0 +1,57 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!.reference",
+      "!.claude",
+      "!examples",
+      "!**/*.tsbuildinfo"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "**/*.test.ts",
+        "packages/core/integration/**",
+        "packages/core/src/cdp/fake-page.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": { "noNonNullAssertion": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["packages/core/src/cdp/playwright-page.ts"],
+      "linter": {
+        "rules": {
+          "security": { "noGlobalEval": "off" },
+          "complexity": { "noCommaOperator": "off" }
+        }
+      }
+    }
+  ]
+}

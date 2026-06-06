@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { FakePage } from "../cdp/fake-page.js";
-import { capture, type CaptureDeps } from "./capture.js";
 import type { Rect } from "../types.js";
+import { type CaptureDeps, capture } from "./capture.js";
 
 const VIEWPORT_PNG = Buffer.from("viewport-data");
 const CLIP_PNG = Buffer.from("clip-data");

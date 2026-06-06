@@ -1,0 +1,15 @@
+# Decisions
+
+One row per non-obvious judgment call (deviating from a spec, choosing between viable
+alternatives, taking a shortcut). Newest at the bottom. Keep entries terse; link specs/plans
+for detail.
+
+| Date | Area | Decision | Rationale |
+|---|---|---|---|
+| 2026-06-06 | Architecture | MVP is a **CDP-only** bridge using React-tree **identity** (component name + ancestry + selector + text + rect), not source-map resolution. Claude greps the component name to locate source. | Phase 0 proved `dom-element-to-component-source` (the lib frontman pins) cannot map elements to *user* source on Next 16 (Turbopack/RSC) — for either reuse-overlay or our-own-selector. Identity via the fiber chain (client) / `_debugStack` (server) is reliable and stack-agnostic. See `docs/superpowers/notes/phase0-spike-findings.md`. |
+| 2026-06-06 | Architecture | Rejected "reuse frontman's overlay as-is"; the bridge does **not** depend on frontman at runtime. | The overlay UI is a separately-served client bundle (frontman's `:5173` client server or cloud `host` + agent WS); reusing it reintroduces the server dependency we set out to avoid. The Apache-2.0 middleware serves only the shell + HTTP tools. |
+| 2026-06-06 | UI | Click-to-select + region uses a **from-scratch minimal injected overlay** (Pick / Region / Off), not Chrome CDP-native inspect nor a third-party picker. | CDP-native inspect has UX quirks (no persistent selection, DevTools coupling, awkward node→extractor plumbing). From-scratch is small, fully controllable, and reads cleanly into our extractor; extensible to richer annotation (pi-annotate-style) later (TASK-5). |
+| 2026-06-06 | Screenshots | Partial screenshots are a **click-drag region marquee** (arbitrary rect), in addition to element-selection. Rects are passed to Playwright `clip` unchanged. | User requirement (screenshot-picker UX). Empirically verified Playwright's `clip` is **viewport-relative** (matches `getBoundingClientRect`); a final-review suggestion to add scroll offset was wrong and reverted (see comment in `playwright-page.ts`). |
+| 2026-06-06 | Env | Example app runs on port **3100** (not 3000); Node comes from `nvm` and isn't on the non-interactive PATH (prepend `$HOME/.nvm/versions/node/v22.22.2/bin`). | Port 3000 is occupied by Docker on this machine. Documented in `docs/superpowers/notes/phase0-spike-findings.md`. |
+| 2026-06-06 | Process | Tooling/work uses a **feature branch in the main checkout** (no worktree, no Docker dev setup). | Local-only repo, no remote; Phase 0/1 are hands-on (dev server + Chrome + Claude session) which is simpler from the main path than a hidden worktree. |
+| 2026-06-06 | Tooling | Adopted **Backlog.md** (coarse board), **Biome** (format+lint), **Lefthook** (pre-commit), and Claude agent hooks — mirroring the STRV Signal setup, minus its Docker/devcontainer layer and CI (skipped for now). | Durable in-repo task tracking + deterministic quality gates wired into the agent loop. CI (GitHub Actions) intentionally not added yet. |
