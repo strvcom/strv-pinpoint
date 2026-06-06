@@ -51,6 +51,18 @@ After the pivot to "our own selector", tested the click→source mechanism (`dom
 
 **Conclusion:** The "click → user source file" mechanism — the heart of the loop — is **not viable on Next.js 16 (Turbopack + React 19 RSC) with the off-the-shelf detection**, for either the original (reuse-overlay) or pivoted (our-selector) approach. The HTTP/middleware half is fine; the *detection* half fails specifically on the chosen MVP target. This is a decision point on MVP target/mechanism (see checkpoint #2). What DOES work: middleware-off-Elixir (0.2), and detection returning *some* `file://` source on non-RSC React trees (suggesting Vite/plain-React would fare better).
 
+## Task 0.3 — RESOLUTION: component-identity (React-DevTools-style), not source-mapping ✅ GO
+
+Decision (checkpoint #2): **Option 1 — grep-by-text/identity, stack-agnostic**, enriched with component identity (user's idea). Source-map resolution is dropped from the MVP; instead the bridge hands Claude enough *identity* to grep the repo.
+
+Validated on the running Next 16 app:
+
+- **Client components:** walking the clicked element's React **fiber `.return` chain** and collecting `type.displayName||type.name` yields the user component at the top, e.g. `#ct-heading → ["ClientTest", "ClientPageRoot", "SegmentViewNode", …Next internals]`. Filtering a known Next/React framework-component list leaves `ClientTest` → grep `function ClientTest` → `app/clienttest/page.tsx`. **Reliable.**
+- **Server components (RSC):** the user component is **not** in the browser fiber tree, but the fiber's `_debugStack` (an Error) contains frames like `at Home (about://React/Server/…)`. Parsing function names from `_debugStack` recovers `Home` → grep `function Home` → `app/page.tsx`.
+- **Always available regardless:** `tagName`, a CSS `selector`, visible `innerText`, and bounding `rect` (+ a CDP screenshot). These let Claude disambiguate when multiple components share a name.
+
+**MVP mechanism:** `get_selection` returns `{ selector, tagName, text, rect, componentName, ancestry[] }` (no resolved file). Claude greps by component name + text to locate and edit; screenshot via CDP. **This needs no frontman middleware at all** — the bridge is CDP-only for the MVP (frontman's HTTP tools become optional/relegated to later phases). The validated extractor is committed at `packages/core/src/cdp/selection-probe.ts`.
+
 ### Follow-ups for Phase 1
 - `create-next-app` added a nested `pnpm-workspace.yaml` (removed) and default `CLAUDE.md`/`AGENTS.md` inside `examples/nextjs`. Task 1.1 sets up the **root** pnpm workspace globbing `examples/*`; reconcile then.
 - The example app is Next **16** (`proxy.ts`), so the Phase 1 plan's `middleware.ts` snippet does not apply here — `proxy.ts` is already in place.
