@@ -1,10 +1,10 @@
 ---
 id: TASK-7
 title: Phase 4 — Package Claude Code skill + README/quickstarts
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-06 18:25'
-updated_date: '2026-06-06 18:49'
+updated_date: '2026-06-06 18:51'
 labels:
   - docs
 dependencies: []
