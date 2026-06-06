@@ -1,7 +1,9 @@
 # frontman-flow — Design
 
-> Status: approved design (brainstorm output). Next: `/superpowers:write-plan`.
+> Status: approved design (brainstorm output), **amended after Phase 0** — see
+> **"Design amendment (post-Phase-0)"** at the end, which supersedes the relevant parts below.
 > Seed brief: `START_HERE.md`. Upstream reference: `.reference/frontman` @ `v0.18.0` (read-only, git-ignored).
+> Phase 0 findings: `docs/superpowers/notes/phase0-spike-findings.md`.
 
 ## Goal
 
@@ -142,3 +144,66 @@ scripts/sync-reference.sh # re-clones pinned frontman into .reference/ (already 
 - "Reuse the overlay as-is" assumes the overlay loads and resolves selections without the Elixir
   server; recon suggests yes, Phase 0 must confirm.
 - CDP attach model: dev clicks in the CDP-driven/attached Chrome rather than an arbitrary browser tab.
+
+---
+
+# Design amendment (post-Phase-0)
+
+This section supersedes the relevant parts above. Rationale is in
+`docs/superpowers/notes/phase0-spike-findings.md`.
+
+## What Phase 0 changed
+
+- ✅ frontman's middleware serves its HTTP tools + the `/frontman` shell with the Elixir server off.
+- 🚩 But the overlay **UI** is a *separately-served client bundle* (frontman's own `:5173` client dev
+  server, or the cloud `host` + agent WebSocket). "Reuse the overlay as-is" therefore reintroduces a
+  server dependency — rejected.
+- 🟥 And the click→source detection lib frontman pins (`dom-element-to-component-source`) does **not**
+  resolve to *user* source on Next 16 (Turbopack + React 19 RSC) — for either the reuse-overlay or
+  our-own-selector approach. frontman ships no Next-specific fix, so its own overlay hits the same wall.
+- 💡 What *does* work: **React-tree identity** — the user component name + ancestry, read from the
+  client fiber chain (client components) or `_debugStack` (server components) — plus CDP screenshots.
+
+## Revised architecture (supersedes §Architecture and §MVP tool surface)
+
+The bridge is **CDP-only** (Playwright `connectOverCDP`). It does **not** require frontman's middleware
+for the MVP loop (frontman's HTTP tools are deferred/optional, a later phase). The bridge injects its
+**own minimal overlay** into the dev-app page (framework-agnostic), providing **two gestures**:
+
+1. **Element pick** (click): hover highlight → on click, run the validated fiber-identity extractor
+   (`packages/core/src/cdp/selection-probe.ts`) → store
+   `{ componentName, ancestry[], selector, tagName, text, rect }` on `window.__frontmanFlowSelection`;
+   show a persistent outline + a component-name badge.
+2. **Region capture** (click-and-drag marquee, like a standard partial-screenshot picker): draw a
+   rubber-band rectangle → store the arbitrary `{ x, y, width, height }` on `window.__frontmanFlowRegion`.
+
+MCP tools exposed to Claude Code over SSE (names unchanged):
+
+| Tool | Returns | How |
+|---|---|---|
+| `get_selection` | `{ componentName, ancestry, selector, tagName, text, rect }` or `{status:"none"}` | read `__frontmanFlowSelection` via CDP. **No resolved file** — Claude greps the repo by component name + text to locate source. |
+| `screenshot` | PNG of `viewport` \| `region` (the drag-selected rect) \| `selection` (selected element's rect) \| a CSS selector | CDP capture; partial captures use `page.screenshot({ clip })`. |
+
+The loop: dev picks an element and/or drags a region in the CDP-attached Chrome → tells Claude "change
+this" → Claude calls `get_selection` + `screenshot` → greps for the component → edits with native
+tools → dev-server HMR reloads.
+
+## Selection/annotation UI decision
+
+A **from-scratch, minimal injected overlay** (element hover/selected outline + component-name badge +
+click-drag region marquee), modeled on the standard element-picker/marquee pattern. Chosen over Chrome's
+CDP-native inspect (UX quirks: no persistent selection, DevTools coupling, awkward node→extractor
+plumbing) and third-party annotation libs (runtime dependency + integration). It stays small (dev-tool
+highlight, not product UI) and is extensible to richer annotation (comments) later.
+
+## Dropped / deferred from the original plan
+
+- **frontman HTTP client / `resolve-source-location`** — not in the MVP path (source-map detection
+  fails on Next 16). Deferred to a later phase if it proves useful elsewhere.
+- **"Reuse frontman overlay"** — replaced by our injected overlay.
+- The MVP no longer depends on frontman at runtime at all; it is a CDP + React-fiber-identity bridge.
+
+## Unchanged
+
+SSE MCP server (`@modelcontextprotocol/sdk`), Playwright CDP connector, config parsing, `examples/nextjs`
+(Next 16), TDD with colocated tests, and the two-tool surface (`get_selection` + `screenshot`).
