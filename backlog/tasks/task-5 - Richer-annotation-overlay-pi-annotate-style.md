@@ -1,9 +1,10 @@
 ---
 id: TASK-5
 title: Richer annotation overlay (pi-annotate-style)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-06-06 18:25'
+updated_date: '2026-06-06 18:59'
 labels:
   - feature
 dependencies: []
