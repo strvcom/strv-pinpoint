@@ -33,6 +33,7 @@ export function startSseServer(port: number, deps: ToolDeps): Server {
     res.writeHead(404).end("not found");
   });
 
-  http.listen(port);
+  // Bind to loopback only — this is an unauthenticated local dev tool.
+  http.listen(port, "127.0.0.1");
   return http;
 }

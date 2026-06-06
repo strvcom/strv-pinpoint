@@ -21,6 +21,12 @@ export class PlaywrightPage implements BridgePage {
   }
 
   screenshotClip(rect: Rect): Promise<Buffer> {
+    // Selection/region rects are VIEWPORT coordinates (getBoundingClientRect /
+    // clientX,Y). Playwright's screenshot `clip` is also viewport-relative for a
+    // (non-fullPage) viewport screenshot — verified empirically on a scrolled page:
+    // the raw rect matches a ground-truth element screenshot, adding scrollX/Y does
+    // NOT. So pass the rect through unchanged. (A region partly outside the viewport
+    // would error; acceptable since the user selects within what they can see.)
     return this.page.screenshot({ type: "png", clip: rect });
   }
 
