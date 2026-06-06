@@ -1,10 +1,21 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ToolDeps } from "../tools/deps.js";
+import { getAnnotationsTool } from "../tools/get-annotations.js";
 import { getSelectionTool } from "../tools/get-selection.js";
 import { screenshotTool } from "../tools/screenshot-tool.js";
 
 export function registerTools(server: McpServer, deps: ToolDeps): void {
+  server.registerTool(
+    "get_annotations",
+    {
+      description:
+        "Return the batch of annotations the user submitted via the overlay's 'Send to Claude' button: per element a JSON block { badge, componentName, ancestry, selector, tagName, text, comment } and (when flagged) a screenshot. Grep each componentName to find its source and apply that annotation's comment. Returns guidance text if nothing is submitted.",
+      inputSchema: undefined,
+    },
+    async () => (await getAnnotationsTool(deps)) as never,
+  );
+
   server.registerTool(
     "get_selection",
     {

@@ -35,7 +35,7 @@ describe("registerTools", () => {
 
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name).sort();
-    expect(names).toEqual(["get_selection", "screenshot"]);
+    expect(names).toEqual(["get_annotations", "get_selection", "screenshot"]);
   });
 
   it("get_selection returns status:selected with componentName for a populated selection", async () => {

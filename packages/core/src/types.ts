@@ -38,3 +38,22 @@ export interface CapturedImage {
   /** base64-encoded PNG bytes. */
   base64: string;
 }
+
+export interface Annotation {
+  id: string;
+  badge: number;
+  componentName: string | null;
+  ancestry: string[];
+  selector: string;
+  tagName: string;
+  text: string;
+  rect: Rect;
+  comment: string;
+  wantScreenshot: boolean;
+}
+
+export interface AnnotationBatch {
+  batchId: number;
+  ready: boolean;
+  items: Annotation[];
+}
