@@ -235,7 +235,13 @@ git commit -m "spike(phase0): confirm SELECTION_PROBE reads current selection vi
 
 # Phase 1 — Next.js Vertical Slice (MVP)
 
-Phase 1 builds the bridge with TDD against fakes; the real CDP/SDK wiring is proven by the integration test (Task 1.14). All imports use explicit `.js` extensions (NodeNext ESM).
+> ⚠️ **SUPERSEDED by "Revised Phase 1 (post-Phase-0 amendment)" at the end of this file.**
+> Phase 0 changed the mechanism: the bridge is now CDP-only with an injected overlay and
+> React-fiber **identity** (not source-mapping), and partial screenshots are a **click-drag region**.
+> The tasks below are kept for history; implement the revised list instead. Task 1.1 (scaffolding) and
+> the config/SSE/CLI tasks carry over almost verbatim.
+
+Phase 1 builds the bridge with TDD against fakes; the real CDP/SDK wiring is proven by the integration test. All imports use explicit `.js` extensions (NodeNext ESM).
 
 ## Task 1.1: Workspace scaffolding
 
@@ -1528,3 +1534,214 @@ git commit -m "docs(phase1): record the manual click-to-fix loop verification"
 ## Out of scope (future plans)
 
 - Phase 2 (Vite/Astro reuse + optional faithful Phoenix path B), Phase 3 (Docker + file-tool proxying), Phase 4 (skill packaging + README/quickstarts). Each gets its own spec→plan cycle.
+
+---
+
+# Revised Phase 1 (post-Phase-0 amendment) — AUTHORITATIVE
+
+Phase 0 outcome (see `docs/superpowers/notes/phase0-spike-findings.md`): the bridge is **CDP-only**
+(no frontman middleware), it injects its **own overlay** with two gestures — **element pick** (→ React
+fiber **identity**) and **region marquee** (→ arbitrary rect for partial screenshots) — and Claude
+greps the repo by component name to locate source. The validated extractor already exists at
+`packages/core/src/cdp/selection-probe.ts` (committed in Phase 0).
+
+**Revised file structure (delta from the original):**
+```
+packages/core/src/
+  types.ts                      # R1.2 — identity Selection, Region, ScreenshotTarget
+  config.ts                     # R1.12 — mcpPort, cdpUrl, appUrl (no frontman)
+  cdp/
+    page.ts  fake-page.ts       # R1.3 — + evaluateOnNewDocument, screenshotClip
+    selection-probe.ts          # DONE (Phase 0) — RawSelection, EXTRACT_SELECTION_FN, SELECTION_PROBE
+    overlay-script.ts           # R1.4 — OVERLAY_SOURCE (element pick + region marquee), REGION_PROBE
+    playwright-page.ts connector.ts  # R1.11 — connectOverCDP + inject overlay
+  selection/
+    read-selection.ts (+test)   # R1.5
+    read-region.ts    (+test)   # R1.6
+  screenshot/
+    capture.ts        (+test)   # R1.7
+  tools/
+    deps.ts get-selection.ts (+test) screenshot-tool.ts (+test)   # R1.8–R1.9
+  server/
+    register-tools.ts (+test) sse-server.ts   # R1.10, R1.13
+  cli.ts                        # R1.13
+integration/loop.integration.test.ts   # R1.15
+```
+DROPPED from the MVP: `frontman/http-client.ts` (original Task 1.4) — source-map resolution isn't used.
+
+## R1.1 — Workspace scaffolding
+**Same as original Task 1.1** (pnpm workspace, `tsconfig.base.json`, `vitest.config.ts`,
+`packages/core` with deps `@modelcontextprotocol/sdk`, `playwright`, `zod`). Additionally reconcile the
+create-next-app leftovers noted in Phase 0 (root `pnpm-workspace.yaml` globs `examples/*`; remove the
+example's default `CLAUDE.md`/`AGENTS.md` if noisy).
+
+## R1.2 — Shared types
+Replace `packages/core/src/types.ts` with the identity model:
+```ts
+export interface Rect { x: number; y: number; width: number; height: number; }
+
+export interface SelectionFound {
+  status: "selected";
+  componentName: string | null;   // user component to grep for, e.g. "ClientTest"
+  ancestry: string[];             // nearest-first user component chain (framework filtered)
+  selector: string;               // CSS selector for the element
+  tagName: string;
+  text: string;                   // trimmed visible text (<=120 chars)
+  rect: Rect;                     // viewport-relative box
+}
+export interface NoSelection { status: "none"; message: string; }
+export type SelectionResult = SelectionFound | NoSelection;
+
+export type ScreenshotTarget =
+  | { kind: "viewport" }
+  | { kind: "region" }            // the last drag-selected marquee rect
+  | { kind: "selection" }         // the selected element's rect
+  | { kind: "selector"; selector: string };
+
+export interface CapturedImage { mimeType: "image/png"; base64: string; }
+```
+(`SelectionFound` mirrors `RawSelection` in `selection-probe.ts` plus `status`.)
+
+## R1.3 — BridgePage interface + FakePage
+`packages/core/src/cdp/page.ts`:
+```ts
+export interface BridgePage {
+  /** Evaluate a JS expression string in the page; return its JSON-serializable value. */
+  evaluate<T>(expression: string): Promise<T>;
+  /** Inject source that runs on the current page AND on every future navigation. */
+  injectBootstrap(source: string): Promise<void>;
+  screenshotViewport(): Promise<Buffer>;
+  /** PNG of an arbitrary viewport-relative rect (partial screenshot). */
+  screenshotClip(rect: { x: number; y: number; width: number; height: number }): Promise<Buffer>;
+  /** PNG of the first element matching selector, or null. */
+  screenshotElement(selector: string): Promise<Buffer | null>;
+}
+```
+`FakePage` implements it: `evaluate` returns from an `evalResults` map keyed by expression (with a `"*"`
+fallback); `injectBootstrap` records the source; `screenshotViewport/Clip/Element` return canned Buffers
+and record their args. (Same testing pattern as the original Task 1.3 fake.)
+
+## R1.4 — Injected overlay script  ⭐ (the main new piece)
+`packages/core/src/cdp/overlay-script.ts` exports `REGION_GLOBAL`, `REGION_PROBE`, and `OVERLAY_SOURCE`
+(a string injected via `injectBootstrap`). It must: prepend `EXTRACT_SELECTION_FN` from
+`selection-probe.ts`; render a tiny fixed toolbar (buttons **Pick** / **Region** / **Off**, very high
+z-index); in **Pick** mode outline the hovered element and on click call
+`window.__frontmanFlowExtractSelection(el)` → store on `window.__frontmanFlowSelection` and draw a
+persistent outline + a badge showing `componentName`; in **Region** mode draw a click-drag marquee and
+on mouseup store `{x,y,width,height}` (viewport/clientX-Y coords) on `window.__frontmanFlowRegion`;
+`Escape` exits. Keep it dependency-free vanilla JS. Concretely:
+```ts
+import { EXTRACT_SELECTION_FN, SELECTION_GLOBAL } from "./selection-probe.js";
+
+export const REGION_GLOBAL = "__frontmanFlowRegion";
+export const REGION_PROBE = `window.${REGION_GLOBAL} ?? null`;
+
+export const OVERLAY_SOURCE = `
+${EXTRACT_SELECTION_FN}
+(() => {
+  if (window.__frontmanFlowOverlayInstalled) return;
+  window.__frontmanFlowOverlayInstalled = true;
+  var Z = 2147483640;
+  var mode = null; // 'pick' | 'region' | null
+  var hi = document.createElement('div');   // hover/selection highlight
+  var sel = document.createElement('div');  // persistent selected outline
+  var badge = document.createElement('div');
+  var marquee = document.createElement('div');
+  [hi, sel, marquee].forEach(function (d) { d.style.cssText = 'position:fixed;pointer-events:none;z-index:' + Z + ';border:2px solid #4f8cff;background:rgba(79,140,255,.12);display:none'; document.documentElement.appendChild(d); });
+  sel.style.borderColor = '#22c55e'; sel.style.background = 'rgba(34,197,94,.10)';
+  marquee.style.borderStyle = 'dashed';
+  badge.style.cssText = 'position:fixed;z-index:' + (Z + 1) + ';background:#111;color:#fff;font:12px/1.4 system-ui;padding:2px 6px;border-radius:4px;display:none;pointer-events:none';
+  document.documentElement.appendChild(badge);
+  var box = function (d, r) { d.style.display = 'block'; d.style.left = r.x + 'px'; d.style.top = r.y + 'px'; d.style.width = r.width + 'px'; d.style.height = r.height + 'px'; };
+  // toolbar
+  var bar = document.createElement('div');
+  bar.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:' + (Z + 2) + ';display:flex;gap:6px;font:12px system-ui';
+  var mk = function (label, m) { var b = document.createElement('button'); b.textContent = label; b.style.cssText = 'padding:4px 8px;border-radius:6px;border:1px solid #555;background:#1b1b1b;color:#fff;cursor:pointer'; b.onclick = function (e) { e.stopPropagation(); setMode(m); }; return b; };
+  bar.appendChild(mk('Pick', 'pick')); bar.appendChild(mk('Region', 'region')); bar.appendChild(mk('Off', null));
+  document.documentElement.appendChild(bar);
+  function setMode(m) { mode = m; hi.style.display = 'none'; if (m !== 'region') marquee.style.display = 'none'; document.body.style.cursor = m ? 'crosshair' : ''; }
+  document.addEventListener('mousemove', function (e) { if (mode !== 'pick') return; var el = document.elementFromPoint(e.clientX, e.clientY); if (!el || bar.contains(el)) return; var r = el.getBoundingClientRect(); box(hi, r); }, true);
+  document.addEventListener('click', function (e) { if (mode !== 'pick') return; if (bar.contains(e.target)) return; e.preventDefault(); e.stopPropagation(); var el = document.elementFromPoint(e.clientX, e.clientY); if (!el) return; var data = window.__frontmanFlowExtractSelection(el); window['${SELECTION_GLOBAL}'] = data; box(sel, data.rect); badge.style.display = 'block'; badge.style.left = data.rect.x + 'px'; badge.style.top = Math.max(0, data.rect.y - 20) + 'px'; badge.textContent = data.componentName || data.tagName; }, true);
+  var drag = null;
+  document.addEventListener('mousedown', function (e) { if (mode !== 'region') return; if (bar.contains(e.target)) return; e.preventDefault(); drag = { x: e.clientX, y: e.clientY }; }, true);
+  document.addEventListener('mousemove', function (e) { if (mode !== 'region' || !drag) return; var r = { x: Math.min(drag.x, e.clientX), y: Math.min(drag.y, e.clientY), width: Math.abs(e.clientX - drag.x), height: Math.abs(e.clientY - drag.y) }; box(marquee, r); }, true);
+  document.addEventListener('mouseup', function (e) { if (mode !== 'region' || !drag) return; var r = { x: Math.min(drag.x, e.clientX), y: Math.min(drag.y, e.clientY), width: Math.abs(e.clientX - drag.x), height: Math.abs(e.clientY - drag.y) }; drag = null; if (r.width > 4 && r.height > 4) window['${REGION_GLOBAL}'] = r; }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMode(null); }, true);
+})();
+`;
+```
+No unit test (DOM/in-page glue); verified by the integration test (R1.15). If it grows unwieldy, split
+the extractor vs UI but keep one injected string.
+
+## R1.5 — readSelection(page)
+`selection/read-selection.ts`: `evaluate<RawSelection|null>(SELECTION_PROBE)`; null → `{status:"none",
+message:"No element selected. Use the Pick tool in the overlay, then ask again."}`; else map fields →
+`SelectionFound`. **TDD** with `FakePage({evalResults:{[SELECTION_PROBE]: raw}})` covering none + a
+populated `RawSelection` (assert `componentName`, `ancestry`, `selector`, `text`, `rect` pass through).
+
+## R1.6 — readRegion(page)
+`selection/read-region.ts`: `evaluate<Rect|null>(REGION_PROBE)` → returns `Rect | null`. **TDD** with
+FakePage (null and a populated rect).
+
+## R1.7 — capture(page, target, deps)
+`screenshot/capture.ts`: `viewport`→`screenshotViewport`; `selector`→`screenshotElement`;
+`selection`→read selection, use its `rect` → `screenshotClip`; `region`→read region → `screenshotClip`
+(null region or selection → return null). Inject `selectorOfSelection`/`rectOfSelection`/`rectOfRegion`
+as small deps so it's testable with FakePage. **TDD**: viewport, explicit selector, selection-by-rect,
+region-by-rect, and null cases.
+
+## R1.8 — get_selection tool
+`tools/get-selection.ts` (deps `{page}`): `readSelection` → `{content:[{type:"text",
+text: JSON.stringify(selection)}]}`. **TDD**: selected returns identity JSON; none returns the message.
+
+## R1.9 — screenshot tool
+`tools/screenshot-tool.ts` (deps `{page}`), arg `target: "viewport"|"region"|"selection"|<selector>`:
+parse → `capture` → image content `{type:"image", data, mimeType:"image/png"}`; null → `isError` with a
+clear message ("no region captured — drag a region in the overlay first", etc.). **TDD** all branches.
+
+## R1.10 — register tools on McpServer
+**Same as original Task 1.9**, with `screenshot` input `{ target: z.string().default("viewport") }` and
+descriptions updated: `screenshot` target accepts `viewport|region|selection|<css-selector>`;
+`get_selection` returns component identity (no file). In-process client↔server test (list = 2 tools;
+calling `get_selection` returns identity JSON).
+
+## R1.11 — Playwright connector + injection
+`cdp/playwright-page.ts`: implement `BridgePage` over Playwright — `evaluate(expr)` via
+`page.evaluate((e)=> (0,eval)(e), expr)`; `injectBootstrap(src)` = `page.addInitScript({content:src})`
+**and** `page.evaluate(src)` once for the already-loaded page; `screenshotViewport`=`page.screenshot()`;
+`screenshotClip(rect)`=`page.screenshot({clip:rect})`; `screenshotElement(sel)` via `locator(sel).first()`
+(null if count 0). `cdp/connector.ts`: `chromium.connectOverCDP(cdpUrl)`, pick/goto `appUrl`, wrap as
+`PlaywrightPage`, then `injectBootstrap(OVERLAY_SOURCE)`. No unit test; covered by R1.15.
+
+## R1.12 — Config
+**Same as original Task 1.11** minus `frontmanBaseUrl`: `{ mcpPort=7331, cdpUrl="http://localhost:9222",
+appUrl="http://localhost:3000" }` with `FF_*` env overrides. **NOTE for this machine:** the example dev
+server runs on **3100** (3000 is taken by Docker), so set `FF_APP_URL=http://localhost:3100`.
+
+## R1.13 — SSE server + CLI
+**Same as original Tasks 1.12** (SSE MCP server + `cli.ts`), wiring `{page}` from the connector. CLI
+prints the Chrome-connect hint on failure.
+
+## R1.14 — .mcp.json
+**Same as original Task 1.13**: SSE server at `http://localhost:7331/sse`, tools
+`mcp__frontman-flow__get_selection` and `mcp__frontman-flow__screenshot`.
+
+## R1.15 — Integration test (the loop)
+Boot `examples/nextjs` (on 3100) + a Chrome with `--remote-debugging-port=9222`. Connect; inject overlay;
+**programmatically** drive the gestures via `page.evaluate` (set `window.__frontmanFlowSelection =
+window.__frontmanFlowExtractSelection(document.querySelector('#ct-heading'))` on `/clienttest`, and set
+`window.__frontmanFlowRegion = {x,y,width,height}`); assert `get_selection` returns
+`componentName:"ClientTest"` and `screenshot({target:"region"})`/`{target:"selection"}` return PNG bytes
+(>100). Excluded from default `vitest run`; run via the integration config.
+
+## R1.16 — Manual loop verification
+With app (3100, Elixir off) + Chrome (9222) + bridge running and `.mcp.json` picked up: in a Claude Code
+session, use the overlay **Pick** on a client-component element, ask Claude to change it; confirm Claude
+calls `get_selection`, greps the component name to the file, edits, and HMR reloads. Try **Region** +
+`screenshot`. Record `docs/superpowers/notes/phase1-manual-loop.md`.
+
+## Revised Definition of Done
+`pnpm test` green (R1.2–R1.10); integration test green (R1.15); manual loop works on a **client
+component** (identity → grep → edit → HMR), with region + element screenshots, Elixir/frontman not
+running. Known limitation to document: server-component identity comes from `_debugStack` (best-effort);
+when `componentName` is null, Claude falls back to visible text + selector + screenshot.
