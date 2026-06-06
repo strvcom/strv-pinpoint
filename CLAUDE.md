@@ -1,11 +1,14 @@
 # CLAUDE.md — project guidance
 
 ## What this project is
-A framework-agnostic bridge + Claude Code skill that exposes frontman's browser/dev-server MCP
-tools (element selection, screenshots, DOM tree, computed CSS, component tree with source
-locations, server logs) to a Claude Code session, so Claude — not frontman's bundled Elixir
-agent — performs visual frontend edits. Target: works across Next.js, Vite, Astro.
-Read `START_HERE.md` for the full brief.
+A framework-agnostic **CDP-only bridge**: an MCP server (SSE) that injects an overlay into a
+running dev app so a developer can click an element (→ React component **identity**: name,
+ancestry, selector, text, rect) or drag a region (→ partial screenshot), and a Claude Code
+session reads those via `get_selection` + `screenshot` tools, greps the repo for the component,
+and edits source. Claude is the agent — there is no frontman server at runtime.
+Read `START_HERE.md` for the original brief and `docs/superpowers/specs/` (the **amendment**
+section is authoritative) for how Phase 0 reshaped it. Phase-0 findings (why the original
+frontman-overlay/source-map approach was dropped): `docs/superpowers/notes/phase0-spike-findings.md`.
 
 ## Upstream reference (read-only, not in git)
 We study `frontman-ai/frontman` from a local, git-ignored clone at `./.reference/frontman`.
@@ -34,7 +37,40 @@ do not write implementation code before a plan exists.
 Honor Superpowers' rules: plan first, tests before implementation, and the two-stage self-review
 before declaring anything done.
 
+### Use Superpowers by default for non-trivial work
+Anything beyond a typo-level fix goes through the workflow, not ad-hoc edits:
+`superpowers:brainstorming` (unclear requirements) → `superpowers:writing-plans` (stepped, checkbox
+plan in `docs/superpowers/plans/YYYY-MM-DD-<name>.md`) → `superpowers:using-git-worktrees` /
+feature branch → `superpowers:subagent-driven-development` (two-stage review) →
+`superpowers:test-driven-development` per task → `superpowers:verification-before-completion`.
+The checkboxes in the plan file are the source of truth for progress.
+
+## Workflow
+- Commit early and often — one logical change per commit; don't accumulate large diffs.
+- Write tests alongside the change (TDD), not as a final step. Unit tests are colocated
+  (`foo.ts` + `foo.test.ts`); the live-browser loop test is `packages/core/integration/*.integration.test.ts`.
+- Run validation before calling anything done: `pnpm typecheck && pnpm lint && pnpm test` (+ `pnpm build`).
+- Record non-obvious judgment calls as a one-line row in `docs/decisions.md`.
+
+## Task Board (Backlog.md)
+Coarse work streams live on a local, git-native Backlog.md board (`backlog/`). Quick view:
+`pnpm backlog`. **When creating/updating/reviewing tasks, use the `managing-the-task-board` skill**
+— it carries the conventions + CLI usage. One card per stream (subtask detail stays in
+`docs/superpowers/plans/*.md`); flip a card to `In Progress` when you start its plan and `Done`
+when it merges; name the branch `task-<n>--<topic>`.
+
+## Quality gates
+- **Biome** (`biome.json`) is format + lint — `pnpm check` / `pnpm lint` / `pnpm format`.
+- **Lefthook** pre-commit runs (parallel): backlog-boundary guard, biome on staged files, typecheck.
+- **Claude agent hooks** (`.claude/settings.json`): auto-format edited files; on Stop run
+  `typecheck && lint && test` so a broken build can't be claimed as done.
+
+## Local dev (no Docker)
+- Node comes from `nvm` (`$HOME/.nvm/versions/node/v22.22.2/bin`) — prepend it if `node` isn't found.
+- The example app runs on **3100** (`pnpm --dir examples/nextjs exec next dev -p 3100`); 3000 is taken by Docker.
+- Manual loop steps: `docs/superpowers/notes/phase1-manual-loop.md`.
+
 ## Guardrails
 - Prove the MVP on **one** integration (Next.js) before generalizing.
 - Keep the integration-agnostic core separate from per-framework adapters.
-- The Elixir orchestrator must NOT be required at runtime — if a step needs it, stop and flag it.
+- No frontman server (Apache-2.0 middleware or AGPL Elixir) may be required at runtime — if a step needs it, stop and flag it.
