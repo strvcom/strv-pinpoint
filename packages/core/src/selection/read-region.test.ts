@@ -1,8 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { FakePage } from "../cdp/fake-page.js";
 import { REGION_PROBE } from "../cdp/overlay-script.js";
-import { readRegion } from "./read-region.js";
 import type { Rect } from "../types.js";
+import { readRegion } from "./read-region.js";
 
 const SAMPLE_RECT: Rect = { x: 50, y: 100, width: 200, height: 150 };
 

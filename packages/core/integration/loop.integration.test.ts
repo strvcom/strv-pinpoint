@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { connect, type Connection } from "../src/cdp/connector.js";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { type Connection, connect } from "../src/cdp/connector.js";
 import { getSelectionTool } from "../src/tools/get-selection.js";
 import { screenshotTool } from "../src/tools/screenshot-tool.js";
 

@@ -1,6 +1,6 @@
 import type { Page } from "playwright";
-import type { BridgePage } from "./page.js";
 import type { Rect } from "../types.js";
+import type { BridgePage } from "./page.js";
 
 export class PlaywrightPage implements BridgePage {
   constructor(private readonly page: Page) {}

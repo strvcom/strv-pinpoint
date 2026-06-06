@@ -1,11 +1,11 @@
 #!/usr/bin/env node
+import { type Connection, connect } from "./cdp/connector.js";
 import { parseConfig } from "./config.js";
-import { connect } from "./cdp/connector.js";
 import { startSseServer } from "./server/sse-server.js";
 
 async function main() {
   const cfg = parseConfig(process.env as Record<string, string | undefined>);
-  let connection;
+  let connection: Connection;
   try {
     connection = await connect({ cdpUrl: cfg.cdpUrl, appUrl: cfg.appUrl });
   } catch (err) {
@@ -17,9 +17,7 @@ async function main() {
     process.exit(1);
   }
   startSseServer(cfg.mcpPort, { page: connection.page });
-  console.error(
-    `frontman-flow MCP (SSE) on http://localhost:${cfg.mcpPort}/sse`,
-  );
+  console.error(`frontman-flow MCP (SSE) on http://localhost:${cfg.mcpPort}/sse`);
   process.on("SIGINT", async () => {
     await connection.close();
     process.exit(0);

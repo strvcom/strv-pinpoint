@@ -1,8 +1,8 @@
+import { capture } from "../screenshot/capture.js";
+import { readRegion } from "../selection/read-region.js";
+import { readSelection } from "../selection/read-selection.js";
 import type { ScreenshotTarget } from "../types.js";
 import type { ToolDeps, ToolResult } from "./deps.js";
-import { capture } from "../screenshot/capture.js";
-import { readSelection } from "../selection/read-selection.js";
-import { readRegion } from "../selection/read-region.js";
 
 export interface ScreenshotArgs {
   target: string;

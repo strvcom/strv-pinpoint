@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { describe, expect, it } from "vitest";
 import { FakePage } from "../cdp/fake-page.js";
+import type { RawSelection } from "../cdp/selection-probe.js";
 import { SELECTION_PROBE } from "../cdp/selection-probe.js";
 import { registerTools } from "./register-tools.js";
-import type { RawSelection } from "../cdp/selection-probe.js";
 
 const SAMPLE_SELECTION: RawSelection = {
   selector: "h1",

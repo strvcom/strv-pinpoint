@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 import type { ToolDeps } from "../tools/deps.js";
 import { getSelectionTool } from "../tools/get-selection.js";
 import { screenshotTool } from "../tools/screenshot-tool.js";

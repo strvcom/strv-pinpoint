@@ -36,7 +36,9 @@ export class FakePage implements BridgePage {
 
   async screenshotClip(rect: Rect): Promise<Buffer> {
     this.clips.push(rect);
-    return this.opts.clipPng ?? Buffer.from(`clip-png:${rect.x},${rect.y},${rect.width},${rect.height}`);
+    return (
+      this.opts.clipPng ?? Buffer.from(`clip-png:${rect.x},${rect.y},${rect.width},${rect.height}`)
+    );
   }
 
   async screenshotElement(selector: string): Promise<Buffer | null> {

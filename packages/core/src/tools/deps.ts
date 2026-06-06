@@ -5,6 +5,8 @@ export interface ToolDeps {
 }
 
 export interface ToolResult {
-  content: Array<{ type: "text"; text: string } | { type: "image"; data: string; mimeType: string }>;
+  content: Array<
+    { type: "text"; text: string } | { type: "image"; data: string; mimeType: string }
+  >;
   isError?: boolean;
 }
