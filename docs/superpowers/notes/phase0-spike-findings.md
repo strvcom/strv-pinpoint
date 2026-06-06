@@ -41,6 +41,16 @@ Drove Chrome (via the Claude-in-Chrome extension) to `http://localhost:3100/fron
 
 **No GO on 0.3 yet — this is a decision point** (see checkpoint). Options: (a) stand up frontman's client server on :5173; (b) pivot the selection gesture to our own minimal click-to-select that reuses the **confirmed-working** `/frontman/resolve-source-location` HTTP endpoint (no :5173, no WS); (c) investigate whether the frontman client's selection works without the agent WS before deciding.
 
+## Task 0.3 — VERDICT: 🟥 element→source detection does NOT reach user source on Next.js 16
+
+After the pivot to "our own selector", tested the click→source mechanism (`dom-element-to-component-source@0.5.0`, the exact lib frontman pins) against the running Next 16 app, then fed results through the confirmed `/frontman/resolve-source-location`:
+
+- **Server Components (default `app/page.tsx`):** elements (H1/MAIN/DIV) return *"No debug stack information found"*. The fiber's `_debugStack` exists but points at a **compiled RSC server chunk** under `about://React/Server/file://….next/dev/server/chunks/ssr/…._.js` (component `Home`), which the lib refuses.
+- **Client Components (`"use client"`):** elements resolve `ok:true` but to **Next.js's own internal `client/components/client-page.tsx:70`** (framework wrapper), not the user's `app/clienttest/page.tsx`. `/frontman/resolve-source-location` returned `200` but **echoed the compiled location unchanged** — it did not source-map back to user source (`resolvedIsUserSource: false`).
+- **frontman has no Next-specific fix:** `frontman-nextjs` ships only OpenTelemetry `instrumentation.ts`; no babel/SWC/Turbopack source-annotation plugin. Detection relies entirely on the runtime lib + `resolveSourceLocationInServer`. So **frontman's own overlay would hit the same wall on Next 16 + Turbopack + RSC.**
+
+**Conclusion:** The "click → user source file" mechanism — the heart of the loop — is **not viable on Next.js 16 (Turbopack + React 19 RSC) with the off-the-shelf detection**, for either the original (reuse-overlay) or pivoted (our-selector) approach. The HTTP/middleware half is fine; the *detection* half fails specifically on the chosen MVP target. This is a decision point on MVP target/mechanism (see checkpoint #2). What DOES work: middleware-off-Elixir (0.2), and detection returning *some* `file://` source on non-RSC React trees (suggesting Vite/plain-React would fare better).
+
 ### Follow-ups for Phase 1
 - `create-next-app` added a nested `pnpm-workspace.yaml` (removed) and default `CLAUDE.md`/`AGENTS.md` inside `examples/nextjs`. Task 1.1 sets up the **root** pnpm workspace globbing `examples/*`; reconcile then.
 - The example app is Next **16** (`proxy.ts`), so the Phase 1 plan's `middleware.ts` snippet does not apply here — `proxy.ts` is already in place.
