@@ -14,11 +14,14 @@ frontman-flow is a small **CDP-only bridge**: an MCP server (SSE) that injects a
 4. In your Claude session you say e.g. *"make the selected heading bigger."*
 5. Claude calls `get_selection` → `{ componentName, ancestry, selector, text, rect }`, greps `function <componentName>` to find the file, edits it (and may call `screenshot` for visual context). Your dev server HMR-reloads.
 
+**Batch:** pick several elements, type a comment on each card (📷 where useful), click **Send to Claude**, then say *"apply my annotations"* — Claude reads them all via `get_annotations` and applies each comment to its component.
+
 ## MCP tools
 
 | Tool | Returns |
 |---|---|
-| `get_selection` | the picked element's `{ componentName, ancestry[], selector, tagName, text, rect }`, or `{ status: "none" }` |
+| `get_selection` | the most-recently picked element's `{ componentName, ancestry[], selector, tagName, text, rect }`, or `{ status: "none" }` |
+| `get_annotations` | the submitted batch: one block per picked element with its `comment`, plus an embedded screenshot for flagged items (after the user clicks **Send to Claude**) |
 | `screenshot` | a PNG of `viewport` \| `region` (drag-selected) \| `selection` (picked element) \| any CSS selector |
 
 ## Prerequisites
