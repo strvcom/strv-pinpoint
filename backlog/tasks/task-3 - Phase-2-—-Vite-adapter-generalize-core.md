@@ -1,9 +1,10 @@
 ---
 id: TASK-3
 title: Phase 2 — Vite adapter (generalize core)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-06-06 18:25'
+updated_date: '2026-06-06 18:46'
 labels:
   - feature
 dependencies: []
