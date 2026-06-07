@@ -15,7 +15,8 @@ export const ANNOTATIONS_PROBE = `window.${ANNOTATIONS_GLOBAL} ?? null`;
 export const OVERLAY_SOURCE = `
 ${EXTRACT_SELECTION_FN}
 (() => {
-  if (window.__frontmanFlowOverlayInstalled) return;
+  function install() {
+  if (window.__frontmanFlowOverlayInstalled || !document.body) return;
   window.__frontmanFlowOverlayInstalled = true;
   var Z = 2147483640;
   var state = { mode: null, items: [], ready: false, batchId: 0, nextId: 1 };
@@ -107,5 +108,10 @@ ${EXTRACT_SELECTION_FN}
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMode(null); }, true);
 
   sync();
+  }
+  // addInitScript runs at document-start (before <body>); build the UI once the DOM is ready
+  // so a Vite/HMR full reload reliably re-creates the toolbar.
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
+  else install();
 })();
 `;
