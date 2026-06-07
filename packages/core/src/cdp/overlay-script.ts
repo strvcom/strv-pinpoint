@@ -1,3 +1,4 @@
+import { BRIDGE_LINK_FN } from "./bridge-link.js";
 import { EXTRACT_SELECTION_FN, SELECTION_GLOBAL } from "./selection-probe.js";
 
 export const REGION_GLOBAL = "__frontmanFlowRegion";
@@ -14,12 +15,13 @@ export const ANNOTATIONS_PROBE = `window.${ANNOTATIONS_GLOBAL} ?? null`;
  */
 export const OVERLAY_SOURCE = `
 ${EXTRACT_SELECTION_FN}
+${BRIDGE_LINK_FN}
 (() => {
   function install() {
   if (window.__frontmanFlowOverlayInstalled || !document.body) return;
   window.__frontmanFlowOverlayInstalled = true;
   var Z = 2147483640;
-  var state = { mode: null, items: [], ready: false, batchId: 0, nextId: 1 };
+  var state = { mode: null, items: [], ready: false, batchId: 0, nextId: 1, lastPromptId: null };
   var sendBtn = null;
 
   var hover = document.createElement('div');
@@ -89,7 +91,7 @@ ${EXTRACT_SELECTION_FN}
       var actions = document.createElement('div'); actions.style.cssText = 'display:flex;gap:6px';
       sendBtn = document.createElement('button'); sendBtn.textContent = state.ready ? 'Sent ✓' : 'Send to Claude';
       sendBtn.style.cssText = 'flex:1;padding:6px;border-radius:6px;border:1px solid #2a6;color:#fff;cursor:pointer;background:' + (state.ready ? '#143' : '#1b1b1b');
-      sendBtn.onclick = function (e) { e.stopPropagation(); state.ready = true; state.batchId++; sync(); sendBtn.textContent = 'Sent ✓'; sendBtn.style.background = '#143'; };
+      sendBtn.onclick = async function (e) { e.stopPropagation(); state.ready = true; state.batchId++; sync(); sendBtn.textContent = 'Sent — paste into Claude (Cmd+Shift+V)'; sendBtn.style.background = '#143'; if (window.__frontmanFlowLink) { try { state.lastPromptId = await window.__frontmanFlowLink.send(serialize().items); } catch (_) {} } };
       var clr = document.createElement('button'); clr.textContent = 'Clear'; clr.style.cssText = 'padding:6px;border-radius:6px;border:1px solid #555;background:#1b1b1b;color:#fff;cursor:pointer';
       clr.onclick = function (e) { e.stopPropagation(); state.items = []; state.ready = false; renderAll(); sync(); };
       actions.appendChild(sendBtn); actions.appendChild(clr); panel.appendChild(actions);
@@ -108,6 +110,14 @@ ${EXTRACT_SELECTION_FN}
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMode(null); }, true);
 
   sync();
+
+  if (window.__frontmanFlowLink) {
+    window.__frontmanFlowLink.init(function (promptId, status) {
+      if (status === 'running' && promptId === state.lastPromptId) {
+        state.items = []; state.ready = false; renderAll(); sync();
+      }
+    });
+  }
   }
   // addInitScript runs at document-start (before <body>); build the UI once the DOM is ready
   // so a Vite/HMR full reload reliably re-creates the toolbar.

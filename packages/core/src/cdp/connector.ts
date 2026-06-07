@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { type Browser, chromium, type Page } from "playwright";
 import { OVERLAY_SOURCE } from "./overlay-script.js";
 import { PlaywrightPage } from "./playwright-page.js";
@@ -5,11 +6,15 @@ import { PlaywrightPage } from "./playwright-page.js";
 export interface ConnectOptions {
   cdpUrl: string;
   appUrl: string;
+  /** Base URL of this bridge's HTTP server, injected into the overlay so it can call back. */
+  bridgeUrl: string;
 }
 
 export interface Connection {
   browser: Browser;
   page: PlaywrightPage;
+  /** The session id injected into the overlay; the overlay uses it for SSE + /send. */
+  sessionId: string;
   close(): Promise<void>;
 }
 
@@ -20,10 +25,13 @@ export async function connect(opts: ConnectOptions): Promise<Connection> {
   const page = existing ?? (await context.newPage());
   if (!existing) await page.goto(opts.appUrl);
   const bridgePage = new PlaywrightPage(page);
-  await bridgePage.injectBootstrap(OVERLAY_SOURCE);
+  const sessionId = randomUUID();
+  const preamble = `window.__frontmanFlowConfig = ${JSON.stringify({ bridgeUrl: opts.bridgeUrl, sessionId })};`;
+  await bridgePage.injectBootstrap(`${preamble}\n${OVERLAY_SOURCE}`);
   return {
     browser,
     page: bridgePage,
+    sessionId,
     close: async () => {
       await browser.close();
     },
