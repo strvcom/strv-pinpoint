@@ -3,9 +3,10 @@ id: TASK-8
 title: >-
   Annotation overlay v3 (FAB + draggable toolbar + anchored cards + screenshot
   tool)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-06-07 19:39'
+updated_date: '2026-06-07 19:54'
 labels:
   - feature
 dependencies: []
