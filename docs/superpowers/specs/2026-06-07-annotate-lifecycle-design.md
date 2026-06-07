@@ -1,111 +1,116 @@
 # Annotate Lifecycle (TASK-9) — Design
 
-> Status: approved direction (user pivot 2026-06-07); spec for review → writing-plans.
-> Builds on the bridge (`packages/core`) + overlay (`overlay-script.ts`). TASK-8 (overlay v3 UX)
-> runs in a parallel session and owns the overlay's look; TASK-9 adds the overlay↔bridge **link**
-> as a separate composable module to minimize collision.
+> Status: approved direction (user pivot 2026-06-07, refined); spec → writing-plans.
+> Builds on the bridge (`packages/core`) + overlay (`overlay-script.ts`). TASK-8 (overlay v3 UX) runs
+> in a parallel session and owns the overlay's look; TASK-9 adds the overlay↔bridge **link** as a
+> separate composable module to minimize collision.
 
 ## Goal
 
-Make annotating feel native and decoupled: the user picks/annotates in the browser, clicks **Send**,
-and the batch lands on the **system clipboard** as text + `@image-path` mentions. The user pastes
-(`⌘⇧V`) into any Claude Code session; a **skill** recognizes it, applies each comment, and **acks**
-the bridge, which **pushes a clear** over SSE to that exact browser session. Everything is
-**session-keyed** (two windows work independently). No Claude-specific input injection.
+Pick/annotate in the browser → click **Send** → the batch lands on the **system clipboard as one JSON
+blob** (text-only) referencing screenshot files on disk. Paste (`⌘⇧V`) into any Claude Code session; a
+**skill** recognizes it, `Read`s the screenshots, applies each comment, and **`curl`s an ack** to the
+bridge, which **pushes a status event over SSE** to that browser session → it clears. Fully
+**decoupled** (no MCP/Claude-specific integration) and **session-keyed** (two windows independent).
 
-## Why clipboard + ack (settled)
+## Settled decisions
 
-`claude-code-guide` confirmed: raw-image clipboard is single-image / image-or-text / broken on
-Win-WSL. The reliable path is **text on the clipboard containing `@/abs/path.png` mentions** (Claude
-auto-loads them) — one `⌘⇧V` delivers text + N images. The bridge can't observe "Claude acting", so
-clear-on-consume is achieved by Claude **explicitly acking** (a `clear_annotations` MCP tool), which
-the bridge turns into an SSE "clear" to the session. This keeps the bridge a dumb, universal annotator.
+- **Clipboard = a single JSON object, text-only.** Easy to parse/adopt anywhere. Screenshots are saved
+  to disk; the JSON carries their absolute paths; the **skill `Read`s them** (no reliance on Claude's
+  `@`-mention auto-load).
+- **Ack over plain HTTP, not MCP.** The skill has Claude `curl` the bridge — keeps the bridge a dumb,
+  universal annotator with zero Claude coupling. (`get_selection`/`screenshot`/`get_annotations` MCP
+  tools stay as-is; this flow doesn't use them.)
+- **Clipboard writes via `clipboardy`** (stable cross-platform: macOS/Linux/Windows) — not hand-rolled `pbcopy`.
+- **`promptId` + status in the protocol now; simple behavior in v1.** Every copied batch gets a
+  `promptId`; ack carries a `status` (`running` first, `done` later). v1 just clears the browser's
+  current draft when it sees the prompt go `running`. The IDs/status leave room for the future
+  (mark running→done, a frontend store of executed prompts, and annotating *while* a prompt runs)
+  without protocol changes.
+
+## Clipboard JSON (`annotations/clipboard-payload.ts`, pure builder)
+```jsonc
+{
+  "source": "frontman-flow",          // marker the skill matches on
+  "version": 1,
+  "bridgeUrl": "http://localhost:7331",
+  "sessionId": "<id>",
+  "promptId": "<id>",                  // identifies exactly these items
+  "items": [
+    {
+      "badge": 1,
+      "componentName": "Hero",          // or null (e.g. screenshot region)
+      "ancestry": ["Hero", "App"],
+      "selector": "#hero-heading",
+      "tagName": "H1",
+      "text": "Vite + React hero",
+      "comment": "make it bigger",
+      "screenshot": "/abs/.../anno-1.png" // or null
+    }
+  ]
+}
+```
 
 ## Components
 
-### Bridge (extends the existing `:7331` HTTP/MCP server in `server/sse-server.ts`)
-- **Session registry** (`server/sessions.ts`): `Map<sessionId, { sse: ServerResponse | null }>`. Helpers
-  `register`, `pushEvent(sessionId, event)`, `clear(sessionId, batchId)`. In-memory.
-- **Routes** (CORS-enabled for the app origin; preflight handled):
-  - `GET /session/:id/events` — SSE; registers the session's response; keeps it open; `res.on("close")` deregisters.
-  - `POST /session/:id/send` — body = `{ batchId, items: Annotation[] }`. For each item, capture a PNG via
-    the CDP page (`screenshotElement(selector)` → fallback `screenshotClip(rect)`), write to
-    `<tmp>/frontman-flow/<sessionId>/<batchId>/anno-<badge>.png`; build the clipboard markdown
-    (below); write it to the system clipboard. Respond `{ ok: true, imageCount }`.
-- **MCP tool `clear_annotations`** (added in `server/register-tools.ts`): args `{ sessionId, batchId }`
-  → `sessions.clear(sessionId, batchId)` → pushes SSE `{type:"clear", batchId}` to that session. Returns text confirmation.
-
-### Clipboard payload (`annotations/clipboard-payload.ts`)
-Pure builder: `(sessionId, batchId, items, pathFor) → string`:
-```
-<!-- frontman-flow session=<sessionId> batch=<batchId> -->
-# frontman-flow annotations (N)
-
-## 1. <componentName ?? "screenshot region"> — `<selector>`
-- ancestry: A > B          (omit if empty)
-- text: "<visible text>"   (omit if empty)
-- comment: <user comment>
-- screenshot: @<abs/path>  (only for items with a saved image)
-...
-```
-The leading marker is how the **skill** detects a frontman-flow paste and learns `sessionId`/`batchId`.
-
-### Clipboard writer (`clipboard/write.ts`)
-`writeClipboard(text): Promise<void>` — abstraction; default impl pipes to `pbcopy` (macOS) via
-`child_process` (note: Linux `xclip`/`wl-copy` is a later add). Injectable so tests use a fake.
+### Bridge (extends the existing `:7331` HTTP server in `server/sse-server.ts`; CORS for the app origin)
+- **Session/prompt registry** (`server/sessions.ts`): `Map<sessionId, { sse: ServerResponse|null }>` +
+  helpers `register`, `pushEvent(sessionId, event)`. (A `promptId → status` map can be added later; v1
+  just relays.)
+- **`GET /session/:id/events`** — SSE; registers the session's response; `res.on("close")` deregisters.
+- **`POST /session/:id/send`** — body `{ items: Annotation[] }`. Generate a `promptId`; for each item
+  capture a PNG via the CDP page (`screenshotElement(selector)` → fallback `screenshotClip(rect)`),
+  write to `<tmp>/frontman-flow/<sessionId>/<promptId>/anno-<badge>.png`; build the clipboard JSON;
+  `clipboardy.write(json)`. Respond `{ ok, promptId, imageCount }`.
+- **`POST /session/:id/ack`** — body `{ promptId, status }`. Push SSE `{type:"status", promptId, status}`
+  to that session. (v1 only ever receives `status:"running"`.) Unknown session → 404.
 
 ### Claude skill (`.claude/skills/frontman-flow-paste/SKILL.md`)
-Triggers when a message contains `<!-- frontman-flow session=… batch=… -->`. Steps: parse the marker
-(sessionId, batchId); **immediately ack** by calling `mcp__frontman-flow__clear_annotations` (clear the
-moment Claude starts acting — the browser resets); then for each annotation apply its `comment`
-(grep `componentName`; use the `@`-loaded screenshot for regions; fall back to text/selector); summarize.
+Triggers when a message contains a JSON blob with `"source": "frontman-flow"`. Steps: parse it; read
+`bridgeUrl`, `sessionId`, `promptId`; **immediately ack** `running` via
+`curl -fsS -X POST <bridgeUrl>/session/<sessionId>/ack -H 'content-type: application/json' -d '{"promptId":"<id>","status":"running"}'`
+(clears the browser the moment work starts); for each item, `Read` its `screenshot` path (if any) and
+apply its `comment` (grep `componentName`; fall back to `text`/`selector`); summarize. (Future: a final
+`done` ack.)
 
 ### Overlay link (`cdp/bridge-link.ts` — new, composable like `EXTRACT_SELECTION_FN`)
-Exports `BRIDGE_LINK_FN` (a JS source string) defining `window.__frontmanFlowLink` with:
-- `init()` — reads `window.__frontmanFlowConfig = { bridgeUrl, sessionId }`, opens
-  `new EventSource(bridgeUrl + "/session/" + sessionId + "/events")`; on `{type:"clear"}` calls a
-  registered `onClear()` callback.
-- `send(batch)` — `fetch(bridgeUrl + "/session/" + sessionId + "/send", { method:"POST", body: JSON })`.
-`overlay-script.ts` changes are minimal & isolated (compose `BRIDGE_LINK_FN`, call `init()` with an
-`onClear` that resets state, and have the **Send** button call `__frontmanFlowLink.send(serialize())`
-instead of only flipping `ready`). The bridge injects `window.__frontmanFlowConfig` as a preamble
-before `OVERLAY_SOURCE` (sessionId generated per injected page).
+Exports `BRIDGE_LINK_FN` defining `window.__frontmanFlowLink`:
+- `init(onStatus)` — reads `window.__frontmanFlowConfig = { bridgeUrl, sessionId }`; opens
+  `EventSource(bridgeUrl + "/session/" + sessionId + "/events")`; on `{type:"status", promptId, status}`
+  calls `onStatus(promptId, status)`.
+- `send(items)` — `POST` to `/session/:id/send`; returns the `promptId`.
+`overlay-script.ts` touch-points (kept minimal to limit TASK-8 collision): compose `BRIDGE_LINK_FN`;
+`init` with an `onStatus` that, in v1, clears the current items when its sent `promptId` goes `running`;
+**Send** → `__frontmanFlowLink.send(serialize().items)`. The bridge injects
+`window.__frontmanFlowConfig` as a preamble before `OVERLAY_SOURCE` (sessionId per injected page).
 
 ## Data flow
-1. Bridge injects config (`{bridgeUrl, sessionId}`) + overlay; overlay opens the SSE channel.
-2. User annotates → clicks **Send** → overlay POSTs the batch to `/session/:id/send`.
-3. Bridge saves PNGs, builds clipboard text (marker + `@paths`), writes the clipboard.
-4. User `⌘⇧V` into a Claude session → the `frontman-flow-paste` skill fires → calls `clear_annotations(session,batch)` → applies each comment.
-5. Bridge pushes SSE `clear` → that browser resets, ready for the next round.
+1. Bridge injects `{bridgeUrl, sessionId}` + overlay; overlay opens the SSE channel.
+2. Annotate → **Send** → overlay POSTs items → bridge saves PNGs, builds JSON, writes clipboard, returns `promptId`.
+3. `⌘⇧V` into Claude → `frontman-flow-paste` skill parses JSON → `curl` ack `running` → `Read`s screenshots → applies comments.
+4. Bridge relays `{status:"running", promptId}` over SSE → overlay clears that prompt's draft, ready for the next.
 
 ## Coordination with TASK-8
-TASK-9 keeps overlay edits to: (a) compose `BRIDGE_LINK_FN`, (b) `init` the link with an `onClear`
-reset, (c) Send → `link.send(...)`. All bridge-link logic lives in `cdp/bridge-link.ts`. Expect a
-reconcile merge with TASK-8's UI rewrite; the link module is designed to be called from whatever
-toolbar/FAB TASK-8 builds.
-
-## Session-keying & multi-window
-All routes/events/payloads are keyed by `sessionId`. v1 generates one sessionId per injected page and
-wires/tests a single session end-to-end. The bridge attaching to multiple tabs (true multi-window) is
-a fast-follow; the API is already session-shaped so it won't need redesign.
+Overlay edits limited to: compose `BRIDGE_LINK_FN`, `init(onStatus)`, and Send → `link.send(...)`. All
+link logic lives in `cdp/bridge-link.ts`. Expect a reconcile merge with TASK-8's UI rewrite; the link
+module is callable from whatever toolbar/FAB TASK-8 builds.
 
 ## Error handling
-- Unknown `sessionId` on `/send` or `clear` → 404 / no-op with a logged warning.
-- Screenshot capture fails for an item → omit its image, keep the text (note "screenshot unavailable").
-- SSE connection drop → overlay's EventSource auto-reconnects (browser default); bridge re-registers on reconnect.
-- Clipboard write failure (no `pbcopy`) → `/send` responds `{ ok:false, error }`; overlay surfaces "couldn't copy".
+- Unknown `sessionId` on `/send` or `/ack` → 404 (logged). Screenshot capture fails for an item → omit
+  its path (`screenshot: null`), keep the text. `clipboardy.write` fails → `/send` returns
+  `{ ok:false, error }`; overlay surfaces "couldn't copy". SSE drop → EventSource auto-reconnects;
+  bridge re-registers.
 
 ## Testing
-- **Unit (Vitest + fakes):** session registry (register/push/clear); clipboard-payload builder (marker +
-  per-item formatting + `@paths` only when image saved); `/send` orchestration (fake CDP page + fake
-  clipboard → asserts PNGs "saved" + payload written); `clear_annotations` tool → asserts SSE push to
-  the right session; CORS/preflight on the new routes.
-- **Bridge integration (Node, no browser):** start the server; `POST /send` with a 2-item batch (fake/real
-  page) → assert clipboard text contains the marker + `@paths` + PNG files exist; open an `EventSource`
-  client, call `clear_annotations` → assert the client receives `{type:"clear"}`.
-- **Overlay link:** the `bridge-link.ts` source parses (`new Function`); live browser loop deferred to
-  the TASK-8 reconcile (the link module is small and contract-tested at the bridge boundary).
+- **Unit (Vitest + fakes):** session registry (register/push); clipboard-JSON builder (shape, `screenshot`
+  null vs path, marker); `/send` orchestration (fake CDP page + fake `clipboardy` → PNGs "saved" +
+  correct JSON written + `promptId` returned); `/ack` → asserts SSE push of `{type:"status",…}` to the
+  right session; CORS/preflight on the new routes; `bridge-link.ts` source parses (`new Function`).
+- **Bridge integration (Node, no browser):** start the server; `POST /send` (2-item batch, real/fake
+  page) → assert clipboard JSON has marker + 2 items + a valid screenshot path + PNG files exist; open
+  an `EventSource` client; `POST /ack` → assert the client receives `{type:"status",status:"running"}`.
+- Full browser loop verified after the TASK-8 overlay reconcile.
 
-## Out of scope
-Overlay v3 UI (FAB/toolbar/cards — TASK-8); multi-tab connector; Linux/Windows clipboard; auth on the
-local routes (loopback-only, like the SSE MCP server).
+## Out of scope (future, but designed-for)
+Mark `running→done`, a frontend store of executed prompts, annotating while a prompt runs (the `promptId`
++ status protocol enables these); overlay v3 UI (TASK-8); multi-tab connector; auth on loopback routes.
