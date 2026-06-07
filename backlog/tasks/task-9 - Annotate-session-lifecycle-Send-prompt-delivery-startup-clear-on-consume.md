@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-06-07 19:39'
+updated_date: '2026-06-07 19:46'
 labels:
   - feature
 dependencies: []
@@ -15,5 +16,5 @@ ordinal: 9000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Make annotating feel native. (1) A command/flow that starts app+bridge+browser if not running, or reuses an existing session. (2) On browser SEND, deliver the batch into the active Claude Code prompt like a pasted attachment ([N annotations]) so the user adds context and submits. FEASIBILITY UNKNOWN: can an external process inject into Claude Code's composer? SPIKE FIRST (ask claude-code-guide). Fallbacks: copy-to-clipboard on Send (user pastes), or a pull command. (3) Clear the browser annotations the moment Claude STARTS consuming the batch (prompt submitted/read), ready for the next round. Spike the delivery mechanism before designing.
+Clipboard-based annotate delivery (decoupled from Claude; feasibility confirmed via claude-code-guide). On browser SEND: (1) write each screenshot PNG to a temp dir (e.g. /tmp/frontman-flow/<batchId>/anno-N.png); (2) copy to the system clipboard a MARKDOWN TEXT block = annotations (componentName, ancestry, selector, text, comment) + '@/abs/path/anno-N.png' mentions for screenshot items. User pastes ONCE with Cmd+Shift+V into any Claude Code session -> text + @-loaded images arrive in one message. Do NOT use raw-image clipboard (single-image, image-or-text only, broken on Win/WSL). Bridge copies via pbcopy / a clipboard lib. (3) Clear the browser annotations on Send (browser hands off; in the decoupled model the bridge can't observe 'Claude acting') OR expose a tiny explicit clear/ack — spec decides; lean clear-on-Send. (4) Small command/flow to start app+bridge+browser or reuse an existing session. No Claude-specific injection needed.
 <!-- SECTION:DESCRIPTION:END -->
