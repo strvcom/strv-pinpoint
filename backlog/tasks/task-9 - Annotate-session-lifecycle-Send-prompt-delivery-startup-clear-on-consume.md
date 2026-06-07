@@ -3,10 +3,10 @@ id: TASK-9
 title: >-
   Annotate session lifecycle: Send -> prompt delivery + startup +
   clear-on-consume
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-06-07 19:39'
-updated_date: '2026-06-07 19:46'
+updated_date: '2026-06-07 20:03'
 labels:
   - feature
 dependencies: []
