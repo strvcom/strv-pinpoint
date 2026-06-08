@@ -9,6 +9,9 @@ saved screenshot paths — to the clipboard; the developer pastes it into a Clau
 which greps the repo for the component and edits source. Delivery is the **clipboard/paste flow**:
 there is no MCP server (removed in P1; see `docs/superpowers/specs/2026-06-08-plugin-clipboard-cdp-design.md`).
 Claude is the agent — there is no frontman server at runtime.
+The tool ships as a **Claude Code plugin** (`plugin/`): a `/frontman-flow:start` command + the
+`frontman-flow-paste` skill + the bridge bundled (esbuild) to a zero-dep executable in `bin/`. Local
+dev: `claude --plugin-dir ./plugin` (build first with `pnpm build:plugin`).
 Read `START_HERE.md` for the original brief and `docs/superpowers/specs/` (the **amendment**
 section is authoritative) for how Phase 0 reshaped it. Phase-0 findings (why the original
 frontman-overlay/source-map approach was dropped): `docs/superpowers/notes/phase0-spike-findings.md`.
