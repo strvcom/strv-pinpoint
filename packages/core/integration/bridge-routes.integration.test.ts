@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FakePage } from "../src/cdp/fake-page.js";
-import type { startBridgeServer } from "../src/server/bridge-server.js";
+import { startBridgeServer } from "../src/server/bridge-server.js";
 import { SessionRegistry } from "../src/server/sessions.js";
 
 const clip: string[] = [];
