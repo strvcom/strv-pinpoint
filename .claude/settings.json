@@ -29,5 +29,8 @@
   },
   "enabledPlugins": {
     "frontman-flow@frontman-flow": true
+  },
+  "worktree": {
+    "baseRef": "head"
   }
 }
