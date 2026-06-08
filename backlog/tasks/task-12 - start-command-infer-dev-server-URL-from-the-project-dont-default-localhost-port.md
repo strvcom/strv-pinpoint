@@ -3,9 +3,10 @@ id: TASK-12
 title: >-
   start command: infer dev-server URL from the project (don't default
   localhost:port)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-06-08 16:38'
+updated_date: '2026-06-08 16:45'
 labels:
   - enhancement
 dependencies: []
@@ -20,9 +21,9 @@ The /frontman-flow:start command (packages/claude-code/commands/start.md) curren
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 start no longer hardcodes/defaults a localhost:PORT
-- [ ] #2 infers the dev URL/port from package.json dev script + framework config (Vite/Next/etc.)
-- [ ] #3 probes whether the dev server is already running and reuses it if so
-- [ ] #4 if not running, surfaces the exact start command (or offers to run it) instead of assuming
-- [ ] #5 falls back to asking the user only when the URL can't be inferred; FF_APP_URL still overrides
+- [x] #1 start no longer hardcodes/defaults a localhost:PORT
+- [x] #2 infers the dev URL/port from package.json dev script + framework config (Vite/Next/etc.)
+- [x] #3 probes whether the dev server is already running and reuses it if so
+- [x] #4 if not running, surfaces the exact start command (or offers to run it) instead of assuming
+- [x] #5 falls back to asking the user only when the URL can't be inferred; FF_APP_URL still overrides
 <!-- AC:END -->
