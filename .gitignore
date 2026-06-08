@@ -11,3 +11,6 @@ dist/
 # Local runtime artifacts (overlay/bridge session data, skill scratch)
 /.frontman-flow/
 /.superpowers/
+
+# built plugin bridge bundle
+plugin/bin/frontman-flow
