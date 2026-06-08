@@ -1,10 +1,10 @@
 ---
 id: TASK-10
 title: 'Self-contained plugin: clipboard-only + raw-CDP bridge + one-command loop'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-08 00:01'
-updated_date: '2026-06-08 14:02'
+updated_date: '2026-06-08 17:02'
 labels:
   - chore
 dependencies: []
@@ -22,5 +22,5 @@ Collapse the runtime to one delivery path + ship as a Claude Code plugin. P1: de
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-P1 (clipboard-only) + P2 (raw CDP, no Playwright) + P3 (plugin packaging) all IMPLEMENTED and merged to main; gates green throughout. @frontman-flow/core is genuinely zero-dep (clipboardy replaced with pbcopy/clip/xclip shell-out). Plugin at plugin/: /frontman-flow:start command + frontman-flow-paste skill + esbuild-bundled bin/frontman-flow. Local marketplace (.claude-plugin/marketplace.json, DIRECTORY source — a 'local' source type does NOT exist) + examples/vite-react/.claude harness + repo dogfood. Dev loop: claude --plugin-dir ./plugin. VERIFIED LIVE: bundled bin injects overlay (window.__frontmanFlowConfig set) + serves bridge against real headless Chrome. Plans: docs/superpowers/plans/2026-06-08-p1/p2/p3-*.md. PENDING (user-only, cannot run headlessly here): interactive acceptance — cd examples/vite-react && claude -> /frontman-flow:start -> Pick/comment/Send/paste. Flip to Done after that smoke. Rename remains TASK-11.
+DONE: P1 (clipboard-only) + P2 (raw CDP, zero-dep) + P3 (plugin packaging) + integrations-as-packages, all merged. Interactive acceptance confirmed working by user: /frontman-flow:start detects the dev URL, starts it, launches the bridge, injects the overlay, serves :7331. Follow-ups split out: TASK-11 (rename), TASK-12 (dev-URL detection, done), and command/skill robustness (node PATH + readiness signal) tracked separately.
 <!-- SECTION:NOTES:END -->
