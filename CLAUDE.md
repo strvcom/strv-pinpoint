@@ -68,6 +68,19 @@ Coarse work streams live on a local, git-native Backlog.md board (`backlog/`). Q
 `docs/superpowers/plans/*.md`); flip a card to `In Progress` when you start its plan and `Done`
 when it merges; name the branch `task-<n>--<topic>`.
 
+### Anti-drift: Done requires a merge (non-negotiable)
+A task branch/worktree **MUST land on `main` before its card flips to `Done`**. "Done" means
+*merged*, not "the code exists somewhere." Flipping a card `Done` while its branch is still
+unmerged is what stranded TASK-8 (overlay v3 lived only on `task-8--overlay-v3` for weeks while
+`main` drifted through the P1 MCP removal + the packages/ refactor — see TASK-13). To prevent it:
+- When a stream's work finishes, **merge `task-<n>--<topic>` into `main`** (local merge — the repo
+  has no remote) *before* editing the card to `Done`. Verify on `main`: `git branch --merged main`
+  should list the branch, or `git log main --oneline` should show the merge/work.
+- Don't leave long-lived task branches behind `main`. If one falls behind, rebase/replay promptly
+  — the longer it drifts, the more a naive merge risks reintroducing already-removed work.
+- The board's status edits run from the `main` checkout; before marking `Done` there, confirm the
+  branch's commits are actually present on `main`.
+
 ## Quality gates
 - **Biome** (`biome.json`) is format + lint — `pnpm check` / `pnpm lint` / `pnpm format`.
 - **Lefthook** pre-commit runs (parallel): backlog-boundary guard, biome on staged files, typecheck.

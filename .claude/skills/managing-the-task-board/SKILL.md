@@ -46,6 +46,22 @@ Move the card's status as the stream moves — this is part of the work, not an 
 
 Run status edits from the **`main` checkout** (the board is canonical there).
 
+### `Done` requires a merge (anti-drift — non-negotiable)
+
+A card flips to `Done` **only after its branch has landed on `main`**. "Done" means *merged*, not
+"the code exists on a branch." Flipping `Done` while `task-<n>--<topic>` is unmerged strands the
+work and lets `main` drift past it — exactly what happened to TASK-8 (overlay v3 sat unmerged while
+`main` moved through the P1 MCP removal + packages/ refactor; TASK-13 had to replay it). Before
+editing a card to `Done`:
+
+1. Merge `task-<n>--<topic>` into `main` (local merge — no remote).
+2. From the `main` checkout, **verify the commits are present**: `git branch --merged main` lists
+   the branch (or `git log main --oneline` shows the work). Only then run
+   `npx backlog.md task edit task-<n> -s "Done"`.
+
+If a branch has fallen behind `main`, rebase/replay it promptly — the longer it drifts, the more a
+naive merge risks reintroducing already-removed work.
+
 ## Branch / worktree naming
 
 One card ↔ one branch. Name the branch (and a worktree, if you use one) `task-<n>--<short-topic>` so the mapping is obvious. This project has no Docker/devcontainer setup and defaults to a feature branch in the main checkout:

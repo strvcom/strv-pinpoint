@@ -22,10 +22,10 @@ Compared `main` ↔ `task-8--overlay-v3` file-by-file:
 | branch docs (v3 spec/plan/notes) | **DROP** | MCP-flavored; not needed for the ACs. |
 
 ## Steps
-- [ ] 1. Port the 3 files from `task-8--overlay-v3` (`git checkout <branch> -- <paths>`).
-- [ ] 2. `pnpm typecheck && pnpm lint && pnpm test` — green (save-screenshots test covers the new behavior).
-- [ ] 3. `pnpm build`; run bridge against `examples/vite-react` on :5173 and confirm the **v3 toolbar** (✦ FAB → Pick · Screenshot · Clear · Copy) serves from the fresh bundle. (AC#1, AC#2)
-- [ ] 4. Anti-drift rule: document in `CLAUDE.md` + `managing-the-task-board` skill — a task branch MUST merge to main before its card flips Done; "Done" requires a merge. (AC#3)
+- [x] 1. Port the 3 files from `task-8--overlay-v3` (`git checkout <branch> -- <paths>`).
+- [x] 2. `pnpm typecheck && pnpm lint && pnpm test` — green (save-screenshots test covers the new behavior).
+- [x] 3. `pnpm build`; run bridge against `examples/vite-react` on :5173 and confirm the **v3 toolbar** (✦ FAB → Pick · Screenshot · Clear · Copy) serves from the fresh bundle. (AC#1, AC#2)
+- [x] 4. Anti-drift rule: document in `CLAUDE.md` + `managing-the-task-board` skill — a task branch MUST merge to main before its card flips Done; "Done" requires a merge. (AC#3)
 - [ ] 5. Merge `task-13--land-overlay-v3` → `main`; re-verify TASK-8 reflects reality. (AC#4)
 - [ ] 6. `docs/decisions.md` row; flip TASK-13 → Done from the main checkout.
 
