@@ -36,5 +36,19 @@ describe("saveScreenshots", () => {
     expect(paths[1]).toBe(join(dir, "anno-1.png"));
     expect(existsSync(paths[1] as string)).toBe(true);
     expect(paths[2]).toBeNull();
+    // overlay is hidden during capture so it doesn't appear in the screenshot
+    expect(page.evaluatedExpressions.some((e) => e.includes("__ffHide"))).toBe(true);
+  });
+
+  it("uses a rect clip for screenshot annotations (empty selector)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const page = new FakePage({ clipPng: Buffer.from("CLIP") });
+    const paths = await saveScreenshots(
+      page,
+      [item({ badge: 3, wantScreenshot: true, selector: "" })],
+      dir,
+    );
+    expect(paths[3]).toBe(join(dir, "anno-3.png"));
+    expect(readFileSync(paths[3] as string).toString()).toBe("CLIP");
   });
 });
