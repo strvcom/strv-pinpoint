@@ -1,22 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { join } from "node:path";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { buildClipboardJson } from "../annotations/clipboard-payload.js";
 import { saveScreenshots } from "../annotations/save-screenshots.js";
 import type { BridgePage } from "../cdp/page.js";
 import type { ClipboardWriter } from "../clipboard/write.js";
 import type { Annotation } from "../types.js";
-import { registerTools } from "./register-tools.js";
 import type { SessionRegistry } from "./sessions.js";
 
-export interface SseServerDeps {
+export interface BridgeServerDeps {
   page: BridgePage;
   sessions: SessionRegistry;
   writeClipboard: ClipboardWriter;
   bridgeUrl: string;
-  /** root tmp dir for screenshots, e.g. join(os.tmpdir(), "frontman-flow"). */
+  /** root tmp dir for screenshots, e.g. join(process.cwd(), ".frontman-flow"). */
   tmpRoot: string;
 }
 
@@ -32,11 +29,7 @@ async function readJson<T>(req: IncomingMessage): Promise<T> {
   return (chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {}) as T;
 }
 
-export function startSseServer(port: number, deps: SseServerDeps): Server {
-  const mcp = new McpServer({ name: "frontman-flow", version: "0.0.0" });
-  registerTools(mcp, { page: deps.page });
-  const transports = new Map<string, SSEServerTransport>();
-
+export function startBridgeServer(port: number, deps: BridgeServerDeps): Server {
   const http = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
     cors(res);
@@ -104,23 +97,6 @@ export function startSseServer(port: number, deps: SseServerDeps): Server {
       }
     }
 
-    if (req.method === "GET" && url.pathname === "/sse") {
-      const t = new SSEServerTransport("/messages", res);
-      transports.set(t.sessionId, t);
-      res.on("close", () => transports.delete(t.sessionId));
-      await mcp.connect(t);
-      return;
-    }
-    if (req.method === "POST" && url.pathname.startsWith("/messages")) {
-      const sid = url.searchParams.get("sessionId") ?? "";
-      const t = transports.get(sid);
-      if (!t) {
-        res.writeHead(400).end("unknown sessionId");
-        return;
-      }
-      await t.handlePostMessage(req, res);
-      return;
-    }
     res.writeHead(404).end("not found");
   });
 
