@@ -4,7 +4,7 @@ title: 'Self-contained plugin: clipboard-only + raw-CDP bridge + one-command loo
 status: In Progress
 assignee: []
 created_date: '2026-06-08 00:01'
-updated_date: '2026-06-08 10:10'
+updated_date: '2026-06-08 14:02'
 labels:
   - chore
 dependencies: []
@@ -22,5 +22,5 @@ Collapse the runtime to one delivery path + ship as a Claude Code plugin. P1: de
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-P1 (clipboard-only) + P2 (raw CDP, no Playwright) COMPLETE and merged to main. @frontman-flow/core has ZERO runtime deps. P2 verified live: loop+vite integration suites pass against real headless Chrome (inject via Page.addScriptToEvaluateOnNewDocument, screenshots via Page.captureScreenshot, Chrome auto-launch/attach via /json). Plans: docs/superpowers/plans/2026-06-08-p1-strip-mcp-clipboard-only.md + 2026-06-08-p2-raw-cdp.md. PENDING: P3 (plugin packaging: command + skills + bundled JS bridge; examples/vite-react/.claude harness so 'claude' + command runs the loop) — needs its own plan, gated on confirming how a project .claude/ installs a LOCAL plugin. NOTE: .claude/skills/frontman-flow SKILL.md still references the deleted MCP tools -> rework/remove in P3.
+P1 (clipboard-only) + P2 (raw CDP, no Playwright) + P3 (plugin packaging) all IMPLEMENTED and merged to main; gates green throughout. @frontman-flow/core is genuinely zero-dep (clipboardy replaced with pbcopy/clip/xclip shell-out). Plugin at plugin/: /frontman-flow:start command + frontman-flow-paste skill + esbuild-bundled bin/frontman-flow. Local marketplace (.claude-plugin/marketplace.json, DIRECTORY source — a 'local' source type does NOT exist) + examples/vite-react/.claude harness + repo dogfood. Dev loop: claude --plugin-dir ./plugin. VERIFIED LIVE: bundled bin injects overlay (window.__frontmanFlowConfig set) + serves bridge against real headless Chrome. Plans: docs/superpowers/plans/2026-06-08-p1/p2/p3-*.md. PENDING (user-only, cannot run headlessly here): interactive acceptance — cd examples/vite-react && claude -> /frontman-flow:start -> Pick/comment/Send/paste. Flip to Done after that smoke. Rename remains TASK-11.
 <!-- SECTION:NOTES:END -->
