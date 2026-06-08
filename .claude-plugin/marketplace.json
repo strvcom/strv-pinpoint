@@ -1,0 +1,11 @@
+{
+  "name": "frontman-flow",
+  "owner": { "name": "frontman-flow" },
+  "plugins": [
+    {
+      "name": "frontman-flow",
+      "source": "./plugin",
+      "description": "frontman-flow click-to-fix overlay bridge"
+    }
+  ]
+}

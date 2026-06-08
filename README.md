@@ -43,11 +43,23 @@ FF_APP_URL=http://localhost:5180 node packages/core/dist/cli.js
 If a debug Chrome is already listening on `:9222`, the bridge **attaches** to it instead of launching one (so you can reuse your own session — start it with
 `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222 --user-data-dir=/tmp/ff-chrome http://localhost:5180`).
 
-Then click in the overlay, comment, **Send**, and paste the copied JSON into a Claude Code session open in this repo — the `frontman-flow-paste` skill (`.claude/skills/`) applies it.
+Then click in the overlay, comment, **Send**, and paste the copied JSON into a Claude Code session — the `frontman-flow-paste` skill applies it.
 
 Or use the helper: `scripts/dev.sh http://localhost:5180`.
 
-> Note: a one-command, plugin-packaged launch (no manual Chrome/bridge steps) is in progress — see `docs/superpowers/specs/2026-06-08-plugin-clipboard-cdp-design.md` (phases P2/P3).
+## Install as a Claude Code plugin
+
+The tool also ships as a self-contained Claude Code plugin (`plugin/`): a `/frontman-flow:start` command, the `frontman-flow-paste` skill, and the bridge bundled to a zero-dep executable in `bin/`. Build the bundle first:
+
+```bash
+pnpm build:plugin      # produces plugin/bin/frontman-flow
+```
+
+- **Dev loop (live edits, recommended):** from any project, `claude --plugin-dir /path/to/frontman-flow/plugin`, then `/reload-plugins` after editing the plugin. The bin is on the session PATH.
+- **In another project:** `/plugin marketplace add /path/to/frontman-flow` then `/plugin install frontman-flow@frontman-flow` (a cached copy — `/plugin marketplace update` + `/reload-plugins` to refresh).
+- **In this repo's example:** `cd examples/vite-react && claude` — its `.claude/settings.json` registers the repo's local marketplace and enables the plugin. Run `/frontman-flow:start`.
+
+The kickoff: `/frontman-flow:start` launches the bridge (which opens Chrome + injects the overlay) and walks you through Pick → comment → **Send** → paste.
 
 ## Limitations
 

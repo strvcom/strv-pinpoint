@@ -39,7 +39,14 @@ export async function connect(opts: ConnectOptions): Promise<Connection> {
     const profileDir = opts.profileDir ?? "/tmp/ff-chrome";
     const child = launchChrome({ chromePath, port, profileDir, appUrl: opts.appUrl });
     kill = () => child.kill();
-    await waitForCdp(base);
+    // A bad binary path emits an async 'error' (ENOENT); surface it as a clear
+    // rejection instead of crashing the process with an unhandled event.
+    const launchFailed = new Promise<never>((_, reject) => {
+      child.once("error", (e) =>
+        reject(new Error(`Failed to launch Chrome (${chromePath}): ${(e as Error).message}`)),
+      );
+    });
+    await Promise.race([waitForCdp(base), launchFailed]);
   }
 
   const wsUrl = await discoverPageTarget(base, opts.appUrl);
