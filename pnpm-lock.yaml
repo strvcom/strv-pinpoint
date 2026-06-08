@@ -14,9 +14,6 @@ importers:
       '@types/node':
         specifier: ^20.14.0
         version: 20.19.42
-      esbuild:
-        specifier: ^0.28.0
-        version: 0.28.0
       lefthook:
         specifier: ^2.1.9
         version: 2.1.9
@@ -72,6 +69,16 @@ importers:
       vite:
         specifier: ^8.0.12
         version: 8.0.16(@types/node@24.13.1)(esbuild@0.28.0)(terser@5.48.0)
+
+  packages/claude-code:
+    dependencies:
+      '@frontman-flow/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      esbuild:
+        specifier: ^0.28.0
+        version: 0.28.0
 
   packages/core: {}
 

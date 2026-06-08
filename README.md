@@ -49,13 +49,13 @@ Or use the helper: `scripts/dev.sh http://localhost:5180`.
 
 ## Install as a Claude Code plugin
 
-The tool also ships as a self-contained Claude Code plugin (`plugin/`): a `/frontman-flow:start` command, the `frontman-flow-paste` skill, and the bridge bundled to a zero-dep executable in `bin/`. Build the bundle first:
+The tool also ships as a self-contained Claude Code plugin (`packages/claude-code/`): a `/frontman-flow:start` command, the `frontman-flow-paste` skill, and the bridge bundled to a zero-dep executable in `bin/`. Build the bundle first:
 
 ```bash
-pnpm build:plugin      # produces plugin/bin/frontman-flow
+pnpm build      # builds all packages, incl. packages/claude-code/bin/frontman-flow
 ```
 
-- **Dev loop (live edits, recommended):** from any project, `claude --plugin-dir /path/to/frontman-flow/plugin`, then `/reload-plugins` after editing the plugin. The bin is on the session PATH.
+- **Dev loop (live edits, recommended):** from any project, `claude --plugin-dir /path/to/frontman-flow/packages/claude-code`, then `/reload-plugins` after editing the plugin. The bin is on the session PATH.
 - **In another project:** `/plugin marketplace add /path/to/frontman-flow` then `/plugin install frontman-flow@frontman-flow` (a cached copy — `/plugin marketplace update` + `/reload-plugins` to refresh).
 - **In this repo's example:** `cd examples/vite-react && claude` — its `.claude/settings.json` registers the repo's local marketplace and enables the plugin. Run `/frontman-flow:start`.
 
@@ -69,10 +69,13 @@ The kickoff: `/frontman-flow:start` launches the bridge (which opens Chrome + in
 
 ## Project layout & conventions
 
+All code units live under `packages/`; everything else is development nuance (examples, docs, config).
+
 ```
-packages/core/   the bridge (CDP connector, overlay, clipboard payload, overlay HTTP server)
-examples/        throwaway apps (vite-react)
-backlog/         git-native task board — `pnpm backlog`
-docs/            specs, plans, decisions log, phase notes
+packages/core/          the agent-agnostic engine (CDP connector, overlay, clipboard payload, bridge HTTP server)
+packages/claude-code/   Claude Code integration (command + skill + bundled bridge in bin/) — depends on core
+examples/               throwaway apps to inspect (vite-react)
+backlog/                git-native task board — `pnpm backlog`
+docs/                   specs, plans, decisions log, phase notes
 ```
-Conventions (superpowers workflow, task board, quality gates) are in `CLAUDE.md`. Quality is enforced by Biome + a Lefthook pre-commit + Claude agent hooks.
+The engine has no agent coupling; a future tool (Codex, Cursor, …) is a new sibling package under `packages/` that depends on `@frontman-flow/core` and re-packages it. Conventions (superpowers workflow, task board, quality gates) are in `CLAUDE.md`. Quality is enforced by Biome + a Lefthook pre-commit + Claude agent hooks.

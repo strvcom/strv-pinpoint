@@ -13,4 +13,4 @@ dist/
 /.superpowers/
 
 # built plugin bridge bundle
-plugin/bin/frontman-flow
+packages/claude-code/bin/frontman-flow
