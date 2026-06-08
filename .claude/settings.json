@@ -21,5 +21,13 @@
         ]
       }
     ]
+  },
+  "extraKnownMarketplaces": {
+    "frontman-flow": {
+      "source": { "source": "directory", "path": "." }
+    }
+  },
+  "enabledPlugins": {
+    "frontman-flow@frontman-flow": true
   }
 }
