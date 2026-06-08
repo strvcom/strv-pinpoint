@@ -9,7 +9,7 @@ import { SessionRegistry } from "./server/sessions.js";
 
 async function main() {
   const cfg = parseConfig(process.env as Record<string, string | undefined>);
-  const bridgeUrl = `http://localhost:${cfg.mcpPort}`;
+  const bridgeUrl = `http://localhost:${cfg.port}`;
   let connection: Connection;
   try {
     connection = await connect({ cdpUrl: cfg.cdpUrl, appUrl: cfg.appUrl, bridgeUrl });
@@ -21,7 +21,7 @@ async function main() {
     );
     process.exit(1);
   }
-  startBridgeServer(cfg.mcpPort, {
+  startBridgeServer(cfg.port, {
     page: connection.page,
     sessions: new SessionRegistry(),
     writeClipboard: systemClipboard,
