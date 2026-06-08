@@ -4,7 +4,7 @@ title: 'Self-contained plugin: clipboard-only + raw-CDP bridge + one-command loo
 status: In Progress
 assignee: []
 created_date: '2026-06-08 00:01'
-updated_date: '2026-06-08 00:21'
+updated_date: '2026-06-08 10:10'
 labels:
   - chore
 dependencies: []
@@ -22,5 +22,5 @@ Collapse the runtime to one delivery path + ship as a Claude Code plugin. P1: de
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-P1 (strip MCP -> clipboard-only) COMPLETE on branch task-10--plugin-clipboard-cdp, all gates green (typecheck/lint/test/build). 7 commits: overlay-only bridge-server (no MCP), deleted MCP tools+readers, dropped @modelcontextprotocol/sdk + zod, removed examples/nextjs, mcpPort->port + Vite default, rewrote Vite clipboard-loop integration tests, docs+decisions+removed .mcp.json. Plan: docs/superpowers/plans/2026-06-08-p1-strip-mcp-clipboard-only.md. PENDING: P2 (raw CDP, drop Playwright) + P3 (plugin packaging + vite-react/.claude harness) need their own plans; P3 gated on confirming local-plugin install mechanics. NOTE: .claude/skills/frontman-flow SKILL.md still references the deleted MCP tools -> rework/remove in P3 (skill consolidation). Branch not yet merged.
+P1 (clipboard-only) + P2 (raw CDP, no Playwright) COMPLETE and merged to main. @frontman-flow/core has ZERO runtime deps. P2 verified live: loop+vite integration suites pass against real headless Chrome (inject via Page.addScriptToEvaluateOnNewDocument, screenshots via Page.captureScreenshot, Chrome auto-launch/attach via /json). Plans: docs/superpowers/plans/2026-06-08-p1-strip-mcp-clipboard-only.md + 2026-06-08-p2-raw-cdp.md. PENDING: P3 (plugin packaging: command + skills + bundled JS bridge; examples/vite-react/.claude harness so 'claude' + command runs the loop) — needs its own plan, gated on confirming how a project .claude/ installs a LOCAL plugin. NOTE: .claude/skills/frontman-flow SKILL.md still references the deleted MCP tools -> rework/remove in P3.
 <!-- SECTION:NOTES:END -->
