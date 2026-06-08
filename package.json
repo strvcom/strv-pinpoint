@@ -8,8 +8,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "pnpm -r build && pnpm build:plugin",
-    "build:plugin": "esbuild packages/core/src/cli.ts --bundle --platform=node --format=esm --target=node20 --outfile=plugin/bin/frontman-flow && chmod +x plugin/bin/frontman-flow",
+    "build": "pnpm -r build",
     "typecheck": "tsc -p packages/core/tsconfig.json --noEmit",
     "lint": "biome lint .",
     "format": "biome format --write .",
@@ -21,7 +20,6 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
     "@types/node": "^20.14.0",
-    "esbuild": "^0.28.0",
     "lefthook": "^2.1.9",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"

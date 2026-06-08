@@ -1,0 +1,16 @@
+{
+  "name": "@frontman-flow/claude-code",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Claude Code integration for frontman-flow: /frontman-flow:start command + paste skill + the bundled bridge.",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild ../core/src/cli.ts --bundle --platform=node --format=esm --target=node20 --outfile=bin/frontman-flow && chmod +x bin/frontman-flow"
+  },
+  "dependencies": {
+    "@frontman-flow/core": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
+  }
+}
