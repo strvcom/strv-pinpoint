@@ -30,23 +30,22 @@ pnpm --filter @frontman-flow/core build
 
 ## Run
 
-Three processes + your Claude session. The bridge defaults: overlay HTTP on `:7331`, CDP on `:9222`, app on `:5173` (override with `FF_PORT` / `FF_CDP_URL` / `FF_APP_URL`).
+Your dev app + the bridge + your Claude session. The bridge speaks **raw CDP** (no Playwright) and **launches Chrome itself**. Defaults: overlay HTTP on `:7331`, CDP on `:9222`, app on `:5173` (override with `FF_PORT` / `FF_CDP_URL` / `FF_APP_URL`; point at a specific browser with `FF_CHROME_PATH`, and set its profile dir with `FF_CHROME_PROFILE`).
 
 ```bash
 # 1. your dev app (any framework). Example (Vite + React):
 pnpm --dir examples/vite-react exec vite --port 5180 --strictPort
 
-# 2. a Chrome with remote debugging (headed, so you can click):
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  --remote-debugging-port=9222 --user-data-dir=/tmp/ff-chrome http://localhost:5180
-
-# 3. the bridge, pointed at the app:
+# 2. the bridge, pointed at the app — it launches a debug Chrome at the app URL:
 FF_APP_URL=http://localhost:5180 node packages/core/dist/cli.js
 ```
 
+If a debug Chrome is already listening on `:9222`, the bridge **attaches** to it instead of launching one (so you can reuse your own session — start it with
+`"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222 --user-data-dir=/tmp/ff-chrome http://localhost:5180`).
+
 Then click in the overlay, comment, **Send**, and paste the copied JSON into a Claude Code session open in this repo — the `frontman-flow-paste` skill (`.claude/skills/`) applies it.
 
-Or use the helper: `scripts/dev.sh http://localhost:5180` (starts Chrome + the bridge).
+Or use the helper: `scripts/dev.sh http://localhost:5180`.
 
 > Note: a one-command, plugin-packaged launch (no manual Chrome/bridge steps) is in progress — see `docs/superpowers/specs/2026-06-08-plugin-clipboard-cdp-design.md` (phases P2/P3).
 

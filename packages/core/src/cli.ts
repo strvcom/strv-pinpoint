@@ -12,7 +12,13 @@ async function main() {
   const bridgeUrl = `http://localhost:${cfg.port}`;
   let connection: Connection;
   try {
-    connection = await connect({ cdpUrl: cfg.cdpUrl, appUrl: cfg.appUrl, bridgeUrl });
+    connection = await connect({
+      cdpUrl: cfg.cdpUrl,
+      appUrl: cfg.appUrl,
+      bridgeUrl,
+      chromePath: cfg.chromePath,
+      profileDir: cfg.profileDir,
+    });
   } catch (err) {
     console.error(
       `Could not connect to Chrome at ${cfg.cdpUrl}. Launch Chrome with:\n` +

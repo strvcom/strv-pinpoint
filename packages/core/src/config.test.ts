@@ -24,4 +24,14 @@ describe("parseConfig", () => {
       "http://localhost:5180",
     );
   });
+
+  it("reads chromePath from FF_CHROME_PATH (undefined by default)", () => {
+    expect(parseConfig({}).chromePath).toBeUndefined();
+    expect(parseConfig({ FF_CHROME_PATH: "/c" }).chromePath).toBe("/c");
+  });
+
+  it("defaults profileDir and overrides from FF_CHROME_PROFILE", () => {
+    expect(parseConfig({}).profileDir).toMatch(/ff-chrome/);
+    expect(parseConfig({ FF_CHROME_PROFILE: "/p" }).profileDir).toBe("/p");
+  });
 });

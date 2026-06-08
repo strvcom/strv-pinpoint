@@ -1,39 +1,62 @@
 import { randomUUID } from "node:crypto";
-import { type Browser, chromium, type Page } from "playwright";
+import { CdpConnection } from "./cdp-connection.js";
+import { CdpPage } from "./cdp-page.js";
+import {
+  discoverPageTarget,
+  findChrome,
+  isCdpUp,
+  launchChrome,
+  waitForCdp,
+} from "./launch-chrome.js";
 import { OVERLAY_SOURCE } from "./overlay-script.js";
-import { PlaywrightPage } from "./playwright-page.js";
 
 export interface ConnectOptions {
   cdpUrl: string;
   appUrl: string;
   /** Base URL of this bridge's HTTP server, injected into the overlay so it can call back. */
   bridgeUrl: string;
+  /** Path to the Chrome binary; auto-detected when omitted. */
+  chromePath?: string;
+  /** Chrome user-data-dir when this process launches Chrome. */
+  profileDir?: string;
 }
 
 export interface Connection {
-  browser: Browser;
-  page: PlaywrightPage;
+  page: CdpPage;
   /** The session id injected into the overlay; the overlay uses it for SSE + /send. */
   sessionId: string;
   close(): Promise<void>;
 }
 
 export async function connect(opts: ConnectOptions): Promise<Connection> {
-  const browser = await chromium.connectOverCDP(opts.cdpUrl);
-  const context = browser.contexts()[0] ?? (await browser.newContext());
-  const existing: Page | undefined = context.pages().find((p) => p.url().startsWith(opts.appUrl));
-  const page = existing ?? (await context.newPage());
-  if (!existing) await page.goto(opts.appUrl);
-  const bridgePage = new PlaywrightPage(page);
+  const base = opts.cdpUrl;
+  let kill: (() => void) | undefined;
+
+  // Attach to an already-running debug Chrome if present; otherwise launch one.
+  if (!(await isCdpUp(base))) {
+    const chromePath = opts.chromePath ?? findChrome();
+    const port = Number(new URL(base).port || 9222);
+    const profileDir = opts.profileDir ?? "/tmp/ff-chrome";
+    const child = launchChrome({ chromePath, port, profileDir, appUrl: opts.appUrl });
+    kill = () => child.kill();
+    await waitForCdp(base);
+  }
+
+  const wsUrl = await discoverPageTarget(base, opts.appUrl);
+  const cdp = await CdpConnection.attach(wsUrl);
+  await cdp.send("Page.enable");
+  const page = new CdpPage(cdp);
+
   const sessionId = randomUUID();
   const preamble = `window.__frontmanFlowConfig = ${JSON.stringify({ bridgeUrl: opts.bridgeUrl, sessionId })};`;
-  await bridgePage.injectBootstrap(`${preamble}\n${OVERLAY_SOURCE}`);
+  await page.injectBootstrap(`${preamble}\n${OVERLAY_SOURCE}`);
+
   return {
-    browser,
-    page: bridgePage,
+    page,
     sessionId,
     close: async () => {
-      await browser.close();
+      cdp.close();
+      kill?.();
     },
   };
 }

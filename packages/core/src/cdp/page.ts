@@ -1,8 +1,8 @@
 import type { Rect } from "../types.js";
 
 /**
- * The minimal page surface the bridge needs. Implemented by the Playwright
- * adapter (PlaywrightPage) in production and by FakePage in tests.
+ * The minimal page surface the bridge needs. Implemented by the raw-CDP
+ * adapter (CdpPage) in production and by FakePage in tests.
  */
 export interface BridgePage {
   /** Evaluate a JS expression string in the page and return its JSON-serializable value. */

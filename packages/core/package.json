@@ -10,7 +10,5 @@
     "build": "tsc -p tsconfig.json",
     "start": "node ./dist/cli.js"
   },
-  "dependencies": {
-    "playwright": "^1.45.0"
-  }
+  "dependencies": {}
 }
