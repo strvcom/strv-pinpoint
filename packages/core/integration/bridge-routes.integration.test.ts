@@ -5,17 +5,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FakePage } from "../src/cdp/fake-page.js";
+import type { startBridgeServer } from "../src/server/bridge-server.js";
 import { SessionRegistry } from "../src/server/sessions.js";
-import { startSseServer } from "../src/server/sse-server.js";
 
 const clip: string[] = [];
 const page = new FakePage({ elementPng: { "#h": Buffer.from("PNG-BYTES") } });
 const tmpRoot = join(tmpdir(), `ff-int-${Math.floor(Math.random() * 1e9)}`);
-let server: ReturnType<typeof startSseServer>;
+let server: ReturnType<typeof startBridgeServer>;
 let base: string;
 
 beforeAll(async () => {
-  server = startSseServer(0, {
+  server = startBridgeServer(0, {
     page,
     sessions: new SessionRegistry(),
     writeClipboard: async (t) => {
