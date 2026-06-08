@@ -4,3 +4,10 @@
 node_modules/
 dist/
 .claude/worktrees/
+
+# macOS Finder metadata
+.DS_Store
+
+# Local runtime artifacts (overlay/bridge session data, skill scratch)
+/.frontman-flow/
+/.superpowers/
