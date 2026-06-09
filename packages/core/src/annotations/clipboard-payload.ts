@@ -11,7 +11,7 @@ export interface ClipboardPayloadArgs {
 
 export function buildClipboardJson(args: ClipboardPayloadArgs): string {
   const payload = {
-    source: "frontman-flow",
+    source: "pinpoint",
     version: 1,
     bridgeUrl: args.bridgeUrl,
     sessionId: args.sessionId,

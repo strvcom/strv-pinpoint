@@ -9,8 +9,8 @@ dist/
 .DS_Store
 
 # Local runtime artifacts (overlay/bridge session data, skill scratch)
-/.frontman-flow/
+/.pinpoint/
 /.superpowers/
 
 # built plugin bridge bundle
-packages/claude-code/bin/frontman-flow
+packages/claude-code/bin/pinpoint

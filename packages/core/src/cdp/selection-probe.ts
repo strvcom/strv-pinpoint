@@ -2,7 +2,7 @@
  * Phase 0 (Task 0.3) deliverable — VALIDATED against Next 16 / React 19.
  * See docs/superpowers/notes/phase0-spike-findings.md.
  *
- * frontman-flow does NOT source-map a clicked element to a file. Instead it
+ * pinpoint does NOT source-map a clicked element to a file. Instead it
  * extracts React-DevTools-style *identity* — the user component name, its
  * ancestry, the CSS selector, tag, visible text, and bounding rect — and lets
  * Claude grep the repo (e.g. `function ClientTest`) to locate the source. This
@@ -28,21 +28,21 @@ export interface RawSelection {
   ancestry: string[];
 }
 
-export const SELECTION_GLOBAL = "__frontmanFlowSelection";
+export const SELECTION_GLOBAL = "__pinpointSelection";
 
 /** Expression evaluated in the page to read the current selection (or null). */
 export const SELECTION_PROBE = `window.${SELECTION_GLOBAL} ?? null`;
 
 /**
  * Source of the in-page extractor, as a string for CDP injection. It defines
- * `window.__frontmanFlowExtractSelection(el) -> RawSelection`. Kept as a string
+ * `window.__pinpointExtractSelection(el) -> RawSelection`. Kept as a string
  * (not an imported function) because it must run in the page's React context.
  *
  * Validated: client-component elements expose the user component at the top of
  * the fiber `.return` chain; server components expose it via `_debugStack` frames.
  */
 export const EXTRACT_SELECTION_FN = String.raw`
-window.__frontmanFlowExtractSelection = function (el) {
+window.__pinpointExtractSelection = function (el) {
   // Framework component names to drop so the user's component surfaces.
   var FRAMEWORK = /^(ClientPageRoot|SegmentViewNode|Outer?LayoutRouter|InnerLayoutRouter|LayoutRouterContext|GlobalLayoutRouterContext|RedirectErrorBoundary|RedirectBoundary|HTTPAccessFallback\w*|DevRootHTTPAccessFallbackBoundary|AppDevOverlay\w*|LoadingBoundary|ErrorBoundary|InnerScrollAndFocusHandler\w*|ScrollAndMaybeFocusHandler|RenderFromTemplateContext|TemplateContext|SegmentStateProvider|NavigationPromisesContext|MetadataBoundary|ViewportBoundary|OutletBoundary|SearchParamsContext|PathnameContext|RootLayout|ServerRoot|AppRouter|HotReload|Router|Head|Fragment|Suspense|__next\w*|_\w*)$/;
   var nameOf = function (t) {

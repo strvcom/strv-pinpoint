@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { discoverPageTarget, findChrome } from "./launch-chrome.js";
 
 describe("findChrome", () => {
-  it("prefers FF_CHROME_PATH", () => {
-    expect(findChrome({ env: { FF_CHROME_PATH: "/custom/chrome" }, exists: () => false })).toBe(
+  it("prefers PIN_CHROME_PATH", () => {
+    expect(findChrome({ env: { PIN_CHROME_PATH: "/custom/chrome" }, exists: () => false })).toBe(
       "/custom/chrome",
     );
   });

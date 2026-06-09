@@ -1,12 +1,12 @@
 /**
- * Injected as part of the overlay. Defines window.__frontmanFlowLink:
+ * Injected as part of the overlay. Defines window.__pinpointLink:
  *  - init(onStatus): opens the bridge SSE channel, routes {type:"status"} events to onStatus.
  *  - send(items): POSTs the batch to the bridge /send; resolves to the promptId.
- * Reads window.__frontmanFlowConfig = { bridgeUrl, sessionId } (injected by the connector).
+ * Reads window.__pinpointConfig = { bridgeUrl, sessionId } (injected by the connector).
  */
 export const BRIDGE_LINK_FN = String.raw`
-window.__frontmanFlowLink = (() => {
-  var cfg = window.__frontmanFlowConfig || {};
+window.__pinpointLink = (() => {
+  var cfg = window.__pinpointConfig || {};
   function init(onStatus) {
     if (!cfg.bridgeUrl || !cfg.sessionId) return;
     try {

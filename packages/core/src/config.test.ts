@@ -9,29 +9,29 @@ describe("parseConfig", () => {
     expect(cfg.appUrl).toBe("http://localhost:5173");
   });
 
-  it("overrides port from FF_PORT", () => {
-    expect(parseConfig({ FF_PORT: "9000" }).port).toBe(9000);
+  it("overrides port from PIN_PORT", () => {
+    expect(parseConfig({ PIN_PORT: "9000" }).port).toBe(9000);
   });
 
-  it("overrides cdpUrl from FF_CDP_URL", () => {
-    expect(parseConfig({ FF_CDP_URL: "http://localhost:9333" }).cdpUrl).toBe(
+  it("overrides cdpUrl from PIN_CDP_URL", () => {
+    expect(parseConfig({ PIN_CDP_URL: "http://localhost:9333" }).cdpUrl).toBe(
       "http://localhost:9333",
     );
   });
 
-  it("overrides appUrl from FF_APP_URL", () => {
-    expect(parseConfig({ FF_APP_URL: "http://localhost:5180" }).appUrl).toBe(
+  it("overrides appUrl from PIN_APP_URL", () => {
+    expect(parseConfig({ PIN_APP_URL: "http://localhost:5180" }).appUrl).toBe(
       "http://localhost:5180",
     );
   });
 
-  it("reads chromePath from FF_CHROME_PATH (undefined by default)", () => {
+  it("reads chromePath from PIN_CHROME_PATH (undefined by default)", () => {
     expect(parseConfig({}).chromePath).toBeUndefined();
-    expect(parseConfig({ FF_CHROME_PATH: "/c" }).chromePath).toBe("/c");
+    expect(parseConfig({ PIN_CHROME_PATH: "/c" }).chromePath).toBe("/c");
   });
 
-  it("defaults profileDir and overrides from FF_CHROME_PROFILE", () => {
+  it("defaults profileDir and overrides from PIN_CHROME_PROFILE", () => {
     expect(parseConfig({}).profileDir).toMatch(/ff-chrome/);
-    expect(parseConfig({ FF_CHROME_PROFILE: "/p" }).profileDir).toBe("/p");
+    expect(parseConfig({ PIN_CHROME_PROFILE: "/p" }).profileDir).toBe("/p");
   });
 });

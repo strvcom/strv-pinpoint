@@ -15,10 +15,10 @@ export function findChrome(
 ): string {
   const env = deps.env ?? process.env;
   const exists = deps.exists ?? existsSync;
-  if (env.FF_CHROME_PATH) return env.FF_CHROME_PATH;
+  if (env.PIN_CHROME_PATH) return env.PIN_CHROME_PATH;
   const found = KNOWN_CHROME_PATHS.find((p) => exists(p));
   if (!found)
-    throw new Error("Chrome not found. Set FF_CHROME_PATH to the Chrome/Chromium binary.");
+    throw new Error("Chrome not found. Set PIN_CHROME_PATH to the Chrome/Chromium binary.");
   return found;
 }
 

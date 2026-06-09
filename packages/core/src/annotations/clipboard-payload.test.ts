@@ -16,7 +16,7 @@ const item = (over = {}) => ({
 });
 
 describe("buildClipboardJson", () => {
-  it("emits the frontman-flow marker + session/prompt ids + items", () => {
+  it("emits the pinpoint marker + session/prompt ids + items", () => {
     const json = buildClipboardJson({
       bridgeUrl: "http://localhost:7331",
       sessionId: "s1",
@@ -25,7 +25,7 @@ describe("buildClipboardJson", () => {
       screenshotPaths: { 1: "/tmp/anno-1.png", 2: null },
     });
     const o = JSON.parse(json);
-    expect(o.source).toBe("frontman-flow");
+    expect(o.source).toBe("pinpoint");
     expect(o.version).toBe(1);
     expect(o).toMatchObject({
       bridgeUrl: "http://localhost:7331",

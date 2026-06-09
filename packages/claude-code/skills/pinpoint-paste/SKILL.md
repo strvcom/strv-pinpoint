@@ -1,14 +1,14 @@
 ---
-name: frontman-flow-paste
-description: Use when the user's message contains a JSON block with "source": "frontman-flow" (pasted from the frontman-flow browser overlay after clicking Send). Acks the bridge so the browser clears, then applies each annotation's comment to its component.
+name: pinpoint-paste
+description: Use when the user's message contains a JSON block with "source": "pinpoint" (pasted from the pinpoint browser overlay after clicking Send). Acks the bridge so the browser clears, then applies each annotation's comment to its component.
 ---
 
-# frontman-flow paste handler
+# pinpoint paste handler
 
-The user clicked **Send** in the frontman-flow overlay and pasted the resulting JSON. It looks like:
+The user clicked **Send** in the pinpoint overlay and pasted the resulting JSON. It looks like:
 
 ```json
-{ "source": "frontman-flow", "version": 1, "bridgeUrl": "http://localhost:7331",
+{ "source": "pinpoint", "version": 1, "bridgeUrl": "http://localhost:7331",
   "sessionId": "…", "promptId": "…",
   "items": [{ "badge": 1, "componentName": "Hero", "ancestry": ["Hero","App"],
     "selector": "#hero-heading", "tagName": "H1", "text": "…", "comment": "make it bigger",

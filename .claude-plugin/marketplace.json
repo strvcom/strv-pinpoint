@@ -1,11 +1,11 @@
 {
-  "name": "frontman-flow",
-  "owner": { "name": "frontman-flow" },
+  "name": "pinpoint",
+  "owner": { "name": "pinpoint" },
   "plugins": [
     {
-      "name": "frontman-flow",
+      "name": "pinpoint",
       "source": "./packages/claude-code",
-      "description": "frontman-flow click-to-fix overlay bridge"
+      "description": "pinpoint click-to-fix overlay bridge"
     }
   ]
 }

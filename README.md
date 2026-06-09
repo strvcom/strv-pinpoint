@@ -1,8 +1,8 @@
-# frontman-flow
+# pinpoint
 
 Click an element in your **running dev app**, comment on what to change, hit **Send**, and paste into your **own Claude Code session** — it edits the source and hot-reloads. No separate agent, no cloud.
 
-frontman-flow is a small **CDP-only bridge**: a local process that injects a lightweight overlay into the app running in your Chrome. You **pick** an element (→ its React component identity: name, ancestry, selector, text, bounding box) or **drag a region** (→ a partial screenshot), comment on each, and click **Send**. The bridge saves any screenshots and copies a `frontman-flow` JSON to your clipboard; you paste it into Claude, which greps the repo for the component and makes the edit. It's framework-agnostic (proven on Vite + React) and runs entirely locally.
+pinpoint is a small **CDP-only bridge**: a local process that injects a lightweight overlay into the app running in your Chrome. You **pick** an element (→ its React component identity: name, ancestry, selector, text, bounding box) or **drag a region** (→ a partial screenshot), comment on each, and click **Send**. The bridge saves any screenshots and copies a `pinpoint` JSON to your clipboard; you paste it into Claude, which greps the repo for the component and makes the edit. It's framework-agnostic (proven on Vite + React) and runs entirely locally.
 
 > Background: this started as a bridge to *frontman*'s tools, but Phase 0 found frontman's overlay needs its own server and its source-mapping doesn't reach user source on modern Next. The shipped design instead reads React-fiber **identity** via CDP, and delivers via the clipboard (the MCP server was removed in P1). See `docs/superpowers/specs/` and `docs/decisions.md`.
 
@@ -11,8 +11,8 @@ frontman-flow is a small **CDP-only bridge**: a local process that injects a lig
 1. Your dev app runs in a Chrome started with remote debugging.
 2. The bridge attaches over CDP and injects the overlay (a small toolbar with **Pick / Screenshot**, plus per-element comment cards).
 3. You **Pick** an element (or drag a **Screenshot** region) and type a comment on each card (📷 where a screenshot helps).
-4. You click **Send**. The bridge saves flagged screenshots under `.frontman-flow/…` and copies a `frontman-flow` JSON — `{ source, sessionId, promptId, items: [{ componentName, ancestry, selector, tagName, text, comment, screenshot }] }` — to your clipboard.
-5. You **paste** that JSON into your Claude Code session. The `frontman-flow-paste` skill reads each item, `Read`s any referenced screenshot, greps `function <componentName>` to find the source, and applies each comment. Your dev server HMR-reloads.
+4. You click **Send**. The bridge saves flagged screenshots under `.pinpoint/…` and copies a `pinpoint` JSON — `{ source, sessionId, promptId, items: [{ componentName, ancestry, selector, tagName, text, comment, screenshot }] }` — to your clipboard.
+5. You **paste** that JSON into your Claude Code session. The `pinpoint-paste` skill reads each item, `Read`s any referenced screenshot, greps `function <componentName>` to find the source, and applies each comment. Your dev server HMR-reloads.
 
 There is no MCP server: delivery is the clipboard/paste flow.
 
@@ -25,41 +25,41 @@ There is no MCP server: delivery is the clipboard/paste flow.
 
 ```bash
 pnpm install
-pnpm --filter @frontman-flow/core build
+pnpm --filter @pinpoint/core build
 ```
 
 ## Run
 
-Your dev app + the bridge + your Claude session. The bridge speaks **raw CDP** (no Playwright) and **launches Chrome itself**. Defaults: overlay HTTP on `:7331`, CDP on `:9222`, app on `:5173` (override with `FF_PORT` / `FF_CDP_URL` / `FF_APP_URL`; point at a specific browser with `FF_CHROME_PATH`, and set its profile dir with `FF_CHROME_PROFILE`).
+Your dev app + the bridge + your Claude session. The bridge speaks **raw CDP** (no Playwright) and **launches Chrome itself**. Defaults: overlay HTTP on `:7331`, CDP on `:9222`, app on `:5173` (override with `PIN_PORT` / `PIN_CDP_URL` / `PIN_APP_URL`; point at a specific browser with `PIN_CHROME_PATH`, and set its profile dir with `PIN_CHROME_PROFILE`).
 
 ```bash
 # 1. your dev app (any framework). Example (Vite + React):
 pnpm --dir examples/vite-react exec vite --port 5180 --strictPort
 
 # 2. the bridge, pointed at the app — it launches a debug Chrome at the app URL:
-FF_APP_URL=http://localhost:5180 node packages/core/dist/cli.js
+PIN_APP_URL=http://localhost:5180 node packages/core/dist/cli.js
 ```
 
 If a debug Chrome is already listening on `:9222`, the bridge **attaches** to it instead of launching one (so you can reuse your own session — start it with
 `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222 --user-data-dir=/tmp/ff-chrome http://localhost:5180`).
 
-Then click in the overlay, comment, **Send**, and paste the copied JSON into a Claude Code session — the `frontman-flow-paste` skill applies it.
+Then click in the overlay, comment, **Send**, and paste the copied JSON into a Claude Code session — the `pinpoint-paste` skill applies it.
 
 Or use the helper: `scripts/dev.sh http://localhost:5180`.
 
 ## Install as a Claude Code plugin
 
-The tool also ships as a self-contained Claude Code plugin (`packages/claude-code/`): a `/frontman-flow:start` command, the `frontman-flow-paste` skill, and the bridge bundled to a zero-dep executable in `bin/`. Build the bundle first:
+The tool also ships as a self-contained Claude Code plugin (`packages/claude-code/`): a `/pinpoint:start` command, the `pinpoint-paste` skill, and the bridge bundled to a zero-dep executable in `bin/`. Build the bundle first:
 
 ```bash
-pnpm build      # builds all packages, incl. packages/claude-code/bin/frontman-flow
+pnpm build      # builds all packages, incl. packages/claude-code/bin/pinpoint
 ```
 
-- **Dev loop (live edits, recommended):** from any project, `claude --plugin-dir /path/to/frontman-flow/packages/claude-code`, then `/reload-plugins` after editing the plugin. The bin is on the session PATH.
-- **In another project:** `/plugin marketplace add /path/to/frontman-flow` then `/plugin install frontman-flow@frontman-flow` (a cached copy — `/plugin marketplace update` + `/reload-plugins` to refresh).
-- **In this repo's example:** `cd examples/vite-react && claude` — its `.claude/settings.json` registers the repo's local marketplace and enables the plugin. Run `/frontman-flow:start`.
+- **Dev loop (live edits, recommended):** from any project, `claude --plugin-dir /path/to/pinpoint/packages/claude-code`, then `/reload-plugins` after editing the plugin. The bin is on the session PATH.
+- **In another project:** `/plugin marketplace add /path/to/pinpoint` then `/plugin install pinpoint@pinpoint` (a cached copy — `/plugin marketplace update` + `/reload-plugins` to refresh).
+- **In this repo's example:** `cd examples/vite-react && claude` — its `.claude/settings.json` registers the repo's local marketplace and enables the plugin. Run `/pinpoint:start`.
 
-The kickoff: `/frontman-flow:start` launches the bridge (which opens Chrome + injects the overlay) and walks you through Pick → comment → **Send** → paste.
+The kickoff: `/pinpoint:start` launches the bridge (which opens Chrome + injects the overlay) and walks you through Pick → comment → **Send** → paste.
 
 ## Limitations
 
@@ -78,4 +78,4 @@ examples/               throwaway apps to inspect (vite-react)
 backlog/                git-native task board — `pnpm backlog`
 docs/                   specs, plans, decisions log, phase notes
 ```
-The engine has no agent coupling; a future tool (Codex, Cursor, …) is a new sibling package under `packages/` that depends on `@frontman-flow/core` and re-packages it. Conventions (superpowers workflow, task board, quality gates) are in `CLAUDE.md`. Quality is enforced by Biome + a Lefthook pre-commit + Claude agent hooks.
+The engine has no agent coupling; a future tool (Codex, Cursor, …) is a new sibling package under `packages/` that depends on `@pinpoint/core` and re-packages it. Conventions (superpowers workflow, task board, quality gates) are in `CLAUDE.md`. Quality is enforced by Biome + a Lefthook pre-commit + Claude agent hooks.

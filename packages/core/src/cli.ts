@@ -32,11 +32,11 @@ async function main() {
     sessions: new SessionRegistry(),
     writeClipboard: systemClipboard,
     bridgeUrl,
-    tmpRoot: join(tmpdir(), "frontman-flow"),
+    tmpRoot: join(tmpdir(), "pinpoint"),
     appUrl: cfg.appUrl,
     sessionId: connection.sessionId,
   });
-  console.error(`frontman-flow bridge on ${bridgeUrl} · session ${connection.sessionId}`);
+  console.error(`pinpoint bridge on ${bridgeUrl} · session ${connection.sessionId}`);
   process.on("SIGINT", async () => {
     await connection.close();
     process.exit(0);
