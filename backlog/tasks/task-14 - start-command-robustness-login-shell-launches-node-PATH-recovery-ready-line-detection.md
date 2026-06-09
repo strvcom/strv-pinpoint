@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-06-09 14:52'
+updated_date: '2026-06-09 14:53'
 labels:
   - enhancement
 dependencies: []
@@ -26,3 +27,9 @@ From the live TASK-10 run, the loop came up but took 2 restarts + ~9 extra calls
 - [ ] #4 does not depend on the host project's CLAUDE.md/notes for runtime PATH
 - [ ] #5 loop comes up without manual PATH fixes in a fresh project checkout
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Sibling: TASK-15 (bridge GET /health) — this command should poll /health for readiness once that lands. (Descriptions' inline 'TASK-13/14' refs predate ID assignment; correct pair is 14=start-robustness, 15=/health.)
+<!-- SECTION:NOTES:END -->

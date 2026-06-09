@@ -4,6 +4,7 @@ title: 'bridge: add GET /health readiness endpoint'
 status: To Do
 assignee: []
 created_date: '2026-06-09 14:52'
+updated_date: '2026-06-09 14:53'
 labels:
   - enhancement
 dependencies: []
@@ -23,3 +24,9 @@ Add a readiness route to the overlay bridge server (packages/core/src/server/bri
 - [ ] #3 unit test covers the /health route (200 + payload shape)
 - [ ] #4 existing overlay routes (/session/*/events|send|ack) unaffected; gates green
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Sibling: TASK-14 (start command robustness) consumes this /health route. (Inline 'TASK-13' in the description means TASK-14.)
+<!-- SECTION:NOTES:END -->
