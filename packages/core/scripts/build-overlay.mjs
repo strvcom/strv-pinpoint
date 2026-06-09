@@ -5,7 +5,7 @@ import { build } from "esbuild";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const result = await build({
-  entryPoints: [join(here, "../src/overlay/index.ts")],
+  entryPoints: [join(here, "../src/overlay/index.tsx")],
   bundle: true,
   format: "iife",
   platform: "browser",
