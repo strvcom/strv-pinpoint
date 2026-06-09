@@ -3,10 +3,10 @@ id: TASK-20
 title: >-
   Driver abstraction: pluggable browser-acquisition + CDP driver #1 +
   /pinpoint:setup
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-06-09 21:56'
-updated_date: '2026-06-09 22:09'
+updated_date: '2026-06-09 23:13'
 labels:
   - core
 dependencies: []
