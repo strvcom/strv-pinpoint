@@ -1,4 +1,6 @@
 import { ANNOTATIONS_GLOBAL, REGION_GLOBAL, SELECTION_GLOBAL } from "./globals.js";
+import { renderSendButton } from "./send-button.js";
+import { createOverlayState } from "./state.js";
 
 // The overlay UI installer — ported verbatim from the inline IIFE that used to
 // live in cdp/overlay-script.ts. No behavior change.
@@ -16,19 +18,7 @@ export function installOverlay(): void {
     min: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 18h12"/></svg>',
     grip: '<svg viewBox="0 0 24 24" width="12" height="16" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
   };
-  var state = {
-    mode: null as string | null,
-    items: [] as any[],
-    ready: false,
-    batchId: 0,
-    nextId: 1,
-    lastPromptId: null as any,
-    open: {} as Record<string, boolean>,
-    fabOpen: false,
-    fab: { right: 16, bottom: 16 },
-    mouse: null as any,
-    confirming: false,
-  };
+  var state = createOverlayState();
   var els: Record<string, any> = {}; // id -> { box, badge, card, closing }
 
   var style = document.createElement("style");
@@ -107,10 +97,10 @@ export function installOverlay(): void {
     clearAnnotations();
   });
   var bSend = document.createElement("button");
-  bSend.textContent = "Copy";
   bSend.title = "Copy annotations to clipboard (then Cmd+Shift+V into Claude)";
   bSend.style.cssText =
     "height:26px;padding:0 12px;border-radius:14px;border:0;background:#0a7d34;color:#fff;font:600 12px system-ui;cursor:pointer";
+  renderSendButton(bSend, { ready: false });
   bSend.onclick = function (e) {
     e.stopPropagation();
     doSend();
@@ -244,8 +234,7 @@ export function installOverlay(): void {
   function setDirty() {
     if (state.ready) {
       state.ready = false;
-      bSend.textContent = "Copy";
-      bSend.style.background = "#0a7d34";
+      renderSendButton(bSend, { ready: state.ready });
     }
     sync();
   }
@@ -309,8 +298,7 @@ export function installOverlay(): void {
           state.items = [];
           state.open = {};
           state.ready = false;
-          bSend.textContent = "Copy";
-          bSend.style.background = "#0a7d34";
+          renderSendButton(bSend, { ready: false });
           draw();
           sync();
         },
@@ -748,9 +736,8 @@ export function installOverlay(): void {
     state.ready = true;
     state.batchId++;
     sync();
-    bSend.textContent = "Copied ✓";
+    renderSendButton(bSend, { ready: true });
     bSend.title = "Copied — paste with Cmd+Shift+V into Claude";
-    bSend.style.background = "#0a4";
     if ((window as any).__pinpointLink) {
       try {
         state.lastPromptId = await (window as any).__pinpointLink.send(serialize().items);
