@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { Snapshot } from "./serialize.js";
 import { latestSelection, serializeState } from "./serialize.js";
 import type { Item, OverlayState, Rect } from "./types.js";
-import type { Snapshot } from "./serialize.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -9,7 +9,8 @@ function makeItem(overrides: Partial<Item> & { id: string }): Item {
   return {
     id: overrides.id,
     kind: overrides.kind ?? "element",
-    componentName: "componentName" in overrides ? (overrides.componentName as string | null) : "Button",
+    componentName:
+      "componentName" in overrides ? (overrides.componentName as string | null) : "Button",
     ancestry: overrides.ancestry ?? ["App"],
     selector: overrides.selector ?? ".btn",
     tagName: overrides.tagName ?? "button",
