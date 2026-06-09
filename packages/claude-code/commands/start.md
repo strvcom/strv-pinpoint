@@ -59,6 +59,9 @@ If a launch ever returns **127**, it's this — fix PATH and retry, don't give u
    ```
    Override the browser with `PIN_CHROME_PATH` and its profile dir with `PIN_CHROME_PROFILE` if needed. The overlay HTTP server listens on `:7331` (`PIN_PORT`).
 
+   If the user ran `/pinpoint:setup`, the bridge reads `.pinpoint/config.json` for the driver and a
+   **persistent** profile (logins persist); explicit `PIN_*` env vars still override it.
+
 5. **Confirm the bridge is ready — poll `/health`, don't guess.** The bridge serves `GET /health → 200 { ok, appUrl, sessionId }` once Chrome is launched, the overlay is injected, and the server is listening. Wait for that 200 (a 404 on any other path is **not** readiness):
    ```bash
    curl --retry 30 --retry-delay 1 --retry-connrefused -fsS http://localhost:7331/health
@@ -74,3 +77,5 @@ If a launch ever returns **127**, it's this — fix PATH and retry, don't give u
 - Exit **127** on any launch = the toolchain isn't on PATH (see "Make the toolchain available first"); fix and retry.
 - If `pinpoint` isn't found on PATH, the plugin bundle wasn't built — run `pnpm build` (or `pnpm --filter @pinpoint/claude-code build`) in the pinpoint repo.
 - Don't guess edits before the user has picked + sent; wait for the pasted JSON.
+- First time in a project? Suggest `/pinpoint:setup` once to pick the driver + a persistent profile;
+  `/start` otherwise falls back to defaults (CDP, throwaway profile).
