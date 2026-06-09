@@ -1,0 +1,55 @@
+import { useEffect } from "preact/hooks";
+import type { Mode, Rect } from "../state/types.js";
+
+export interface UsePickerArgs {
+  mode: Mode;
+  /** The shadow-host element; hover/click events on it (or its children) are ignored. */
+  hostEl: HTMLElement | null;
+  /** Called with the hovered element's rect, or null to clear. */
+  onHover: (rect: Rect | null) => void;
+  /** Called with the extracted selection data when the user clicks a picked element. */
+  onPick: (data: unknown) => void;
+}
+
+/**
+ * Wires pick-mode hover and click listeners to the document.
+ * Ignores the overlay's own shadow host so the overlay UI stays inert.
+ * Port of install.ts:633-665.
+ */
+export function usePicker({ mode, hostEl, onHover, onPick }: UsePickerArgs): void {
+  useEffect(() => {
+    function isHostHit(el: Element | null): boolean {
+      if (!el) return false;
+      return el === hostEl || !!hostEl?.contains(el);
+    }
+
+    function onMouseMove(e: MouseEvent) {
+      if (mode !== "pick") return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (!el || isHostHit(el)) return;
+      onHover(el.getBoundingClientRect() as Rect);
+    }
+
+    function onClick(e: MouseEvent) {
+      if (mode !== "pick") return;
+      if (isHostHit(e.target as Element | null)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (!el) return;
+      const extract = (window as unknown as Record<string, (el: Element) => unknown>)
+        .__pinpointExtractSelection;
+      const data = typeof extract === "function" ? extract(el) : undefined;
+      onHover(null);
+      onPick(data);
+    }
+
+    document.addEventListener("mousemove", onMouseMove, true);
+    document.addEventListener("click", onClick, true);
+
+    return () => {
+      document.removeEventListener("mousemove", onMouseMove, true);
+      document.removeEventListener("click", onClick, true);
+    };
+  }, [mode, hostEl, onHover, onPick]);
+}

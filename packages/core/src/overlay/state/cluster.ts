@@ -16,6 +16,8 @@ export interface Placement {
   oy: number;
   k: number;
   multi: boolean;
+  /** Whether the cluster is currently expanded (multi && isExpanded returned true). */
+  expanded: boolean;
 }
 
 interface Cluster {
@@ -28,14 +30,19 @@ interface Cluster {
  * Assign anchors to clusters and compute per-member badge offsets.
  *
  * @param anchors      Ordered list of badge anchor points (one per item).
- * @param isExpanded   Called with `(clusterX, clusterY, anyMemberMulti)`.
+ * @param isExpanded   Called with `(clusterX, clusterY, anyMemberMulti, memberIds)`.
  *                     Return true when the cluster should expand vertically
  *                     (mouse near OR any card open). The effective expanded
  *                     flag is `multi && isExpanded(...)`.
  */
 export function clusterAnchors(
   anchors: Anchor[],
-  isExpanded: (clusterX: number, clusterY: number, anyMemberMulti: boolean) => boolean,
+  isExpanded: (
+    clusterX: number,
+    clusterY: number,
+    anyMemberMulti: boolean,
+    memberIds: string[],
+  ) => boolean,
 ): Placement[] {
   // 1. Build clusters — port of install.ts:535-549
   const clusters: Cluster[] = [];
@@ -60,7 +67,8 @@ export function clusterAnchors(
 
   for (const cl of clusters) {
     const multi = cl.members.length > 1;
-    const expanded = multi && isExpanded(cl.x, cl.y, multi);
+    const memberIds = cl.members.map((m) => m.id);
+    const expanded = multi && isExpanded(cl.x, cl.y, multi, memberIds);
 
     cl.members.forEach((m, k) => {
       let ox = 0;
@@ -73,7 +81,7 @@ export function clusterAnchors(
           oy = k * 4;
         }
       }
-      placements.push({ id: m.id, clusterX: cl.x, clusterY: cl.y, ox, oy, k, multi });
+      placements.push({ id: m.id, clusterX: cl.x, clusterY: cl.y, ox, oy, k, multi, expanded });
     });
   }
 

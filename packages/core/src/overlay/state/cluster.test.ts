@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { clusterAnchors } from "./cluster.js";
 import type { Anchor, Placement } from "./cluster.js";
+import { clusterAnchors } from "./cluster.js";
 
 // Helper: isExpanded always returns false (collapsed)
 const collapsed = () => false;
 // Helper: isExpanded always returns true (expanded)
 const expanded = () => true;
+
+// Helper: typed collapsed/expanded with full signature
+const collapsedFull = (_cx: number, _cy: number, _multi: boolean, _ids: string[]) => false;
+const expandedFull = (_cx: number, _cy: number, _multi: boolean, _ids: string[]) => true;
 
 // ─── Single anchor ────────────────────────────────────────────────────────────
 describe("single anchor", () => {
@@ -204,17 +208,81 @@ describe("empty input", () => {
 
 // ─── isExpanded callback receives correct args ────────────────────────────────
 describe("isExpanded callback arguments", () => {
-  it("passes clusterX, clusterY, and multi to the callback", () => {
-    const calls: Array<[number, number, boolean]> = [];
+  it("passes clusterX, clusterY, multi, and memberIds to the callback", () => {
+    const calls: Array<[number, number, boolean, string[]]> = [];
     const anchors: Anchor[] = [
       { id: "a1", x: 77, y: 88 },
       { id: "a2", x: 80, y: 90 },
     ];
-    clusterAnchors(anchors, (cx, cy, anyMulti) => {
-      calls.push([cx, cy, anyMulti]);
+    clusterAnchors(anchors, (cx, cy, anyMulti, memberIds) => {
+      calls.push([cx, cy, anyMulti, memberIds]);
       return false;
     });
     expect(calls).toHaveLength(1);
-    expect(calls[0]).toEqual([77, 88, true]);
+    expect(calls[0][0]).toBe(77);
+    expect(calls[0][1]).toBe(88);
+    expect(calls[0][2]).toBe(true);
+    expect(calls[0][3]).toEqual(["a1", "a2"]);
+  });
+
+  it("memberIds contains all cluster member ids in insertion order", () => {
+    const receivedIds: string[][] = [];
+    const anchors: Anchor[] = [
+      { id: "x1", x: 0, y: 0 },
+      { id: "x2", x: 5, y: 5 },
+      { id: "x3", x: 10, y: 10 },
+    ];
+    clusterAnchors(anchors, (_cx, _cy, _multi, ids) => {
+      receivedIds.push(ids);
+      return false;
+    });
+    expect(receivedIds).toHaveLength(1);
+    expect(receivedIds[0]).toEqual(["x1", "x2", "x3"]);
+  });
+});
+
+// ─── Placement.expanded field ─────────────────────────────────────────────────
+describe("Placement.expanded field", () => {
+  it("expanded=false for single-member cluster regardless of callback", () => {
+    const result = clusterAnchors([{ id: "a1", x: 0, y: 0 }], expandedFull);
+    expect(result[0].expanded).toBe(false);
+  });
+
+  it("expanded=false for multi-member cluster when callback returns false", () => {
+    const anchors: Anchor[] = [
+      { id: "a1", x: 0, y: 0 },
+      { id: "a2", x: 5, y: 5 },
+    ];
+    const result = clusterAnchors(anchors, collapsedFull);
+    expect(result[0].expanded).toBe(false);
+    expect(result[1].expanded).toBe(false);
+  });
+
+  it("expanded=true for all members of a multi-member cluster when callback returns true", () => {
+    const anchors: Anchor[] = [
+      { id: "a1", x: 0, y: 0 },
+      { id: "a2", x: 5, y: 5 },
+    ];
+    const result = clusterAnchors(anchors, expandedFull);
+    expect(result[0].expanded).toBe(true);
+    expect(result[1].expanded).toBe(true);
+  });
+
+  it("expanded field drives oy offset correctly", () => {
+    const anchors: Anchor[] = [
+      { id: "a1", x: 0, y: 0 },
+      { id: "a2", x: 5, y: 5 },
+    ];
+    // expanded: oy = k*24
+    const expResult = clusterAnchors(anchors, expandedFull);
+    const p1exp = expResult.find((p) => p.id === "a2") as Placement;
+    expect(p1exp.expanded).toBe(true);
+    expect(p1exp.oy).toBe(24);
+
+    // collapsed: oy = k*4
+    const colResult = clusterAnchors(anchors, collapsedFull);
+    const p1col = colResult.find((p) => p.id === "a2") as Placement;
+    expect(p1col.expanded).toBe(false);
+    expect(p1col.oy).toBe(4);
   });
 });
