@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launch a debug Chrome + the frontman-flow bridge for an already-running dev app.
+# Launch a debug Chrome + the pinpoint bridge for an already-running dev app.
 #
 # Usage:  scripts/dev.sh [APP_URL]
 #   APP_URL defaults to http://localhost:5173. Start your dev app separately first.
@@ -9,13 +9,13 @@
 set -euo pipefail
 
 APP_URL="${1:-http://localhost:5173}"
-CDP_PORT="${FF_CDP_PORT:-9222}"
+CDP_PORT="${PIN_CDP_PORT:-9222}"
 CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
-PROFILE="${FF_CHROME_PROFILE:-/tmp/ff-chrome}"
+PROFILE="${PIN_CHROME_PROFILE:-/tmp/ff-chrome}"
 
 if [ ! -f packages/core/dist/cli.js ]; then
-  echo "→ building @frontman-flow/core…"
-  pnpm --filter @frontman-flow/core build
+  echo "→ building @pinpoint/core…"
+  pnpm --filter @pinpoint/core build
 fi
 
 if curl -fsS "http://localhost:${CDP_PORT}/json/version" >/dev/null 2>&1; then
@@ -26,5 +26,5 @@ else
     --no-first-run --no-default-browser-check "$APP_URL" >/dev/null 2>&1 &
 fi
 
-echo "→ starting bridge (overlay HTTP on :${FF_PORT:-7331}, app ${APP_URL})…"
-FF_APP_URL="$APP_URL" FF_CDP_URL="http://localhost:${CDP_PORT}" exec node packages/core/dist/cli.js
+echo "→ starting bridge (overlay HTTP on :${PIN_PORT:-7331}, app ${APP_URL})…"
+PIN_APP_URL="$APP_URL" PIN_CDP_URL="http://localhost:${CDP_PORT}" exec node packages/core/dist/cli.js

@@ -4,13 +4,13 @@
 A framework-agnostic **CDP-only bridge**: a local process that injects an overlay into a
 running dev app so a developer can click an element (→ React component **identity**: name,
 ancestry, selector, text, rect) or drag a region (→ partial screenshot). When the developer
-clicks **Send**, the overlay writes a `frontman-flow` JSON — per-element identity + comments +
+clicks **Send**, the overlay writes a `pinpoint` JSON — per-element identity + comments +
 saved screenshot paths — to the clipboard; the developer pastes it into a Claude Code session,
 which greps the repo for the component and edits source. Delivery is the **clipboard/paste flow**:
 there is no MCP server (removed in P1; see `docs/superpowers/specs/2026-06-08-plugin-clipboard-cdp-design.md`).
 Claude is the agent — there is no frontman server at runtime.
-The tool ships as a **Claude Code plugin** (`packages/claude-code/`): a `/frontman-flow:start`
-command + the `frontman-flow-paste` skill + the bridge bundled (esbuild) to a zero-dep executable in
+The tool ships as a **Claude Code plugin** (`packages/claude-code/`): a `/pinpoint:start`
+command + the `pinpoint-paste` skill + the bridge bundled (esbuild) to a zero-dep executable in
 `bin/`. Local dev: `claude --plugin-dir ./packages/claude-code` (build first with `pnpm build`).
 All code units (engine + per-tool integrations) live under `packages/`; everything else is dev
 nuance. The engine (`packages/core`) is agent-agnostic; integrations are thin packages that depend

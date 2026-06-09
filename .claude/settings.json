@@ -23,12 +23,12 @@
     ]
   },
   "extraKnownMarketplaces": {
-    "frontman-flow": {
+    "pinpoint": {
       "source": { "source": "directory", "path": "." }
     }
   },
   "enabledPlugins": {
-    "frontman-flow@frontman-flow": true
+    "pinpoint@pinpoint": true
   },
   "worktree": {
     "baseRef": "head"

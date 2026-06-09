@@ -55,7 +55,7 @@ export async function connect(opts: ConnectOptions): Promise<Connection> {
   const page = new CdpPage(cdp);
 
   const sessionId = randomUUID();
-  const preamble = `window.__frontmanFlowConfig = ${JSON.stringify({ bridgeUrl: opts.bridgeUrl, sessionId })};`;
+  const preamble = `window.__pinpointConfig = ${JSON.stringify({ bridgeUrl: opts.bridgeUrl, sessionId })};`;
   await page.injectBootstrap(`${preamble}\n${OVERLAY_SOURCE}`);
 
   return {

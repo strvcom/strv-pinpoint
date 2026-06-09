@@ -72,7 +72,7 @@ importers:
 
   packages/claude-code:
     dependencies:
-      '@frontman-flow/core':
+      '@pinpoint/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:

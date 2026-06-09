@@ -13,7 +13,7 @@ export interface BridgeServerDeps {
   sessions: SessionRegistry;
   writeClipboard: ClipboardWriter;
   bridgeUrl: string;
-  /** root tmp dir for screenshots, e.g. join(process.cwd(), ".frontman-flow"). */
+  /** root tmp dir for screenshots, e.g. join(process.cwd(), ".pinpoint"). */
   tmpRoot: string;
   /** The dev-app URL the bridge connected to (reported by /health). */
   appUrl: string;

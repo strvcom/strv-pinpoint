@@ -11,15 +11,15 @@ import type { SelectionFound } from "../src/types.js";
 /**
  * The full clipboard loop on a live page: inject overlay → build an annotation
  * from the in-page extractor → POST /send → assert the bridge wrote a
- * frontman-flow clipboard JSON and saved the flagged screenshot to disk.
+ * pinpoint clipboard JSON and saved the flagged screenshot to disk.
  * Requires examples/vite-react on 5180 + Chrome on 9222.
  *
  *   pnpm --dir examples/vite-react exec vite --port 5180 --strictPort &
  *   <chrome> --headless=new --remote-debugging-port=9222 about:blank &
- *   pnpm --filter @frontman-flow/core exec vitest run --config vitest.integration.config.ts loop
+ *   pnpm --filter @pinpoint/core exec vitest run --config vitest.integration.config.ts loop
  */
-const APP_URL = process.env.FF_VITE_URL ?? "http://localhost:5180";
-const CDP_URL = process.env.FF_CDP_URL ?? "http://localhost:9222";
+const APP_URL = process.env.PIN_VITE_URL ?? "http://localhost:5180";
+const CDP_URL = process.env.PIN_CDP_URL ?? "http://localhost:9222";
 const tmpRoot = join(tmpdir(), `ff-loop-${Math.floor(Math.random() * 1e9)}`);
 
 let connection: Connection;
@@ -53,10 +53,10 @@ afterAll(async () => {
   await connection?.close();
 });
 
-describe("frontman-flow clipboard loop on Vite (integration)", () => {
-  it("/send writes a frontman-flow clipboard JSON + saves the flagged screenshot", async () => {
+describe("pinpoint clipboard loop on Vite (integration)", () => {
+  it("/send writes a pinpoint clipboard JSON + saves the flagged screenshot", async () => {
     const sel = await connection.page.evaluate<SelectionFound>(
-      "window.__frontmanFlowExtractSelection(document.querySelector('#hero-heading'))",
+      "window.__pinpointExtractSelection(document.querySelector('#hero-heading'))",
     );
     const item = { ...sel, id: "a1", badge: 1, comment: "make it bigger", wantScreenshot: true };
 
@@ -70,7 +70,7 @@ describe("frontman-flow clipboard loop on Vite (integration)", () => {
     expect(body.imageCount).toBe(1);
 
     const payload = JSON.parse(clip.at(-1) as string);
-    expect(payload.source).toBe("frontman-flow");
+    expect(payload.source).toBe("pinpoint");
     expect(payload.items).toHaveLength(1);
     expect(payload.items[0].componentName).toBe("Hero");
     expect(payload.items[0].comment).toBe("make it bigger");

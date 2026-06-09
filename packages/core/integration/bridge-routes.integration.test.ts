@@ -46,7 +46,7 @@ const item = (over = {}) => ({
 });
 
 describe("bridge routes", () => {
-  it("/send writes a frontman-flow JSON to the clipboard + saves flagged screenshots", async () => {
+  it("/send writes a pinpoint JSON to the clipboard + saves flagged screenshots", async () => {
     const res = await fetch(`${base}/session/s1/send`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -61,7 +61,7 @@ describe("bridge routes", () => {
     expect(body.ok).toBe(true);
     expect(body.imageCount).toBe(1);
     const payload = JSON.parse(clip.at(-1) as string);
-    expect(payload.source).toBe("frontman-flow");
+    expect(payload.source).toBe("pinpoint");
     expect(payload.items).toHaveLength(2);
     expect(payload.items[0].screenshot).toMatch(/anno-1\.png$/);
     expect(existsSync(payload.items[0].screenshot)).toBe(true);

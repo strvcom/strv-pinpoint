@@ -1,9 +1,10 @@
 ---
 id: TASK-11
 title: Rename frontman-flow (no longer the frontman architecture)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-06-08 00:01'
+updated_date: '2026-06-09 15:17'
 labels:
   - chore
 dependencies: []

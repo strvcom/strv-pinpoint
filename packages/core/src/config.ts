@@ -11,10 +11,10 @@ export interface BridgeConfig {
 
 export function parseConfig(env: Record<string, string | undefined>): BridgeConfig {
   return {
-    port: env.FF_PORT ? Number(env.FF_PORT) : 7331,
-    cdpUrl: env.FF_CDP_URL ?? "http://localhost:9222",
-    appUrl: env.FF_APP_URL ?? "http://localhost:5173",
-    chromePath: env.FF_CHROME_PATH,
-    profileDir: env.FF_CHROME_PROFILE ?? join(tmpdir(), "ff-chrome"),
+    port: env.PIN_PORT ? Number(env.PIN_PORT) : 7331,
+    cdpUrl: env.PIN_CDP_URL ?? "http://localhost:9222",
+    appUrl: env.PIN_APP_URL ?? "http://localhost:5173",
+    chromePath: env.PIN_CHROME_PATH,
+    profileDir: env.PIN_CHROME_PROFILE ?? join(tmpdir(), "ff-chrome"),
   };
 }

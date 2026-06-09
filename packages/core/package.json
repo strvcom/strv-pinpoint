@@ -1,9 +1,9 @@
 {
-  "name": "@frontman-flow/core",
+  "name": "@pinpoint/core",
   "version": "0.0.0",
   "type": "module",
   "bin": {
-    "frontman-flow": "./dist/cli.js"
+    "pinpoint": "./dist/cli.js"
   },
   "main": "./dist/index.js",
   "scripts": {

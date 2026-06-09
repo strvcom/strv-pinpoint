@@ -2,7 +2,7 @@ function Hero() {
   return (
     <section style={{ padding: 40 }}>
       <h1 id="hero-heading">Vite + React go brrrr</h1>
-      <p id="hero-para">Edit me via frontman-flow.</p>
+      <p id="hero-para">Edit me via pinpoint.</p>
       <button
         id="hero-btn"
         type="button"
