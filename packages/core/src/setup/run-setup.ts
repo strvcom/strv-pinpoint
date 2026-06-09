@@ -1,4 +1,6 @@
+import { join } from "node:path";
 import {
+  CONFIG_RELPATH,
   type PinpointFileConfig,
   writePinpointConfig as writeConfigImpl,
 } from "../config/pinpoint-config.js";
@@ -40,6 +42,6 @@ export async function runSetup(opts: RunSetupOptions): Promise<RunSetupResult> {
     ok: true,
     driver: opts.driver.name,
     profileDir,
-    configPath: `${opts.cwd}/.pinpoint/config.json`,
+    configPath: join(opts.cwd, CONFIG_RELPATH),
   };
 }

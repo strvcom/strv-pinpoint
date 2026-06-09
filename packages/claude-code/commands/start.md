@@ -62,7 +62,7 @@ If a launch ever returns **127**, it's this — fix PATH and retry, don't give u
    If the user ran `/pinpoint:setup`, the bridge reads `.pinpoint/config.json` for the driver and a
    **persistent** profile (logins persist); explicit `PIN_*` env vars still override it.
 
-5. **Confirm the bridge is ready — poll `/health`, don't guess.** The bridge serves `GET /health → 200 { ok, appUrl, sessionId }` once Chrome is launched, the overlay is injected, and the server is listening. Wait for that 200 (a 404 on any other path is **not** readiness):
+5. **Confirm the bridge is ready — poll `/health`, don't guess.** The bridge serves `GET /health → 200 { ok, appUrl, sessionId, project }` once Chrome is launched, the overlay is injected, and the server is listening. Wait for that 200 (a 404 on any other path is **not** readiness):
    ```bash
    curl --retry 30 --retry-delay 1 --retry-connrefused -fsS http://localhost:7331/health
    ```
