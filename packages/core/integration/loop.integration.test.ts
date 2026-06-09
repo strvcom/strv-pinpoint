@@ -20,7 +20,7 @@ import type { SelectionFound } from "../src/types.js";
  */
 const APP_URL = process.env.PIN_VITE_URL ?? "http://localhost:5180";
 const CDP_URL = process.env.PIN_CDP_URL ?? "http://localhost:9222";
-const tmpRoot = join(tmpdir(), `ff-loop-${Math.floor(Math.random() * 1e9)}`);
+const tmpRoot = join(tmpdir(), `pp-loop-${Math.floor(Math.random() * 1e9)}`);
 
 let connection: Connection;
 let server: ReturnType<typeof startBridgeServer>;

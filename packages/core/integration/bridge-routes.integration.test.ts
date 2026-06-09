@@ -10,7 +10,7 @@ import { SessionRegistry } from "../src/server/sessions.js";
 
 const clip: string[] = [];
 const page = new FakePage({ elementPng: { "#h": Buffer.from("PNG-BYTES") } });
-const tmpRoot = join(tmpdir(), `ff-int-${Math.floor(Math.random() * 1e9)}`);
+const tmpRoot = join(tmpdir(), `pp-int-${Math.floor(Math.random() * 1e9)}`);
 let server: ReturnType<typeof startBridgeServer>;
 let base: string;
 
