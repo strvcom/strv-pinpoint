@@ -15,6 +15,10 @@ export interface BridgeServerDeps {
   bridgeUrl: string;
   /** root tmp dir for screenshots, e.g. join(process.cwd(), ".frontman-flow"). */
   tmpRoot: string;
+  /** The dev-app URL the bridge connected to (reported by /health). */
+  appUrl: string;
+  /** The session id injected into the overlay (reported by /health). */
+  sessionId: string;
 }
 
 function cors(res: ServerResponse): void {
@@ -35,6 +39,13 @@ export function startBridgeServer(port: number, deps: BridgeServerDeps): Server 
     cors(res);
     if (req.method === "OPTIONS") {
       res.writeHead(204).end();
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/health") {
+      res
+        .writeHead(200, { "Content-Type": "application/json" })
+        .end(JSON.stringify({ ok: true, appUrl: deps.appUrl, sessionId: deps.sessionId }));
       return;
     }
 

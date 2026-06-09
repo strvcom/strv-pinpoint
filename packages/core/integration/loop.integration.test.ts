@@ -41,6 +41,8 @@ beforeAll(async () => {
     },
     bridgeUrl: "http://localhost:7331",
     tmpRoot,
+    appUrl: APP_URL,
+    sessionId: connection.sessionId,
   });
   await new Promise((r) => server.on("listening", r));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

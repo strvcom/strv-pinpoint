@@ -1,10 +1,10 @@
 ---
 id: TASK-15
 title: 'bridge: add GET /health readiness endpoint'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-06-09 14:52'
-updated_date: '2026-06-09 14:53'
+updated_date: '2026-06-09 15:00'
 labels:
   - enhancement
 dependencies: []
@@ -19,11 +19,19 @@ Add a readiness route to the overlay bridge server (packages/core/src/server/bri
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 GET /health returns 200 with { ok: true, appUrl, sessionId }
-- [ ] #2 appUrl + sessionId are threaded into bridge-server via deps and reported by the route
-- [ ] #3 unit test covers the /health route (200 + payload shape)
-- [ ] #4 existing overlay routes (/session/*/events|send|ack) unaffected; gates green
+- [x] #1 GET /health returns 200 with { ok: true, appUrl, sessionId }
+- [x] #2 appUrl + sessionId are threaded into bridge-server via deps and reported by the route
+- [x] #3 unit test covers the /health route (200 + payload shape)
+- [x] #4 existing overlay routes (/session/*/events|send|ack) unaffected; gates green
 <!-- AC:END -->
+
+
+
+
+
+
+
+
 
 ## Implementation Notes
 

@@ -33,6 +33,8 @@ async function main() {
     writeClipboard: systemClipboard,
     bridgeUrl,
     tmpRoot: join(tmpdir(), "frontman-flow"),
+    appUrl: cfg.appUrl,
+    sessionId: connection.sessionId,
   });
   console.error(`frontman-flow bridge on ${bridgeUrl} · session ${connection.sessionId}`);
   process.on("SIGINT", async () => {
