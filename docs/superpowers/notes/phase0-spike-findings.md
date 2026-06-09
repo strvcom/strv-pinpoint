@@ -4,13 +4,13 @@
 
 - **Node** comes from `nvm` (v22.22.2 used) and is **not on the non-interactive shell PATH**. Prepend `$HOME/.nvm/versions/node/v22.22.2/bin` to PATH when running node/npm/npx/pnpm-spawned tooling. (Captured as a project note; consider an `.nvmrc`.)
 - `pnpm` 10.20.0 and `bun` 1.2.2 are on PATH; npm registry reachable.
-- **Port 3000 is occupied by Docker.** The example app runs on **3100**. Thread the app URL through `FF_APP_URL` (config supports this) rather than assuming 3000.
+- **Port 3000 is occupied by Docker.** The example app runs on **3100**. Thread the app URL through `PIN_APP_URL` (config supports this) rather than assuming 3000.
 - `create-next-app` checks the *parent* of the target dir for writability — `examples/` must exist before scaffolding into `examples/nextjs`.
 - Some Bash tooling (`create-next-app`, `next dev`, network installs) needs the harness sandbox disabled to spawn child processes / bind ports.
 
 ## Task 0.2 — middleware serves with the Elixir server OFF ✅
 
-Scaffolded `examples/nextjs` with `create-next-app` → **Next.js 16.2.7** (note: Next 16 uses **`proxy.ts`**, not `middleware.ts`). Installed **`@frontman-ai/nextjs@0.6.6`** and added `examples/nextjs/proxy.ts` using `createMiddleware({ host: 'frontman.local:4000' })` (the host is a local-dev placeholder; the middleware does not connect to it, and frontman-flow drives the browser via CDP, so it need not be reachable).
+Scaffolded `examples/nextjs` with `create-next-app` → **Next.js 16.2.7** (note: Next 16 uses **`proxy.ts`**, not `middleware.ts`). Installed **`@frontman-ai/nextjs@0.6.6`** and added `examples/nextjs/proxy.ts` using `createMiddleware({ host: 'frontman.local:4000' })` (the host is a local-dev placeholder; the middleware does not connect to it, and pinpoint drives the browser via CDP, so it need not be reachable).
 
 Ran `next dev -p 3100` with **no Elixir/cloud server running** and probed:
 

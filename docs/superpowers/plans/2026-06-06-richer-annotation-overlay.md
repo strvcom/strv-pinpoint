@@ -4,7 +4,7 @@
 
 **Goal:** Turn the single-selection overlay into a multi-annotation experience (pick N elements, comment on each, optional per-item screenshot, Send to Claude) exposed via a new `get_annotations` MCP tool, keeping `get_selection` + `screenshot` unchanged.
 
-**Architecture:** Overlay v2 (injected vanilla JS) maintains an annotation list on `window.__frontmanFlowAnnotations = { batchId, ready, items }`; a new `get_annotations` tool reads it over CDP and returns a text block per item plus an embedded CDP screenshot for flagged items. TDD for the TS units against `FakePage`; the overlay DOM glue is verified by an integration test + manual.
+**Architecture:** Overlay v2 (injected vanilla JS) maintains an annotation list on `window.__pinpointAnnotations = { batchId, ready, items }`; a new `get_annotations` tool reads it over CDP and returns a text block per item plus an embedded CDP screenshot for flagged items. TDD for the TS units against `FakePage`; the overlay DOM glue is verified by an integration test + manual.
 
 **Tech Stack:** Node 20+ (from nvm: `export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"`), pnpm, TypeScript (NodeNext ESM, `.js` imports), Vitest (colocated), Playwright/CDP, `@modelcontextprotocol/sdk`. Gates: Biome + Lefthook + typecheck (the `(0,eval)` Biome override exists only for `playwright-page.ts`).
 
@@ -21,7 +21,7 @@ packages/core/src/
   tools/get-annotations.ts        (+test)                                     (Task 4)
   server/register-tools.ts      # register get_annotations (update test)      (Task 5)
   integration/annotations.integration.test.ts                                 (Task 6)
-.claude/skills/frontman-flow/SKILL.md ; README.md  # document the batch loop  (Task 7)
+.claude/skills/pinpoint/SKILL.md ; README.md  # document the batch loop  (Task 7)
 ```
 
 ## Task 1: Types
@@ -60,23 +60,23 @@ No unit test (DOM/in-page glue; verified by Task 6 + manual). After writing, ver
 ```ts
 import { EXTRACT_SELECTION_FN, SELECTION_GLOBAL } from "./selection-probe.js";
 
-export const REGION_GLOBAL = "__frontmanFlowRegion";
+export const REGION_GLOBAL = "__pinpointRegion";
 export const REGION_PROBE = `window.${REGION_GLOBAL} ?? null`;
-export const ANNOTATIONS_GLOBAL = "__frontmanFlowAnnotations";
+export const ANNOTATIONS_GLOBAL = "__pinpointAnnotations";
 export const ANNOTATIONS_PROBE = `window.${ANNOTATIONS_GLOBAL} ?? null`;
 
 /**
  * Injected overlay (v2). Pick appends an annotation per click; a fixed panel shows a card per
  * annotation (comment textarea + 📷 toggle + ✕). "Send to Claude" marks the batch ready. State on
- * window.__frontmanFlowAnnotations = { batchId, ready, items }. window.__frontmanFlowSelection keeps
- * the most-recent pick (get_selection unchanged); window.__frontmanFlowRegion keeps the drag region.
+ * window.__pinpointAnnotations = { batchId, ready, items }. window.__pinpointSelection keeps
+ * the most-recent pick (get_selection unchanged); window.__pinpointRegion keeps the drag region.
  * DOM glue — verified by integration/manual, not unit tests.
  */
 export const OVERLAY_SOURCE = `
 ${EXTRACT_SELECTION_FN}
 (() => {
-  if (window.__frontmanFlowOverlayInstalled) return;
-  window.__frontmanFlowOverlayInstalled = true;
+  if (window.__pinpointOverlayInstalled) return;
+  window.__pinpointOverlayInstalled = true;
   var Z = 2147483640;
   var state = { mode: null, items: [], ready: false, batchId: 0, nextId: 1 };
   var sendBtn = null;
@@ -157,7 +157,7 @@ ${EXTRACT_SELECTION_FN}
   function renderAll() { renderMarks(); renderPanel(); }
 
   document.addEventListener('mousemove', function (e) { if (state.mode !== 'pick') return; var el = document.elementFromPoint(e.clientX, e.clientY); if (!el || panel.contains(el) || bar.contains(el)) return; show(hover, el.getBoundingClientRect()); }, true);
-  document.addEventListener('click', function (e) { if (state.mode !== 'pick') return; if (panel.contains(e.target) || bar.contains(e.target)) return; e.preventDefault(); e.stopPropagation(); var el = document.elementFromPoint(e.clientX, e.clientY); if (!el) return; var data = window.__frontmanFlowExtractSelection(el); data.id = 'a' + (state.nextId++); data.comment = ''; data.wantScreenshot = false; state.items.push(data); state.ready = false; renderAll(); sync(); }, true);
+  document.addEventListener('click', function (e) { if (state.mode !== 'pick') return; if (panel.contains(e.target) || bar.contains(e.target)) return; e.preventDefault(); e.stopPropagation(); var el = document.elementFromPoint(e.clientX, e.clientY); if (!el) return; var data = window.__pinpointExtractSelection(el); data.id = 'a' + (state.nextId++); data.comment = ''; data.wantScreenshot = false; state.items.push(data); state.ready = false; renderAll(); sync(); }, true);
 
   var drag = null;
   var rectOf = function (a, e) { return { x: Math.min(a.x, e.clientX), y: Math.min(a.y, e.clientY), width: Math.abs(e.clientX - a.x), height: Math.abs(e.clientY - a.y) }; };
@@ -172,10 +172,10 @@ ${EXTRACT_SELECTION_FN}
 ```
 - [ ] **Step 2:** Build + parse-check:
 ```bash
-pnpm --filter @frontman-flow/core build
+pnpm --filter @pinpoint/core build
 node --input-type=module -e "import('./packages/core/dist/cdp/overlay-script.js').then(m=>{new Function(m.OVERLAY_SOURCE);console.log('parses; probes:',m.ANNOTATIONS_PROBE,m.REGION_PROBE)})"
 ```
-Expected: prints "parses; probes: window.__frontmanFlowAnnotations ?? null window.__frontmanFlowRegion ?? null".
+Expected: prints "parses; probes: window.__pinpointAnnotations ?? null window.__pinpointRegion ?? null".
 - [ ] **Step 3:** `pnpm exec biome check .` clean; `pnpm test` (27) still green.
 - [ ] **Step 4:** Commit: `git add packages/core/src/cdp/overlay-script.ts && git commit -m "feat(core): overlay v2 — multi-annotation panel + Send to Claude"`
 
@@ -337,16 +337,16 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type Connection, connect } from "../src/cdp/connector.js";
 import { getAnnotationsTool } from "../src/tools/get-annotations.js";
 
-const APP_URL = process.env.FF_VITE_URL ?? "http://localhost:5180";
-const CDP_URL = process.env.FF_CDP_URL ?? "http://localhost:9222";
+const APP_URL = process.env.PIN_VITE_URL ?? "http://localhost:5180";
+const CDP_URL = process.env.PIN_CDP_URL ?? "http://localhost:9222";
 let connection: Connection;
 
 beforeAll(async () => {
   connection = await connect({ cdpUrl: CDP_URL, appUrl: APP_URL });
   // Build a 2-item ready batch programmatically using the injected extractor.
   await connection.page.evaluate<unknown>(`(() => {
-    var mk = function (sel, comment, shot) { var d = window.__frontmanFlowExtractSelection(document.querySelector(sel)); d.comment = comment; d.wantScreenshot = shot; return d; };
-    window.__frontmanFlowAnnotations = { batchId: 1, ready: true, items: [ mk('#hero-heading', 'make it bigger', true), mk('#hero-btn', 'rename to Save', false) ] };
+    var mk = function (sel, comment, shot) { var d = window.__pinpointExtractSelection(document.querySelector(sel)); d.comment = comment; d.wantScreenshot = shot; return d; };
+    window.__pinpointAnnotations = { batchId: 1, ready: true, items: [ mk('#hero-heading', 'make it bigger', true), mk('#hero-btn', 'rename to Save', false) ] };
   })()`);
 });
 afterAll(async () => { await connection?.close(); });
@@ -369,17 +369,17 @@ describe("get_annotations on a live page (integration)", () => {
 ```bash
 pnpm --dir examples/vite-react exec vite --port 5180 --strictPort &
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --remote-debugging-port=9222 --user-data-dir=/tmp/ff-chrome-anno about:blank &
-pnpm --filter @frontman-flow/core exec vitest run --config vitest.integration.config.ts annotations
+pnpm --filter @pinpoint/core exec vitest run --config vitest.integration.config.ts annotations
 ```
 Expected: PASS (1 test). Stop the bg processes after (`pkill -f "vite --port 5180"; pkill -f ff-chrome-anno`).
 - [ ] **Step 3:** Commit: `git add packages/core/integration/annotations.integration.test.ts && git commit -m "test(core): get_annotations live integration (2-item batch + screenshot)"`
 
 ## Task 7: Docs
-**Files:** Modify `.claude/skills/frontman-flow/SKILL.md`, `README.md`
+**Files:** Modify `.claude/skills/pinpoint/SKILL.md`, `README.md`
 
-- [ ] **Step 1:** In `.claude/skills/frontman-flow/SKILL.md`, add a section that for **batch** requests Claude calls `mcp__frontman-flow__get_annotations` (after the user clicks **Send to Claude**), then for each returned item greps `componentName` and applies that item's `comment`; if nothing submitted, ask the user to pick + comment + Send. Keep `get_selection` as the single-pick path.
+- [ ] **Step 1:** In `.claude/skills/pinpoint/SKILL.md`, add a section that for **batch** requests Claude calls `mcp__pinpoint__get_annotations` (after the user clicks **Send to Claude**), then for each returned item greps `componentName` and applies that item's `comment`; if nothing submitted, ask the user to pick + comment + Send. Keep `get_selection` as the single-pick path.
 - [ ] **Step 2:** In `README.md`, add `get_annotations` to the MCP tools table and a one-line "batch" note in the loop (pick several → comment each → Send → "apply my annotations").
-- [ ] **Step 3:** Commit: `git add .claude/skills/frontman-flow/SKILL.md README.md && git commit -m "docs: document the annotation batch loop + get_annotations"`
+- [ ] **Step 3:** Commit: `git add .claude/skills/pinpoint/SKILL.md README.md && git commit -m "docs: document the annotation batch loop + get_annotations"`
 
 ---
 

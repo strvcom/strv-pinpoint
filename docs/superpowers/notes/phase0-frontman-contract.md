@@ -92,7 +92,7 @@ Source: `.reference/frontman/libs/frontman-nextjs/README.md` §Manual Setup > Ne
 
 The `host` option is passed to the **client JS bundle** via a `?host=` query param so the browser UI can open a WebSocket (`wss://<host>/socket`). The middleware itself does not connect to the Frontman server.
 
-For frontman-flow, the middleware does NOT need to point at any Frontman server — it intercepts `/frontman/*` requests locally. The `host` option in the original package is irrelevant to frontman-flow's use case; frontman-flow replaces the cloud-side role.
+For pinpoint, the middleware does NOT need to point at any Frontman server — it intercepts `/frontman/*` requests locally. The `host` option in the original package is irrelevant to pinpoint's use case; pinpoint replaces the cloud-side role.
 
 **Note:** The `host` field is required by the original `createMiddleware` API (no default in the TypeScript shape — the default kicks in only if the field is absent from the JS object, via ReScript's optional field handling). The `FRONTMAN_HOST` env var overrides it at runtime.
 

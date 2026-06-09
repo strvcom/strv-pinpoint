@@ -1,6 +1,3 @@
-# Read-only upstream reference, re-cloned on demand. Never committed.
-/.reference/
-
 node_modules/
 dist/
 .claude/worktrees/

@@ -4,7 +4,7 @@ Click an element in your **running dev app**, comment on what to change, hit **S
 
 pinpoint is a small **CDP-only bridge**: a local process that injects a lightweight overlay into the app running in your Chrome. You **pick** an element (→ its React component identity: name, ancestry, selector, text, bounding box) or **drag a region** (→ a partial screenshot), comment on each, and click **Send**. The bridge saves any screenshots and copies a `pinpoint` JSON to your clipboard; you paste it into Claude, which greps the repo for the component and makes the edit. It's framework-agnostic (proven on Vite + React) and runs entirely locally.
 
-> Background: this started as a bridge to *frontman*'s tools, but Phase 0 found frontman's overlay needs its own server and its source-mapping doesn't reach user source on modern Next. The shipped design instead reads React-fiber **identity** via CDP, and delivers via the clipboard (the MCP server was removed in P1). See `docs/superpowers/specs/` and `docs/decisions.md`.
+> Design: pinpoint reads React-fiber **identity** via CDP (not source-maps, which don't reach user source on modern bundlers) and delivers via the clipboard (no MCP server). See `docs/superpowers/specs/` and `docs/decisions.md`.
 
 ## How the loop works
 

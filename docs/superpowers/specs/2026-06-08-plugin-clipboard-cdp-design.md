@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-08
 **Status:** Approved (brainstorm) → pending implementation plan
-**Supersedes (in part):** the MCP-server delivery path from `2026-06-06-frontman-flow-design.md`
+**Supersedes (in part):** the MCP-server delivery path from `2026-06-06-pinpoint-design.md`
 
 ## Problem
 
@@ -44,8 +44,8 @@ ceremony.
 
 ## Non-goals
 
-- **Rename.** "frontman-flow" no longer reflects the architecture, but renaming (packages, globals,
-  `.frontman-flow/` dir, skills, repo, docs) is a separate task, done *after* this (fewer surfaces
+- **Rename.** "pinpoint" no longer reflects the architecture, but renaming (packages, globals,
+  `.pinpoint/` dir, skills, repo, docs) is a separate task, done *after* this (fewer surfaces
   once MCP names are gone).
 - **Re-adding source-map resolution** or any frontman middleware (dropped in Phase 0; unchanged).
 - **Multi-framework breadth.** Next.js was removed; Vite + React is the single supported target for
@@ -57,7 +57,7 @@ A single **Claude Code plugin** bundling:
 
 - a **slash command** — the one-phrase trigger;
 - the **orchestration skill** — drives bring-up (dev server if needed → run the bundled bridge);
-- the **paste skill** (today's `frontman-flow-paste`) — consumes the pasted JSON, applies edits, acks;
+- the **paste skill** (today's `pinpoint-paste`) — consumes the pasted JSON, applies edits, acks;
 - one **bundled JS bridge** — transport on Node built-ins (`http`, `child_process`, `fs`, `crypto`,
   global `WebSocket`, global `fetch`); no `@modelcontextprotocol/sdk`, no `playwright` (a small
   pure-JS validator may remain — see Problem #2).
@@ -91,7 +91,7 @@ server for the overlay's own channel (`/session/*/events|send|ack`).
   `page.screenshot`. (Clip remains viewport-relative — see `decisions.md` 2026-06-06 Screenshots.)
 - `config.ts` → drop `mcpPort` semantics in favor of a single bridge `port`; default `appUrl` to the
   **Vite** dev URL (Next's `:3000` default is removed). Add Chrome launch knobs
-  (`FF_CHROME_PATH`, `FF_CHROME_PORT`, profile dir).
+  (`PIN_CHROME_PATH`, `PIN_CHROME_PORT`, profile dir).
 
 **New:**
 - `cdp/launch-chrome.ts` — locate the Chrome binary per platform, spawn with debug flags + temp
@@ -112,7 +112,7 @@ server for the overlay's own channel (`/session/*/events|send|ack`).
 5. Developer clicks elements, adds comments, hits **Send** → overlay POSTs items to
    `/session/<id>/send`.
 6. Bridge: for each flagged item, `Page.captureScreenshot(clip)` → write
-   `.frontman-flow/<session>/<promptId>/<badge>.png` → build clipboard JSON (identity + comment +
+   `.pinpoint/<session>/<promptId>/<badge>.png` → build clipboard JSON (identity + comment +
    cwd-relative path) → write to system clipboard.
 7. Developer pastes into Claude → the **paste skill** parses the JSON, `Read`s the PNGs, greps by
    `componentName`/`text` to locate source, applies each comment's edit, then POSTs
@@ -121,7 +121,7 @@ server for the overlay's own channel (`/session/*/events|send|ack`).
 ## Error handling
 
 - **Chrome not found / fails to launch** → actionable message listing per-platform Chrome paths and
-  the `FF_CHROME_PATH` override.
+  the `PIN_CHROME_PATH` override.
 - **CDP connect** → bounded retry/backoff against `/json`; clear failure after timeout.
 - **App URL unreachable** → warn (dev server not up yet).
 - **Screenshot capture failure** → record `null` path for that badge, continue (today's behavior).

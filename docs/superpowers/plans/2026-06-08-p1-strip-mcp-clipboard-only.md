@@ -4,7 +4,7 @@
 
 **Goal:** Make the clipboard/paste flow the sole delivery path by deleting the MCP server, its read-back tools, and the `@modelcontextprotocol/sdk` dependency — leaving the bridge as an overlay HTTP server (`/session/*/events|send|ack`) that captures screenshots and writes the clipboard.
 
-**Architecture:** The overlay already POSTs full annotation payloads to `/send`, where the bridge saves PNGs and writes a `frontman-flow` JSON to the clipboard (`clipboard-payload.ts`). That payload carries everything Claude needs, so the MCP pull tools (`get_selection`, `get_annotations`, `screenshot`) and their CDP readers are redundant. This phase removes them. Playwright stays (replaced in P2); plugin packaging is P3.
+**Architecture:** The overlay already POSTs full annotation payloads to `/send`, where the bridge saves PNGs and writes a `pinpoint` JSON to the clipboard (`clipboard-payload.ts`). That payload carries everything Claude needs, so the MCP pull tools (`get_selection`, `get_annotations`, `screenshot`) and their CDP readers are redundant. This phase removes them. Playwright stays (replaced in P2); plugin packaging is P3.
 
 **Tech Stack:** TypeScript (ESM), Node 22, Vitest, Biome, pnpm workspace. Bridge HTTP via `node:http`; screenshots via the `BridgePage` interface (Playwright adapter in prod, `FakePage` in tests).
 
@@ -68,7 +68,7 @@ export interface BridgeServerDeps {
   sessions: SessionRegistry;
   writeClipboard: ClipboardWriter;
   bridgeUrl: string;
-  /** root tmp dir for screenshots, e.g. join(process.cwd(), ".frontman-flow"). */
+  /** root tmp dir for screenshots, e.g. join(process.cwd(), ".pinpoint"). */
   tmpRoot: string;
 }
 
@@ -186,9 +186,9 @@ Replace the `startSseServer(cfg.mcpPort, {` call and the following log line:
     sessions: new SessionRegistry(),
     writeClipboard: systemClipboard,
     bridgeUrl,
-    tmpRoot: join(process.cwd(), ".frontman-flow"),
+    tmpRoot: join(process.cwd(), ".pinpoint"),
   });
-  console.error(`frontman-flow MCP (SSE) on ${bridgeUrl}/sse · session ${connection.sessionId}`);
+  console.error(`pinpoint MCP (SSE) on ${bridgeUrl}/sse · session ${connection.sessionId}`);
 ```
 
 with:
@@ -199,9 +199,9 @@ with:
     sessions: new SessionRegistry(),
     writeClipboard: systemClipboard,
     bridgeUrl,
-    tmpRoot: join(process.cwd(), ".frontman-flow"),
+    tmpRoot: join(process.cwd(), ".pinpoint"),
   });
-  console.error(`frontman-flow bridge on ${bridgeUrl} · session ${connection.sessionId}`);
+  console.error(`pinpoint bridge on ${bridgeUrl} · session ${connection.sessionId}`);
 ```
 
 (`cfg.mcpPort` is renamed to `cfg.port` in Task 4 — leave it as `cfg.mcpPort` for now so this task stays green.)
@@ -224,7 +224,7 @@ Then change line 14 (`let server: ReturnType<typeof startSseServer>;`) to use `s
 
 - [ ] **Step 5: Verify typecheck, unit tests, and build pass**
 
-Run: `pnpm typecheck && pnpm test && pnpm --filter @frontman-flow/core build`
+Run: `pnpm typecheck && pnpm test && pnpm --filter @pinpoint/core build`
 Expected: PASS. (`register-tools.ts` and `tools/*` still exist and still compile against the SDK at this point; they're deleted in Tasks 2–3.)
 
 - [ ] **Step 6: Commit**
@@ -265,7 +265,7 @@ git rm packages/core/src/server/register-tools.ts packages/core/src/server/regis
 
 - [ ] **Step 3: Verify typecheck, unit tests, and build pass**
 
-Run: `pnpm typecheck && pnpm test && pnpm --filter @frontman-flow/core build`
+Run: `pnpm typecheck && pnpm test && pnpm --filter @pinpoint/core build`
 Expected: PASS. `packages/core/tsconfig.json` excludes `integration/**` and `*.test.ts`, and the integration suite is excluded from the default `pnpm test`, so the `loop`/`vite` integration files still referencing deleted tools do NOT break either gate here — Task 5 rewrites them, and they're only exercised when manually running the integration config. The `selection-probe.ts` extractor is kept and unaffected.
 
 - [ ] **Step 4: Commit**
@@ -315,7 +315,7 @@ Expected: lockfile updates, `@modelcontextprotocol/sdk` removed from `node_modul
 
 - [ ] **Step 4: Verify typecheck, unit tests, and build pass**
 
-Run: `pnpm typecheck && pnpm test && pnpm --filter @frontman-flow/core build`
+Run: `pnpm typecheck && pnpm test && pnpm --filter @pinpoint/core build`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -350,18 +350,18 @@ describe("parseConfig", () => {
     expect(cfg.appUrl).toBe("http://localhost:5173");
   });
 
-  it("overrides port from FF_PORT", () => {
-    expect(parseConfig({ FF_PORT: "9000" }).port).toBe(9000);
+  it("overrides port from PIN_PORT", () => {
+    expect(parseConfig({ PIN_PORT: "9000" }).port).toBe(9000);
   });
 
-  it("overrides cdpUrl from FF_CDP_URL", () => {
-    expect(parseConfig({ FF_CDP_URL: "http://localhost:9333" }).cdpUrl).toBe(
+  it("overrides cdpUrl from PIN_CDP_URL", () => {
+    expect(parseConfig({ PIN_CDP_URL: "http://localhost:9333" }).cdpUrl).toBe(
       "http://localhost:9333",
     );
   });
 
-  it("overrides appUrl from FF_APP_URL", () => {
-    expect(parseConfig({ FF_APP_URL: "http://localhost:5180" }).appUrl).toBe(
+  it("overrides appUrl from PIN_APP_URL", () => {
+    expect(parseConfig({ PIN_APP_URL: "http://localhost:5180" }).appUrl).toBe(
       "http://localhost:5180",
     );
   });
@@ -370,7 +370,7 @@ describe("parseConfig", () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `pnpm --filter @frontman-flow/core exec vitest run src/config.test.ts`
+Run: `pnpm --filter @pinpoint/core exec vitest run src/config.test.ts`
 Expected: FAIL — `cfg.port` is undefined and `appUrl` default is still `:3000`.
 
 - [ ] **Step 3: Update `config.ts`**
@@ -386,9 +386,9 @@ export interface BridgeConfig {
 
 export function parseConfig(env: Record<string, string | undefined>): BridgeConfig {
   return {
-    port: env.FF_PORT ? Number(env.FF_PORT) : 7331,
-    cdpUrl: env.FF_CDP_URL ?? "http://localhost:9222",
-    appUrl: env.FF_APP_URL ?? "http://localhost:5173",
+    port: env.PIN_PORT ? Number(env.PIN_PORT) : 7331,
+    cdpUrl: env.PIN_CDP_URL ?? "http://localhost:9222",
+    appUrl: env.PIN_APP_URL ?? "http://localhost:5173",
   };
 }
 ```
@@ -399,7 +399,7 @@ In `packages/core/src/cli.ts`, change `const bridgeUrl = \`http://localhost:${cf
 
 - [ ] **Step 5: Verify the test passes + typecheck + build**
 
-Run: `pnpm --filter @frontman-flow/core exec vitest run src/config.test.ts && pnpm typecheck && pnpm --filter @frontman-flow/core build`
+Run: `pnpm --filter @pinpoint/core exec vitest run src/config.test.ts && pnpm typecheck && pnpm --filter @pinpoint/core build`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
@@ -435,15 +435,15 @@ import type { SelectionFound } from "../src/types.js";
 
 /**
  * Proves the CDP + fiber-identity bridge works on Vite + React. The extractor
- * runs in-page (window.__frontmanFlowExtractSelection), injected by connect().
+ * runs in-page (window.__pinpointExtractSelection), injected by connect().
  * Requires examples/vite-react running + Chrome on 9222.
  *
  *   pnpm --dir examples/vite-react exec vite --port 5180 --strictPort &
  *   <chrome> --headless=new --remote-debugging-port=9222 about:blank &
- *   pnpm --filter @frontman-flow/core exec vitest run --config vitest.integration.config.ts vite
+ *   pnpm --filter @pinpoint/core exec vitest run --config vitest.integration.config.ts vite
  */
-const APP_URL = process.env.FF_VITE_URL ?? "http://localhost:5180";
-const CDP_URL = process.env.FF_CDP_URL ?? "http://localhost:9222";
+const APP_URL = process.env.PIN_VITE_URL ?? "http://localhost:5180";
+const CDP_URL = process.env.PIN_CDP_URL ?? "http://localhost:9222";
 
 let connection: Connection;
 
@@ -459,10 +459,10 @@ afterAll(async () => {
   await connection?.close();
 });
 
-describe("frontman-flow identity extraction on Vite + React (integration)", () => {
+describe("pinpoint identity extraction on Vite + React (integration)", () => {
   it("extracts the user component identity for the picked element", async () => {
     const sel = await connection.page.evaluate<SelectionFound>(
-      "window.__frontmanFlowExtractSelection(document.querySelector('#hero-heading'))",
+      "window.__pinpointExtractSelection(document.querySelector('#hero-heading'))",
     );
     expect(sel.componentName).toBe("Hero");
     expect(sel.ancestry).toEqual(["Hero", "App"]);
@@ -495,15 +495,15 @@ import type { SelectionFound } from "../src/types.js";
 /**
  * The full clipboard loop on a live page: inject overlay → build an annotation
  * from the in-page extractor → POST /send → assert the bridge wrote a
- * frontman-flow clipboard JSON and saved the flagged screenshot to disk.
+ * pinpoint clipboard JSON and saved the flagged screenshot to disk.
  * Requires examples/vite-react on 5180 + Chrome on 9222.
  *
  *   pnpm --dir examples/vite-react exec vite --port 5180 --strictPort &
  *   <chrome> --headless=new --remote-debugging-port=9222 about:blank &
- *   pnpm --filter @frontman-flow/core exec vitest run --config vitest.integration.config.ts loop
+ *   pnpm --filter @pinpoint/core exec vitest run --config vitest.integration.config.ts loop
  */
-const APP_URL = process.env.FF_VITE_URL ?? "http://localhost:5180";
-const CDP_URL = process.env.FF_CDP_URL ?? "http://localhost:9222";
+const APP_URL = process.env.PIN_VITE_URL ?? "http://localhost:5180";
+const CDP_URL = process.env.PIN_CDP_URL ?? "http://localhost:9222";
 const tmpRoot = join(tmpdir(), `ff-loop-${Math.floor(Math.random() * 1e9)}`);
 
 let connection: Connection;
@@ -535,10 +535,10 @@ afterAll(async () => {
   await connection?.close();
 });
 
-describe("frontman-flow clipboard loop on Vite (integration)", () => {
-  it("/send writes a frontman-flow clipboard JSON + saves the flagged screenshot", async () => {
+describe("pinpoint clipboard loop on Vite (integration)", () => {
+  it("/send writes a pinpoint clipboard JSON + saves the flagged screenshot", async () => {
     const sel = await connection.page.evaluate<SelectionFound>(
-      "window.__frontmanFlowExtractSelection(document.querySelector('#hero-heading'))",
+      "window.__pinpointExtractSelection(document.querySelector('#hero-heading'))",
     );
     const item = { ...sel, id: "a1", badge: 1, comment: "make it bigger", wantScreenshot: true };
 
@@ -552,7 +552,7 @@ describe("frontman-flow clipboard loop on Vite (integration)", () => {
     expect(body.imageCount).toBe(1);
 
     const payload = JSON.parse(clip.at(-1) as string);
-    expect(payload.source).toBe("frontman-flow");
+    expect(payload.source).toBe("pinpoint");
     expect(payload.items).toHaveLength(1);
     expect(payload.items[0].componentName).toBe("Hero");
     expect(payload.items[0].comment).toBe("make it bigger");
@@ -572,7 +572,7 @@ Expected: PASS (the integration files now import only existing modules: `connect
 ```bash
 pnpm --dir examples/vite-react exec vite --port 5180 --strictPort &
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --remote-debugging-port=9222 about:blank &
-pnpm --filter @frontman-flow/core exec vitest run --config vitest.integration.config.ts
+pnpm --filter @pinpoint/core exec vitest run --config vitest.integration.config.ts
 ```
 Expected: `vite` and `loop` suites PASS; clipboard JSON contains `Hero` and the PNG file exists.
 
@@ -607,14 +607,14 @@ with:
 
 ```
 a Claude Code session receives those when the developer clicks **Send** (the overlay writes a
-`frontman-flow` JSON — per-element identity + comments + saved screenshot paths — to the clipboard;
+`pinpoint` JSON — per-element identity + comments + saved screenshot paths — to the clipboard;
 the developer pastes it in), greps the repo for the component, and edits source. There is no MCP
 server: delivery is the clipboard/paste flow.
 ```
 
 - [ ] **Step 2: Update `README.md`**
 
-Find any section listing the MCP tools (`get_selection`, `get_annotations`, `screenshot`) and replace it with the Send → paste flow: the developer clicks elements, comments, hits **Send**, and pastes the copied JSON into Claude; Claude reads the pasted identity + the referenced `.frontman-flow/*.png` files. Remove instructions to configure an MCP server. (Read the current README first to match its structure; keep the launch instructions, which P2/P3 will revise.)
+Find any section listing the MCP tools (`get_selection`, `get_annotations`, `screenshot`) and replace it with the Send → paste flow: the developer clicks elements, comments, hits **Send**, and pastes the copied JSON into Claude; Claude reads the pasted identity + the referenced `.pinpoint/*.png` files. Remove instructions to configure an MCP server. (Read the current README first to match its structure; keep the launch instructions, which P2/P3 will revise.)
 
 - [ ] **Step 3: Append a decision row**
 
@@ -645,7 +645,7 @@ git commit -m "docs: clipboard-only delivery path, drop MCP tool references (P1)
 - "config default → Vite; drop Next `:3000`" (acceptance #6) → Task 4. ✓
 - "Vite integration loop test passes" (acceptance #5) → Task 5. ✓
 - "No `@modelcontextprotocol/sdk`" (acceptance #1) → Task 3. ✓
-- Out of P1 scope (later plans): raw CDP / no Playwright (P2), plugin packaging + `.claude/` harness (P3), the `frontman-flow` MCP-driving skill consolidation (P3 — the paste skill keeps working in the meantime), rename (TASK-11).
+- Out of P1 scope (later plans): raw CDP / no Playwright (P2), plugin packaging + `.claude/` harness (P3), the `pinpoint` MCP-driving skill consolidation (P3 — the paste skill keeps working in the meantime), rename (TASK-11).
 
 **Placeholder scan:** No TBD/TODO; every code step shows full content. Step 2 of Task 6 (README) describes the edit rather than quoting it because the current README wasn't read into this plan — the executor reads it first; this is the one acceptable "read-then-edit" step, scoped to a doc.
 

@@ -40,13 +40,13 @@ Together these prove the whole chain except the human gesture + a second Claude 
 
 3. **The bridge:**
    ```bash
-   pnpm --filter @frontman-flow/core build
-   FF_APP_URL=http://localhost:3100/clienttest FF_CDP_URL=http://localhost:9222 \
+   pnpm --filter @pinpoint/core build
+   PIN_APP_URL=http://localhost:3100/clienttest PIN_CDP_URL=http://localhost:9222 \
      node packages/core/dist/cli.js
    ```
 
 4. **A Claude Code session** in this repo (it picks up `.mcp.json` → SSE server at `:7331`). Grant the
-   tools `mcp__frontman-flow__get_selection` and `mcp__frontman-flow__screenshot`.
+   tools `mcp__pinpoint__get_selection` and `mcp__pinpoint__screenshot`.
 
 5. In the Chrome window, click **Pick** (bottom-right overlay toolbar), click an element, then tell
    Claude e.g. *"change the selected element's text"*. Claude calls `get_selection`, greps the repo for

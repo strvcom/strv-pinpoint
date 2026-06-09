@@ -31,7 +31,7 @@ bridge, which **pushes a status event over SSE** to that browser session → it 
 ## Clipboard JSON (`annotations/clipboard-payload.ts`, pure builder)
 ```jsonc
 {
-  "source": "frontman-flow",          // marker the skill matches on
+  "source": "pinpoint",          // marker the skill matches on
   "version": 1,
   "bridgeUrl": "http://localhost:7331",
   "sessionId": "<id>",
@@ -60,13 +60,13 @@ bridge, which **pushes a status event over SSE** to that browser session → it 
 - **`GET /session/:id/events`** — SSE; registers the session's response; `res.on("close")` deregisters.
 - **`POST /session/:id/send`** — body `{ items: Annotation[] }`. Generate a `promptId`; for each item
   capture a PNG via the CDP page (`screenshotElement(selector)` → fallback `screenshotClip(rect)`),
-  write to `<tmp>/frontman-flow/<sessionId>/<promptId>/anno-<badge>.png`; build the clipboard JSON;
+  write to `<tmp>/pinpoint/<sessionId>/<promptId>/anno-<badge>.png`; build the clipboard JSON;
   `clipboardy.write(json)`. Respond `{ ok, promptId, imageCount }`.
 - **`POST /session/:id/ack`** — body `{ promptId, status }`. Push SSE `{type:"status", promptId, status}`
   to that session. (v1 only ever receives `status:"running"`.) Unknown session → 404.
 
-### Claude skill (`.claude/skills/frontman-flow-paste/SKILL.md`)
-Triggers when a message contains a JSON blob with `"source": "frontman-flow"`. Steps: parse it; read
+### Claude skill (`.claude/skills/pinpoint-paste/SKILL.md`)
+Triggers when a message contains a JSON blob with `"source": "pinpoint"`. Steps: parse it; read
 `bridgeUrl`, `sessionId`, `promptId`; **immediately ack** `running` via
 `curl -fsS -X POST <bridgeUrl>/session/<sessionId>/ack -H 'content-type: application/json' -d '{"promptId":"<id>","status":"running"}'`
 (clears the browser the moment work starts); for each item, `Read` its `screenshot` path (if any) and
@@ -74,20 +74,20 @@ apply its `comment` (grep `componentName`; fall back to `text`/`selector`); summ
 `done` ack.)
 
 ### Overlay link (`cdp/bridge-link.ts` — new, composable like `EXTRACT_SELECTION_FN`)
-Exports `BRIDGE_LINK_FN` defining `window.__frontmanFlowLink`:
-- `init(onStatus)` — reads `window.__frontmanFlowConfig = { bridgeUrl, sessionId }`; opens
+Exports `BRIDGE_LINK_FN` defining `window.__pinpointLink`:
+- `init(onStatus)` — reads `window.__pinpointConfig = { bridgeUrl, sessionId }`; opens
   `EventSource(bridgeUrl + "/session/" + sessionId + "/events")`; on `{type:"status", promptId, status}`
   calls `onStatus(promptId, status)`.
 - `send(items)` — `POST` to `/session/:id/send`; returns the `promptId`.
 `overlay-script.ts` touch-points (kept minimal to limit TASK-8 collision): compose `BRIDGE_LINK_FN`;
 `init` with an `onStatus` that, in v1, clears the current items when its sent `promptId` goes `running`;
-**Send** → `__frontmanFlowLink.send(serialize().items)`. The bridge injects
-`window.__frontmanFlowConfig` as a preamble before `OVERLAY_SOURCE` (sessionId per injected page).
+**Send** → `__pinpointLink.send(serialize().items)`. The bridge injects
+`window.__pinpointConfig` as a preamble before `OVERLAY_SOURCE` (sessionId per injected page).
 
 ## Data flow
 1. Bridge injects `{bridgeUrl, sessionId}` + overlay; overlay opens the SSE channel.
 2. Annotate → **Send** → overlay POSTs items → bridge saves PNGs, builds JSON, writes clipboard, returns `promptId`.
-3. `⌘⇧V` into Claude → `frontman-flow-paste` skill parses JSON → `curl` ack `running` → `Read`s screenshots → applies comments.
+3. `⌘⇧V` into Claude → `pinpoint-paste` skill parses JSON → `curl` ack `running` → `Read`s screenshots → applies comments.
 4. Bridge relays `{status:"running", promptId}` over SSE → overlay clears that prompt's draft, ready for the next.
 
 ## Coordination with TASK-8

@@ -2,13 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 
-**Goal:** Ship frontman-flow as a self-contained Claude Code plugin — a kickoff command + the paste skill + a single bundled JS bridge in `bin/` — plus a repo-local marketplace and an `examples/vite-react/.claude/` harness, so `claude --plugin-dir ./plugin` (anywhere) or `cd examples/vite-react && claude` runs the whole loop.
+**Goal:** Ship pinpoint as a self-contained Claude Code plugin — a kickoff command + the paste skill + a single bundled JS bridge in `bin/` — plus a repo-local marketplace and an `examples/vite-react/.claude/` harness, so `claude --plugin-dir ./plugin` (anywhere) or `cd examples/vite-react && claude` runs the whole loop.
 
-**Architecture:** A plugin at `plugin/` bundles `.claude-plugin/plugin.json`, a `commands/start.md` kickoff, `skills/frontman-flow-paste/`, and `bin/frontman-flow` (the bridge bundled to one dependency-free `.mjs` via esbuild, on the Bash `PATH` while the plugin is active). The bridge talks raw CDP and launches Chrome (P2). Local dev/test uses `--plugin-dir`; the in-repo harness uses a local marketplace registered in project `.claude/settings.json`.
+**Architecture:** A plugin at `plugin/` bundles `.claude-plugin/plugin.json`, a `commands/start.md` kickoff, `skills/pinpoint-paste/`, and `bin/pinpoint` (the bridge bundled to one dependency-free `.mjs` via esbuild, on the Bash `PATH` while the plugin is active). The bridge talks raw CDP and launches Chrome (P2). Local dev/test uses `--plugin-dir`; the in-repo harness uses a local marketplace registered in project `.claude/settings.json`.
 
 **Tech Stack:** TypeScript ESM, Node 22, esbuild (build-time only), Vitest, Biome. Claude Code plugin format (`.claude-plugin/plugin.json`, `commands/`, `skills/`, `bin/`).
 
-**Scope note:** Phase P3 of `docs/superpowers/specs/2026-06-08-plugin-clipboard-cdp-design.md`. P1 (clipboard-only) + P2 (raw CDP) are merged. The **rename** (frontman-flow → new name) remains a separate task (TASK-11) — this plan keeps the `frontman-flow` name throughout.
+**Scope note:** Phase P3 of `docs/superpowers/specs/2026-06-08-plugin-clipboard-cdp-design.md`. P1 (clipboard-only) + P2 (raw CDP) are merged. The **rename** (pinpoint → new name) remains a separate task (TASK-11) — this plan keeps the `pinpoint` name throughout.
 
 **Verification limit:** Whether Claude actually loads the plugin and the command triggers correctly is an **interactive** check only the user can fully run (no nested `claude` session here). This plan verifies everything mechanically — valid JSON, the bundle builds, the bundled bridge smoke-launches Chrome + injects + writes the clipboard (same harness as P2's live test), `bin` is executable — and hands off exact manual steps.
 
@@ -21,25 +21,25 @@
 - root `package.json` — remove the `clipboardy` dependency.
 
 **Plugin (new, under `plugin/`):**
-- `plugin/.claude-plugin/plugin.json` — manifest (`name: "frontman-flow"`).
-- `plugin/commands/start.md` — `/frontman-flow:start` kickoff: launch the bridge, guide the loop.
-- `plugin/skills/frontman-flow-paste/SKILL.md` — the paste/apply skill (moved from `.claude/skills/`).
-- `plugin/bin/frontman-flow` — the bundled, executable bridge (esbuild output; git-ignored, built on demand). A committed `plugin/bin/.gitkeep` keeps the dir.
+- `plugin/.claude-plugin/plugin.json` — manifest (`name: "pinpoint"`).
+- `plugin/commands/start.md` — `/pinpoint:start` kickoff: launch the bridge, guide the loop.
+- `plugin/skills/pinpoint-paste/SKILL.md` — the paste/apply skill (moved from `.claude/skills/`).
+- `plugin/bin/pinpoint` — the bundled, executable bridge (esbuild output; git-ignored, built on demand). A committed `plugin/bin/.gitkeep` keeps the dir.
 - `plugin/README.md` — what the plugin is + the install/dev loop.
 
 **Local marketplace (new):**
-- `.claude-plugin/marketplace.json` (repo root) — lists the `frontman-flow` plugin at `./plugin`.
+- `.claude-plugin/marketplace.json` (repo root) — lists the `pinpoint` plugin at `./plugin`.
 
 **In-repo harness (new):**
 - `examples/vite-react/.claude/settings.json` — registers the local marketplace + enables the plugin + allows Bash.
 
 **Build wiring:**
 - root `package.json` — add `esbuild` devDep + a `build:plugin` script; have `build` also build the plugin bundle.
-- `.gitignore` — ignore `plugin/bin/frontman-flow` (built artifact).
+- `.gitignore` — ignore `plugin/bin/pinpoint` (built artifact).
 
 **Retired:**
-- `.claude/skills/frontman-flow/` — the obsolete MCP-driving skill (its guidance is superseded by the paste skill).
-- `.claude/skills/frontman-flow-paste/` — moved into the plugin (the repo dogfoods the plugin via root `.claude/settings.json`).
+- `.claude/skills/pinpoint/` — the obsolete MCP-driving skill (its guidance is superseded by the paste skill).
+- `.claude/skills/pinpoint-paste/` — moved into the plugin (the repo dogfoods the plugin via root `.claude/settings.json`).
 
 **Modified:** `README.md`, `CLAUDE.md`, `docs/decisions.md`, root `.claude/settings.json` (dogfood the plugin).
 
@@ -168,7 +168,7 @@ Run: `pnpm add -D -w esbuild`
 In root `package.json` `scripts`, add:
 
 ```json
-    "build:plugin": "esbuild packages/core/src/cli.ts --bundle --platform=node --format=esm --target=node20 --outfile=plugin/bin/frontman-flow && chmod +x plugin/bin/frontman-flow",
+    "build:plugin": "esbuild packages/core/src/cli.ts --bundle --platform=node --format=esm --target=node20 --outfile=plugin/bin/pinpoint && chmod +x plugin/bin/pinpoint",
 ```
 
 and chain it into `build`:
@@ -184,40 +184,40 @@ Append to `.gitignore`:
 
 ```
 # built plugin bridge bundle
-plugin/bin/frontman-flow
+plugin/bin/pinpoint
 ```
 
 - [ ] **Step 3: Build the bundle**
 
 Run: `pnpm build:plugin`
-Expected: `plugin/bin/frontman-flow` created, executable.
+Expected: `plugin/bin/pinpoint` created, executable.
 
 - [ ] **Step 4: Smoke-run the bundle (no app needed — expect a clean connect error)**
 
-Run: `FF_APP_URL=http://localhost:1 FF_CDP_URL=http://localhost:1 node plugin/bin/frontman-flow; echo "exit: $?"`
+Run: `PIN_APP_URL=http://localhost:1 PIN_CDP_URL=http://localhost:1 node plugin/bin/pinpoint; echo "exit: $?"`
 Expected: it runs (no module-resolution crash), then exits non-zero with the "Could not connect to Chrome" message — proving the bundle is self-contained (no missing deps).
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add package.json pnpm-lock.yaml .gitignore plugin/bin/.gitkeep
-git commit -m "build: bundle the bridge to plugin/bin/frontman-flow via esbuild (P3)"
+git commit -m "build: bundle the bridge to plugin/bin/pinpoint via esbuild (P3)"
 ```
 
 ---
 
 ## Task 3: Plugin manifest, command, and paste skill
 
-**Files:** Create `plugin/.claude-plugin/plugin.json`, `plugin/commands/start.md`, `plugin/skills/frontman-flow-paste/SKILL.md`, `plugin/README.md`.
+**Files:** Create `plugin/.claude-plugin/plugin.json`, `plugin/commands/start.md`, `plugin/skills/pinpoint-paste/SKILL.md`, `plugin/README.md`.
 
 - [ ] **Step 1: Manifest** — `plugin/.claude-plugin/plugin.json`
 
 ```json
 {
-  "name": "frontman-flow",
+  "name": "pinpoint",
   "description": "Click an element in your running dev app, comment, Send, and paste into Claude — it edits the source. CDP-only, zero-dep bridge; no MCP server.",
   "version": "0.1.0",
-  "author": { "name": "frontman-flow" }
+  "author": { "name": "pinpoint" }
 }
 ```
 
@@ -225,77 +225,77 @@ git commit -m "build: bundle the bridge to plugin/bin/frontman-flow via esbuild 
 
 ```markdown
 ---
-description: Start the frontman-flow bridge and run the click-to-fix loop against your running dev app.
+description: Start the pinpoint bridge and run the click-to-fix loop against your running dev app.
 ---
 
-# Start frontman-flow
+# Start pinpoint
 
 Bring up the overlay loop so the user can click elements in their dev app and have you edit the source.
 
 ## Steps
 
 1. **Confirm the dev app URL.** Ask the user for their dev server URL if you don't know it (default `http://localhost:5173`). It must already be running.
-2. **Launch the bridge in the background.** The plugin ships a `frontman-flow` executable on your PATH; it talks raw CDP and launches Chrome itself (or attaches to a debug Chrome already on `:9222`). Run it backgrounded, pointed at the app:
+2. **Launch the bridge in the background.** The plugin ships a `pinpoint` executable on your PATH; it talks raw CDP and launches Chrome itself (or attaches to a debug Chrome already on `:9222`). Run it backgrounded, pointed at the app:
    ```bash
-   FF_APP_URL=<app-url> frontman-flow &
+   PIN_APP_URL=<app-url> pinpoint &
    ```
-   Override the browser with `FF_CHROME_PATH` and its profile with `FF_CHROME_PROFILE` if needed. The overlay HTTP server listens on `:7331` (`FF_PORT`).
-3. **Tell the user the loop:** in the Chrome window the bridge opened, use the overlay toolbar — **Pick** an element (or **Screenshot** a region), type a comment on each card, then click **Send**. The bridge copies a `frontman-flow` JSON to their clipboard.
-4. **Wait for the paste.** When the user pastes that JSON back into the chat, the `frontman-flow-paste` skill takes over and applies each comment to its component.
+   Override the browser with `PIN_CHROME_PATH` and its profile with `PIN_CHROME_PROFILE` if needed. The overlay HTTP server listens on `:7331` (`PIN_PORT`).
+3. **Tell the user the loop:** in the Chrome window the bridge opened, use the overlay toolbar — **Pick** an element (or **Screenshot** a region), type a comment on each card, then click **Send**. The bridge copies a `pinpoint` JSON to their clipboard.
+4. **Wait for the paste.** When the user pastes that JSON back into the chat, the `pinpoint-paste` skill takes over and applies each comment to its component.
 
 ## Notes
-- If `frontman-flow` isn't found on PATH, the plugin bundle wasn't built — run `pnpm build:plugin` in the frontman-flow repo (or `pnpm build`).
+- If `pinpoint` isn't found on PATH, the plugin bundle wasn't built — run `pnpm build:plugin` in the pinpoint repo (or `pnpm build`).
 - Don't guess edits before the user has picked + sent; wait for the pasted JSON.
 ```
 
 - [ ] **Step 3: Move the paste skill into the plugin**
 
-Run: `mkdir -p plugin/skills/frontman-flow-paste && git mv .claude/skills/frontman-flow-paste/SKILL.md plugin/skills/frontman-flow-paste/SKILL.md`
+Run: `mkdir -p plugin/skills/pinpoint-paste && git mv .claude/skills/pinpoint-paste/SKILL.md plugin/skills/pinpoint-paste/SKILL.md`
 
 (The skill content is already correct for the clipboard flow — no edits needed. Verify it still reads sensibly after the move.)
 
 - [ ] **Step 4: Plugin README** — `plugin/README.md`
 
 ```markdown
-# frontman-flow (Claude Code plugin)
+# pinpoint (Claude Code plugin)
 
 Click an element in your running dev app, comment, **Send**, and paste into Claude — it edits the source. CDP-only, zero-dependency bridge; no MCP server.
 
 ## Use it
-- `/frontman-flow:start` — launches the bridge (which opens Chrome + injects the overlay) and walks you through the loop.
-- Pick / Screenshot → comment → **Send** → paste the copied JSON into chat. The `frontman-flow-paste` skill applies it.
+- `/pinpoint:start` — launches the bridge (which opens Chrome + injects the overlay) and walks you through the loop.
+- Pick / Screenshot → comment → **Send** → paste the copied JSON into chat. The `pinpoint-paste` skill applies it.
 
 ## Install / develop
-- **Quick dev (live edits):** from anywhere, `claude --plugin-dir /path/to/frontman-flow/plugin`, then `/reload-plugins` after edits.
-- **In a project:** register the repo's local marketplace in that project's `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`), or `/plugin marketplace add /path/to/frontman-flow` then `/plugin install frontman-flow@frontman-flow`.
+- **Quick dev (live edits):** from anywhere, `claude --plugin-dir /path/to/pinpoint/plugin`, then `/reload-plugins` after edits.
+- **In a project:** register the repo's local marketplace in that project's `.claude/settings.json` (`extraKnownMarketplaces` + `enabledPlugins`), or `/plugin marketplace add /path/to/pinpoint` then `/plugin install pinpoint@pinpoint`.
 
-The bridge binary (`bin/frontman-flow`) is built from `@frontman-flow/core` — run `pnpm build:plugin` in the repo first.
+The bridge binary (`bin/pinpoint`) is built from `@pinpoint/core` — run `pnpm build:plugin` in the repo first.
 ```
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add plugin/.claude-plugin plugin/commands plugin/skills plugin/README.md
-git rm -r .claude/skills/frontman-flow-paste
-git commit -m "feat(plugin): manifest + /frontman-flow:start command + paste skill (P3)"
+git rm -r .claude/skills/pinpoint-paste
+git commit -m "feat(plugin): manifest + /pinpoint:start command + paste skill (P3)"
 ```
 
 ---
 
 ## Task 4: Retire the obsolete MCP-driving skill
 
-**Files:** Delete `.claude/skills/frontman-flow/`.
+**Files:** Delete `.claude/skills/pinpoint/`.
 
 - [ ] **Step 1: Delete it**
 
-Run: `git rm -r .claude/skills/frontman-flow`
+Run: `git rm -r .claude/skills/pinpoint`
 
-(Its single-pick/batch guidance drove `mcp__frontman-flow__*` tools removed in P1; the clipboard/paste flow + the new `start` command replace it.)
+(Its single-pick/batch guidance drove `mcp__pinpoint__*` tools removed in P1; the clipboard/paste flow + the new `start` command replace it.)
 
 - [ ] **Step 2: Commit**
 
 ```bash
-git commit -m "chore: retire obsolete MCP-driving frontman-flow skill (P3)"
+git commit -m "chore: retire obsolete MCP-driving pinpoint skill (P3)"
 ```
 
 ---
@@ -308,13 +308,13 @@ git commit -m "chore: retire obsolete MCP-driving frontman-flow skill (P3)"
 
 ```json
 {
-  "name": "frontman-flow",
-  "owner": { "name": "frontman-flow" },
+  "name": "pinpoint",
+  "owner": { "name": "pinpoint" },
   "plugins": [
     {
-      "name": "frontman-flow",
+      "name": "pinpoint",
       "source": "./plugin",
-      "description": "frontman-flow click-to-fix overlay bridge"
+      "description": "pinpoint click-to-fix overlay bridge"
     }
   ]
 }
@@ -327,12 +327,12 @@ The relative marketplace path resolves from this project root (`examples/vite-re
 ```json
 {
   "extraKnownMarketplaces": {
-    "frontman-flow": {
+    "pinpoint": {
       "source": { "source": "local", "path": "../../" }
     }
   },
   "enabledPlugins": {
-    "frontman-flow@frontman-flow": true
+    "pinpoint@pinpoint": true
   },
   "permissions": {
     "allow": ["Bash"]
@@ -346,10 +346,10 @@ Merge these keys into the existing root `.claude/settings.json` (so this repo's 
 
 ```json
   "extraKnownMarketplaces": {
-    "frontman-flow": { "source": { "source": "local", "path": "." } }
+    "pinpoint": { "source": { "source": "local", "path": "." } }
   },
   "enabledPlugins": {
-    "frontman-flow@frontman-flow": true
+    "pinpoint@pinpoint": true
   }
 ```
 
@@ -378,33 +378,33 @@ git commit -m "feat(plugin): local marketplace + vite-react harness + repo dogfo
 
 - [ ] **Step 1: Live smoke — the BUNDLED bin drives the loop**
 
-Reuse the P2 live harness but through `plugin/bin/frontman-flow` (proves the bundle, not just the source). With the Vite app on 5180 and a headless Chrome on 9222 at the app URL:
+Reuse the P2 live harness but through `plugin/bin/pinpoint` (proves the bundle, not just the source). With the Vite app on 5180 and a headless Chrome on 9222 at the app URL:
 
 ```bash
 pnpm build:plugin
 pnpm --dir examples/vite-react exec vite --port 5180 --strictPort &   # wait until ready
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --remote-debugging-port=9222 --user-data-dir=/tmp/ff-it http://localhost:5180 &  # wait until /json/version answers
-FF_APP_URL=http://localhost:5180 FF_PORT=7333 node plugin/bin/frontman-flow &
-# drive a Send via the overlay link (or reuse the integration loop). Then verify a frontman-flow
-# JSON reached the clipboard (pbpaste) and a PNG was written under .frontman-flow/.
+PIN_APP_URL=http://localhost:5180 PIN_PORT=7333 node plugin/bin/pinpoint &
+# drive a Send via the overlay link (or reuse the integration loop). Then verify a pinpoint
+# JSON reached the clipboard (pbpaste) and a PNG was written under .pinpoint/.
 ```
 Expected: the bundled bridge injects the overlay and serves `:7333`; a Send produces clipboard JSON + a saved PNG. Kill the background processes after. (If headless Chrome can't launch in your environment, note it — the unit + P2 integration suites already cover the logic.)
 
 - [ ] **Step 2: README — document the plugin + dev loop**
 
-Add a "## Install as a Claude Code plugin" section: the `--plugin-dir ./plugin` dev loop (live edits via `/reload-plugins`); `/plugin marketplace add <repo>` + `/plugin install frontman-flow@frontman-flow` for other projects; and the `examples/vite-react` harness (`cd examples/vite-react && claude` → `/frontman-flow:start`). Note `pnpm build:plugin` builds the bundled bridge.
+Add a "## Install as a Claude Code plugin" section: the `--plugin-dir ./plugin` dev loop (live edits via `/reload-plugins`); `/plugin marketplace add <repo>` + `/plugin install pinpoint@pinpoint` for other projects; and the `examples/vite-react` harness (`cd examples/vite-react && claude` → `/pinpoint:start`). Note `pnpm build:plugin` builds the bundled bridge.
 
 - [ ] **Step 3: CLAUDE.md — note the plugin packaging**
 
-In "What this project is", add one sentence: the tool ships as a Claude Code plugin (`plugin/`) — a `/frontman-flow:start` command + the paste skill + a bundled zero-dep bridge in `bin/`; local dev via `claude --plugin-dir ./plugin`.
+In "What this project is", add one sentence: the tool ships as a Claude Code plugin (`plugin/`) — a `/pinpoint:start` command + the paste skill + a bundled zero-dep bridge in `bin/`; local dev via `claude --plugin-dir ./plugin`.
 
 - [ ] **Step 4: Decisions rows**
 
 Append to `docs/decisions.md`:
 
 ```
-| 2026-06-08 | Packaging | Ship as a **Claude Code plugin** (`plugin/`): `/frontman-flow:start` command + `frontman-flow-paste` skill + the bridge bundled (esbuild) to an executable `bin/frontman-flow` on the plugin PATH. Local marketplace (`.claude-plugin/marketplace.json`) + `examples/vite-react/.claude/settings.json` harness; the repo dogfoods its own plugin. Dev loop: `claude --plugin-dir ./plugin` (live, reference not copy). | `${CLAUDE_PLUGIN_ROOT}` does NOT resolve in SKILL/command markdown, so the bridge ships in `bin/` (auto-added to PATH) instead of a path reference. Marketplace installs are cached copies; `--plugin-dir` gives live edits for development. |
-| 2026-06-08 | Correction | Replaced **`clipboardy`** with a `child_process` shell-out (`pbcopy`/`clip`/`xclip`). The earlier P2 "zero runtime deps" was inaccurate — `clipboard/write.ts` imported `clipboardy`, satisfied only via the root workspace's hoisted copy (so `@frontman-flow/core` would crash standalone). Now genuinely zero-dep, which also makes the esbuild bundle self-contained. | Honest dependency accounting + a clean, dependency-free plugin bundle. |
+| 2026-06-08 | Packaging | Ship as a **Claude Code plugin** (`plugin/`): `/pinpoint:start` command + `pinpoint-paste` skill + the bridge bundled (esbuild) to an executable `bin/pinpoint` on the plugin PATH. Local marketplace (`.claude-plugin/marketplace.json`) + `examples/vite-react/.claude/settings.json` harness; the repo dogfoods its own plugin. Dev loop: `claude --plugin-dir ./plugin` (live, reference not copy). | `${CLAUDE_PLUGIN_ROOT}` does NOT resolve in SKILL/command markdown, so the bridge ships in `bin/` (auto-added to PATH) instead of a path reference. Marketplace installs are cached copies; `--plugin-dir` gives live edits for development. |
+| 2026-06-08 | Correction | Replaced **`clipboardy`** with a `child_process` shell-out (`pbcopy`/`clip`/`xclip`). The earlier P2 "zero runtime deps" was inaccurate — `clipboard/write.ts` imported `clipboardy`, satisfied only via the root workspace's hoisted copy (so `@pinpoint/core` would crash standalone). Now genuinely zero-dep, which also makes the esbuild bundle self-contained. | Honest dependency accounting + a clean, dependency-free plugin bundle. |
 ```
 
 - [ ] **Step 5: Full gate + commit**
@@ -420,17 +420,17 @@ git commit -m "docs: Claude Code plugin packaging + dev loop; clipboardy correct
 Document these for the user to run (cannot be done from this session — needs an interactive `claude`):
 1. `pnpm build:plugin`
 2. Start the Vite app: `pnpm --dir examples/vite-react exec vite --port 5173`
-3. `cd examples/vite-react && claude` → trust the folder → `/frontman-flow:start` → follow the loop (Pick → comment → Send → paste).
-   - Or, from anywhere: `claude --plugin-dir /path/to/frontman-flow/plugin` then `/frontman-flow:start`.
+3. `cd examples/vite-react && claude` → trust the folder → `/pinpoint:start` → follow the loop (Pick → comment → Send → paste).
+   - Or, from anywhere: `claude --plugin-dir /path/to/pinpoint/plugin` then `/pinpoint:start`.
 
 ---
 
 ## Self-Review
 
-**Spec coverage (P3):** plugin packaging (command + skills + bundled JS) → Tasks 2–4 ✓; local marketplace + `examples/vite-react/.claude/` harness (acceptance #3/#4) → Task 5 ✓; one-command kickoff → Task 3 (`/frontman-flow:start`) ✓; zero-dep bundle (acceptance #1) → Tasks 1–2 ✓; dev/test loop (`--plugin-dir`) → Tasks 3,6 ✓.
+**Spec coverage (P3):** plugin packaging (command + skills + bundled JS) → Tasks 2–4 ✓; local marketplace + `examples/vite-react/.claude/` harness (acceptance #3/#4) → Task 5 ✓; one-command kickoff → Task 3 (`/pinpoint:start`) ✓; zero-dep bundle (acceptance #1) → Tasks 1–2 ✓; dev/test loop (`--plugin-dir`) → Tasks 3,6 ✓.
 
 **Placeholder scan:** Tasks 5 Step 3 and 6 Step 2 describe edits to read-then-modify existing files (root `.claude/settings.json`, `README.md`) rather than quoting them whole — acceptable for merge-into-existing config/docs; the executor reads first. All new files have full content.
 
-**Type/name consistency:** plugin name `frontman-flow` is the namespace for `/frontman-flow:start` and the marketplace ref `frontman-flow@frontman-flow`. The bin is named `frontman-flow` (matches the command's `frontman-flow &` instruction and core's existing `bin` name). `clipboardCommand`/`writeWith`/`systemClipboard` are consistent across `write.ts` and its test and the unchanged `ClipboardWriter` type used by `bridge-server.ts`.
+**Type/name consistency:** plugin name `pinpoint` is the namespace for `/pinpoint:start` and the marketplace ref `pinpoint@pinpoint`. The bin is named `pinpoint` (matches the command's `pinpoint &` instruction and core's existing `bin` name). `clipboardCommand`/`writeWith`/`systemClipboard` are consistent across `write.ts` and its test and the unchanged `ClipboardWriter` type used by `bridge-server.ts`.
 
 **Risk — interactive load unverifiable here:** mitigated by mechanical checks (JSON parse, bundle builds + smoke-runs, bin executable) + explicit manual acceptance steps. **Risk — esbuild shebang:** `cli.ts` already starts with `#!/usr/bin/env node`; esbuild preserves the entry shebang, and Task 2 Step 4 smoke-runs via `node` regardless, with `chmod +x` for direct execution. **Risk — `permissions.allow: ["Bash"]`** in the harness is broad; acceptable for a local dev harness, noted for the user.
