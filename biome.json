@@ -9,7 +9,8 @@
       "!.reference",
       "!.claude",
       "!examples",
-      "!**/*.tsbuildinfo"
+      "!**/*.tsbuildinfo",
+      "!packages/core/src/cdp/overlay-source.generated.ts"
     ]
   },
   "formatter": {
@@ -51,6 +52,12 @@
           "security": { "noGlobalEval": "off" },
           "complexity": { "noCommaOperator": "off" }
         }
+      }
+    },
+    {
+      "includes": ["packages/core/src/overlay/**"],
+      "linter": {
+        "rules": { "suspicious": { "noExplicitAny": "off" }, "security": { "noGlobalEval": "off" } }
       }
     }
   ]

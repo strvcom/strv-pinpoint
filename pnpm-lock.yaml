@@ -80,7 +80,11 @@ importers:
         specifier: ^0.28.0
         version: 0.28.0
 
-  packages/core: {}
+  packages/core:
+    devDependencies:
+      esbuild:
+        specifier: ^0.28.0
+        version: 0.28.0
 
 packages:
 

@@ -10,5 +10,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node ./dist/cli.js"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "devDependencies": {
+    "esbuild": "^0.28.0"
+  }
 }
