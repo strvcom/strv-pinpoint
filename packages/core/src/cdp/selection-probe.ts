@@ -8,9 +8,9 @@
  * Claude grep the repo (e.g. `function ClientTest`) to locate the source. This
  * is stack-agnostic and works where fiber→source maps do not (Next Turbopack/RSC).
  *
- * In Phase 1, an injected click-to-select script (built on EXTRACT_SELECTION_FN)
- * stores the latest RawSelection on `window[SELECTION_GLOBAL]`; the bridge reads
- * it via SELECTION_PROBE through CDP.
+ * In Phase 1, the selection extractor is authored in src/overlay/selection-probe.ts
+ * and bundled into OVERLAY_SOURCE. It stores the latest RawSelection on
+ * `window[SELECTION_GLOBAL]`; the bridge reads it via SELECTION_PROBE through CDP.
  */
 
 export interface RawSelection {
