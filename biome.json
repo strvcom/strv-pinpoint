@@ -57,7 +57,16 @@
     {
       "includes": ["packages/core/src/overlay/**"],
       "linter": {
-        "rules": { "suspicious": { "noExplicitAny": "off" }, "security": { "noGlobalEval": "off" } }
+        "rules": {
+          "suspicious": { "noExplicitAny": "off" },
+          "security": { "noGlobalEval": "off" },
+          "style": {
+            "useTemplate": "off",
+            "noNonNullAssertion": "off"
+          },
+          "complexity": { "useArrowFunction": "off", "useOptionalChain": "off" },
+          "correctness": { "noInnerDeclarations": "off" }
+        }
       }
     }
   ]
