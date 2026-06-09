@@ -11,14 +11,14 @@ Compared `main` ↔ `task-8--overlay-v3` file-by-file:
 
 | File | Action | Why |
 |---|---|---|
-| `packages/core/src/cdp/overlay-script.ts` | **PORT (wholesale)** | v3 UX. Header imports identical to main; references only `__frontmanFlowLink` (bridge-link, clipboard model) — no MCP. |
-| `packages/core/src/annotations/save-screenshots.ts` | **PORT (wholesale)** | Clipboard-safe win: hides `[data-frontman]` overlay during capture; `if (it.selector)` guard for screenshot-kind items. |
+| `packages/core/src/cdp/overlay-script.ts` | **PORT (wholesale)** | v3 UX. Header imports identical to main; references only `__pinpointLink` (bridge-link, clipboard model) — no MCP. |
+| `packages/core/src/annotations/save-screenshots.ts` | **PORT (wholesale)** | Clipboard-safe win: hides `[data-pinpoint]` overlay during capture; `if (it.selector)` guard for screenshot-kind items. |
 | `packages/core/src/annotations/save-screenshots.test.ts` | **PORT** | Tests above. main's `FakePage` already has `evaluatedExpressions` + `clipPng`, so it runs as-is. |
 | `cli.ts` | **DROP** | Branch version uses `startSseServer`/`cfg.mcpPort` — the exact MCP regression to avoid. |
 | `server/sse-server.ts` | **DROP** | MCP/SSE — removed on main in P1. |
 | `cdp/playwright-page.ts` | **DROP** | Removed on main in the raw-CDP refactor (main uses `cdp-page.ts`). |
 | `integration/bridge-routes.integration.test.ts` | **DROP** | Branch version imports `startSseServer` (MCP). main's clipboard version stays. |
-| `README.md`, `.claude/skills/frontman-flow/SKILL.md` | **DROP** | Branch versions document the MCP tools / `.mcp.json` / `FF_MCP_PORT` (pre-P1). |
+| `README.md`, `.claude/skills/pinpoint/SKILL.md` | **DROP** | Branch versions document the MCP tools / `.mcp.json` / `PIN_MCP_PORT` (pre-P1). |
 | branch docs (v3 spec/plan/notes) | **DROP** | MCP-flavored; not needed for the ACs. |
 
 ## Steps

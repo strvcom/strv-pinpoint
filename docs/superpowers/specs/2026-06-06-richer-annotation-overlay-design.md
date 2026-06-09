@@ -28,7 +28,7 @@ Injected via `injectBootstrap` (as today). Toolbar gains nothing new for modes (
 Off** stay); Pick now **appends** an annotation per click instead of replacing. A **fixed side
 panel** renders the annotation list + panel actions.
 
-State on `window.__frontmanFlowAnnotations`:
+State on `window.__pinpointAnnotations`:
 ```
 { batchId: number, ready: boolean, items: Annotation[] }
 ```
@@ -36,22 +36,22 @@ where each `Annotation` is the extractor output plus annotation fields:
 ```
 { id, badge, componentName, ancestry[], selector, tagName, text, rect, comment, wantScreenshot }
 ```
-- **Pick click** → run `__frontmanFlowExtractSelection(el)`, append an item (`badge = items.length+1`),
+- **Pick click** → run `__pinpointExtractSelection(el)`, append an item (`badge = items.length+1`),
   draw a persistent outline + numbered badge on the element, add a card, set `ready=false`.
 - **Card**: badge · `componentName||tagName` label · comment `<textarea>` (updates `item.comment`,
   sets `ready=false`) · 📷 toggle (`item.wantScreenshot`) · ✕ remove (drops the item + its outline/badge,
   sets `ready=false`).
 - **Panel actions**: **Send to Claude** → `ready=true`, `batchId++`. **Clear** → empty `items`,
   `ready=false`.
-- Back-compat: also keep `window.__frontmanFlowSelection` = the most-recent picked item (so
-  `get_selection` is unchanged), and `window.__frontmanFlowRegion` for ad-hoc region screenshots.
+- Back-compat: also keep `window.__pinpointSelection` = the most-recent picked item (so
+  `get_selection` is unchanged), and `window.__pinpointRegion` for ad-hoc region screenshots.
 - ESC exits the active mode (as today). Idempotent install guard stays.
 
 The extractor (`selection-probe.ts`) is unchanged and reused per pick.
 
 ## MCP surface
 
-- **`get_annotations`** (new): reads `window.__frontmanFlowAnnotations` via CDP.
+- **`get_annotations`** (new): reads `window.__pinpointAnnotations` via CDP.
   - Not `ready` (or empty) → single text block: "No submitted annotations — pick elements in the
     overlay, add a comment to each, then click Send to Claude."
   - `ready` → a `content` array. For each item, in badge order: a **text** block with
@@ -73,7 +73,7 @@ The extractor (`selection-probe.ts`) is unchanged and reused per pick.
   `page.screenshotElement(selector)`, falling back to `page.screenshotClip(item.rect)` if no element
   matches; base64-encode into an image block (omit on null). (+ colocated test)
 - `packages/core/src/server/register-tools.ts` — register `get_annotations` (no input).
-- `.claude/skills/frontman-flow/SKILL.md` + `README.md` — document the batch loop + the new tool.
+- `.claude/skills/pinpoint/SKILL.md` + `README.md` — document the batch loop + the new tool.
 
 ## Data flow
 
@@ -98,7 +98,7 @@ The extractor (`selection-probe.ts`) is unchanged and reused per pick.
   - `get-annotations`: not-ready → guidance text; ready with 2 items → 2 text blocks (badge order);
     image block present only for the `wantScreenshot` item; null screenshot → graceful text-only.
 - **Integration (live Chrome):** on `examples/vite-react` (or nextjs), set a 2-item
-  `__frontmanFlowAnnotations` (one `wantScreenshot:true`) with `ready:true`, call `get_annotations`,
+  `__pinpointAnnotations` (one `wantScreenshot:true`) with `ready:true`, call `get_annotations`,
   assert 2 text blocks with correct `componentName`s + exactly one image block.
 - Overlay DOM glue (panel, cards, badges, Send) verified by integration + manual, as in v1.
 

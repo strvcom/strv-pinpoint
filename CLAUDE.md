@@ -8,32 +8,18 @@ clicks **Send**, the overlay writes a `pinpoint` JSON — per-element identity +
 saved screenshot paths — to the clipboard; the developer pastes it into a Claude Code session,
 which greps the repo for the component and edits source. Delivery is the **clipboard/paste flow**:
 there is no MCP server (removed in P1; see `docs/superpowers/specs/2026-06-08-plugin-clipboard-cdp-design.md`).
-Claude is the agent — there is no frontman server at runtime.
+Claude is the agent — the injected bridge is the only runtime.
 The tool ships as a **Claude Code plugin** (`packages/claude-code/`): a `/pinpoint:start`
 command + the `pinpoint-paste` skill + the bridge bundled (esbuild) to a zero-dep executable in
 `bin/`. Local dev: `claude --plugin-dir ./packages/claude-code` (build first with `pnpm build`).
 All code units (engine + per-tool integrations) live under `packages/`; everything else is dev
 nuance. The engine (`packages/core`) is agent-agnostic; integrations are thin packages that depend
 on it and re-package it for a specific agent harness.
-Read `START_HERE.md` for the original brief and `docs/superpowers/specs/` (the **amendment**
-section is authoritative) for how Phase 0 reshaped it. Phase-0 findings (why the original
-frontman-overlay/source-map approach was dropped): `docs/superpowers/notes/phase0-spike-findings.md`.
-
-## Upstream reference (read-only, not in git)
-We study `frontman-ai/frontman` from a local, git-ignored clone at `./.reference/frontman`.
-
-- **If `./.reference/frontman` is missing, re-clone it before doing reference work:**
-  run `scripts/sync-reference.sh`. (It clones the pinned ref; safe to run anytime — it no-ops
-  if the clone already exists.)
-- The reference is **READ-ONLY**: never edit, move, or commit anything under `.reference/`.
-- Start any architecture/transport question by reading `libs/frontman-client/` and
-  `libs/frontman-protocol/` in the reference.
-
-## License boundary (non-negotiable)
-- We may study and depend on the **Apache-2.0** half: `libs/` (client libraries + framework
-  integrations).
-- We must **never copy, vendor, port, or modify** the **AGPL-3.0** server
-  (`apps/frontman_server/`) into this repo. We are *replacing* that component, not reusing it.
+For the current design, read `docs/superpowers/specs/` (the **amendment** section is
+authoritative); `docs/superpowers/notes/phase0-spike-findings.md` records the Phase-0 findings
+(why the original source-map approach was dropped). `START_HERE.md` is the historical original
+brief, kept for context. The project is now standalone — it studies/depends on no external
+upstream at runtime or in source.
 
 ## How we work: Superpowers
 This project uses the **Superpowers** plugin. Follow its brainstorm → plan → execute discipline:
@@ -89,10 +75,10 @@ unmerged is what stranded TASK-8 (overlay v3 lived only on `task-8--overlay-v3` 
 
 ## Local dev (no Docker)
 - Node comes from `nvm` (`$HOME/.nvm/versions/node/v22.22.2/bin`) — prepend it if `node` isn't found.
-- The example app runs on **3100** (`pnpm --dir examples/nextjs exec next dev -p 3100`); 3000 is taken by Docker.
+- The example app is `examples/vite-react` (`pnpm --dir examples/vite-react exec vite`, default `:5173`).
 - Manual loop steps: `docs/superpowers/notes/phase1-manual-loop.md`.
 
 ## Guardrails
-- Prove the MVP on **one** integration (Next.js) before generalizing.
+- Prove the MVP on **one** integration (Vite + React) before generalizing.
 - Keep the integration-agnostic core separate from per-framework adapters.
-- No frontman server (Apache-2.0 middleware or AGPL Elixir) may be required at runtime — if a step needs it, stop and flag it.
+- The bridge is self-contained: no external server may be required at runtime — if a step needs it, stop and flag it.

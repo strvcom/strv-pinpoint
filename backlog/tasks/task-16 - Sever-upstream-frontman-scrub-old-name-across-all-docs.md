@@ -1,9 +1,10 @@
 ---
 id: TASK-16
 title: Sever upstream frontman + scrub old name across all docs
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-06-09 15:49'
+updated_date: '2026-06-09 15:54'
 labels:
   - chore
 dependencies: []
@@ -18,8 +19,8 @@ pinpoint has fully diverged from upstream frontman; sever the relationship and f
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 .reference/frontman + scripts/sync-reference.sh removed; CLAUDE.md Upstream/License sections + README background gone; reframed standalone
-- [ ] #2 frontman-flow (+ __frontmanFlow, data-frontman, FF_) scrubbed to pinpoint across all tracked docs except backlog/
-- [ ] #3 genuine upstream-frontman references preserved where historically accurate (frontman-ai/_server/etc.)
-- [ ] #4 no stale live-doc refs (nextjs example/3100); gates green
+- [x] #1 .reference/frontman + scripts/sync-reference.sh removed; CLAUDE.md Upstream/License sections + README background gone; reframed standalone
+- [x] #2 frontman-flow (+ __frontmanFlow, data-frontman, FF_) scrubbed to pinpoint across all tracked docs except backlog/
+- [x] #3 genuine upstream-frontman references preserved where historically accurate (frontman-ai/_server/etc.)
+- [x] #4 no stale live-doc refs (nextjs example/3100); gates green
 <!-- AC:END -->

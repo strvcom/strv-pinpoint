@@ -4,7 +4,7 @@
 
 **Goal:** On browser Send, the bridge writes a JSON annotation blob (+ saved screenshots) to the system clipboard; pasting it into Claude triggers a skill that acks the bridge over HTTP, which pushes an SSE status event back to that browser session so it clears — fully decoupled, session-keyed.
 
-**Architecture:** Extend the bridge's `:7331` HTTP server with session SSE + `/send` + `/ack` routes; a pure clipboard-JSON builder + `clipboardy` writer; a screenshot saver; a composable `bridge-link.ts` injected into the overlay (3 minimal touch-points); and a `frontman-flow-paste` skill. Spec: `docs/superpowers/specs/2026-06-07-annotate-lifecycle-design.md`.
+**Architecture:** Extend the bridge's `:7331` HTTP server with session SSE + `/send` + `/ack` routes; a pure clipboard-JSON builder + `clipboardy` writer; a screenshot saver; a composable `bridge-link.ts` injected into the overlay (3 minimal touch-points); and a `pinpoint-paste` skill. Spec: `docs/superpowers/specs/2026-06-07-annotate-lifecycle-design.md`.
 
 **Tech Stack:** Node 20+ (nvm: `export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"`), TypeScript ESM (`.js` imports), Vitest (colocated), Playwright/CDP, `clipboardy`, `@modelcontextprotocol/sdk`. Gates: Biome + Lefthook + typecheck (the `(0,eval)` Biome override is `playwright-page.ts` only). Branch: `task-9--annotate-lifecycle`.
 
@@ -42,10 +42,10 @@ import { buildClipboardJson } from "./clipboard-payload.js";
 const item = (over = {}) => ({ id: "a1", badge: 1, componentName: "Hero", ancestry: ["Hero", "App"], selector: "#h", tagName: "H1", text: "hi", rect: { x: 0, y: 0, width: 1, height: 1 }, comment: "bigger", wantScreenshot: false, ...over });
 
 describe("buildClipboardJson", () => {
-  it("emits the frontman-flow marker + session/prompt ids + items", () => {
+  it("emits the pinpoint marker + session/prompt ids + items", () => {
     const json = buildClipboardJson({ bridgeUrl: "http://localhost:7331", sessionId: "s1", promptId: "p1", items: [item({ badge: 1 }), item({ id: "a2", badge: 2, componentName: "Nav" })], screenshotPaths: { 1: "/tmp/anno-1.png", 2: null } });
     const o = JSON.parse(json);
-    expect(o.source).toBe("frontman-flow");
+    expect(o.source).toBe("pinpoint");
     expect(o.version).toBe(1);
     expect(o).toMatchObject({ bridgeUrl: "http://localhost:7331", sessionId: "s1", promptId: "p1" });
     expect(o.items).toHaveLength(2);
@@ -70,7 +70,7 @@ export interface ClipboardPayloadArgs {
 
 export function buildClipboardJson(args: ClipboardPayloadArgs): string {
   const payload = {
-    source: "frontman-flow",
+    source: "pinpoint",
     version: 1,
     bridgeUrl: args.bridgeUrl,
     sessionId: args.sessionId,
@@ -238,7 +238,7 @@ export interface SseServerDeps {
   sessions: SessionRegistry;
   writeClipboard: ClipboardWriter;
   bridgeUrl: string;
-  /** root tmp dir for screenshots, e.g. join(os.tmpdir(), "frontman-flow"). */
+  /** root tmp dir for screenshots, e.g. join(os.tmpdir(), "pinpoint"). */
   tmpRoot: string;
 }
 
@@ -255,7 +255,7 @@ async function readJson<T>(req: IncomingMessage): Promise<T> {
 }
 
 export function startSseServer(port: number, deps: SseServerDeps): Server {
-  const mcp = new McpServer({ name: "frontman-flow", version: "0.0.0" });
+  const mcp = new McpServer({ name: "pinpoint", version: "0.0.0" });
   registerTools(mcp, { page: deps.page });
   const transports = new Map<string, SSEServerTransport>();
 
@@ -336,7 +336,7 @@ export function startSseServer(port: number, deps: SseServerDeps): Server {
   return http;
 }
 ```
-- [ ] **Step 2:** `pnpm typecheck` clean; `pnpm --filter @frontman-flow/core build` succeeds; `pnpm test` still green (existing suite unaffected). The routes are covered by Task 12's integration test.
+- [ ] **Step 2:** `pnpm typecheck` clean; `pnpm --filter @pinpoint/core build` succeeds; `pnpm test` still green (existing suite unaffected). The routes are covered by Task 12's integration test.
 - [ ] **Step 3:** Commit: `git add packages/core/src/server/sse-server.ts && git commit -m "feat(core): session SSE + /send (clipboard) + /ack routes"`
 
 ## Task 7: Overlay bridge-link module
@@ -344,14 +344,14 @@ export function startSseServer(port: number, deps: SseServerDeps): Server {
 - [ ] **Step 1: Implement** (composable JS source, like `EXTRACT_SELECTION_FN`):
 ```ts
 /**
- * Injected as part of the overlay. Defines window.__frontmanFlowLink:
+ * Injected as part of the overlay. Defines window.__pinpointLink:
  *  - init(onStatus): opens the bridge SSE channel, routes {type:"status"} events to onStatus.
  *  - send(items): POSTs the batch to the bridge /send; resolves to the promptId.
- * Reads window.__frontmanFlowConfig = { bridgeUrl, sessionId } (injected by the connector).
+ * Reads window.__pinpointConfig = { bridgeUrl, sessionId } (injected by the connector).
  */
 export const BRIDGE_LINK_FN = String.raw`
-window.__frontmanFlowLink = (() => {
-  var cfg = window.__frontmanFlowConfig || {};
+window.__pinpointLink = (() => {
+  var cfg = window.__pinpointConfig || {};
   function init(onStatus) {
     if (!cfg.bridgeUrl || !cfg.sessionId) return;
     try {
@@ -374,7 +374,7 @@ window.__frontmanFlowLink = (() => {
 ```
 - [ ] **Step 2: Parse-check:**
 ```bash
-pnpm --filter @frontman-flow/core build
+pnpm --filter @pinpoint/core build
 node --input-type=module -e "import('./packages/core/dist/cdp/bridge-link.js').then(m=>{new Function(m.BRIDGE_LINK_FN);console.log('bridge-link parses')})"
 ```
 Expected: "bridge-link parses".
@@ -398,8 +398,8 @@ ${BRIDGE_LINK_FN}
 - [ ] **Step 2: init the link + Send via it.** Add `lastPromptId` to `state`, init the link inside `install()` (after `sync()`), and make the Send button call the link. Replace the Send button's `onclick` body:
 ```js
   // inside install(), after sync():
-  if (window.__frontmanFlowLink) {
-    window.__frontmanFlowLink.init(function (promptId, status) {
+  if (window.__pinpointLink) {
+    window.__pinpointLink.init(function (promptId, status) {
       if (status === 'running' && promptId === state.lastPromptId) {
         state.items = []; state.ready = false; renderAll(); sync();
       }
@@ -412,13 +412,13 @@ And the Send button (in `renderPanel`):
     e.stopPropagation();
     state.ready = true; state.batchId++; sync();
     sendBtn.textContent = 'Sent — paste into Claude (Cmd+Shift+V)'; sendBtn.style.background = '#143';
-    if (window.__frontmanFlowLink) { try { state.lastPromptId = await window.__frontmanFlowLink.send(serialize().items); } catch (_) {} }
+    if (window.__pinpointLink) { try { state.lastPromptId = await window.__pinpointLink.send(serialize().items); } catch (_) {} }
   };
 ```
 Add `lastPromptId: null` to the `state` object literal.
 - [ ] **Step 3: Build + parse-check + tests:**
 ```bash
-pnpm --filter @frontman-flow/core build
+pnpm --filter @pinpoint/core build
 node --input-type=module -e "import('./packages/core/dist/cdp/overlay-script.js').then(m=>{new Function(m.OVERLAY_SOURCE);console.log('overlay parses')})"
 pnpm test
 ```
@@ -442,13 +442,13 @@ export async function connect(opts: ConnectOptions): Promise<Connection> {
   if (!existing) await page.goto(opts.appUrl);
   const bridgePage = new PlaywrightPage(page);
   const sessionId = randomUUID();
-  const preamble = `window.__frontmanFlowConfig = ${JSON.stringify({ bridgeUrl: opts.bridgeUrl, sessionId })};`;
+  const preamble = `window.__pinpointConfig = ${JSON.stringify({ bridgeUrl: opts.bridgeUrl, sessionId })};`;
   await bridgePage.injectBootstrap(`${preamble}\n${OVERLAY_SOURCE}`);
   return { browser, page: bridgePage, sessionId, close: async () => { await browser.close(); } };
 }
 ```
-- [ ] **Step 2:** `pnpm typecheck` clean; `pnpm --filter @frontman-flow/core build` succeeds.
-- [ ] **Step 3:** Commit: `git add packages/core/src/cdp/connector.ts && git commit -m "feat(core): inject __frontmanFlowConfig (bridgeUrl + sessionId)"`
+- [ ] **Step 2:** `pnpm typecheck` clean; `pnpm --filter @pinpoint/core build` succeeds.
+- [ ] **Step 3:** Commit: `git add packages/core/src/cdp/connector.ts && git commit -m "feat(core): inject __pinpointConfig (bridgeUrl + sessionId)"`
 
 ## Task 10: CLI wiring
 **Files:** Modify `packages/core/src/cli.ts`
@@ -482,9 +482,9 @@ async function main() {
     sessions: new SessionRegistry(),
     writeClipboard: systemClipboard,
     bridgeUrl,
-    tmpRoot: join(tmpdir(), "frontman-flow"),
+    tmpRoot: join(tmpdir(), "pinpoint"),
   });
-  console.error(`frontman-flow MCP (SSE) on ${bridgeUrl}/sse · session ${connection.sessionId}`);
+  console.error(`pinpoint MCP (SSE) on ${bridgeUrl}/sse · session ${connection.sessionId}`);
   process.on("SIGINT", async () => { await connection.close(); process.exit(0); });
 }
 
@@ -493,19 +493,19 @@ main().catch((e) => { console.error(e); process.exit(1); });
 - [ ] **Step 2:** Build; smoke (no Chrome) → prints the connect hint + exit 1: `node packages/core/dist/cli.js; echo "exit=$?"`.
 - [ ] **Step 3:** Commit: `git add packages/core/src/cli.ts && git commit -m "feat(core): wire sessions + clipboard + bridgeUrl into the bridge"`
 
-## Task 11: frontman-flow-paste skill
-**Files:** Create `.claude/skills/frontman-flow-paste/SKILL.md`
+## Task 11: pinpoint-paste skill
+**Files:** Create `.claude/skills/pinpoint-paste/SKILL.md`
 - [ ] **Step 1: Write the skill:**
 ```markdown
 ---
-name: frontman-flow-paste
-description: Use when the user's message contains a JSON block with "source": "frontman-flow" (pasted from the frontman-flow browser overlay after clicking Send). Applies each annotation's comment to its component and acks the bridge so the browser clears.
+name: pinpoint-paste
+description: Use when the user's message contains a JSON block with "source": "pinpoint" (pasted from the pinpoint browser overlay after clicking Send). Applies each annotation's comment to its component and acks the bridge so the browser clears.
 ---
 
-# frontman-flow paste handler
+# pinpoint paste handler
 
-The user clicked **Send** in the frontman-flow overlay and pasted the resulting JSON. It looks like:
-`{ "source": "frontman-flow", "bridgeUrl", "sessionId", "promptId", "items": [{ badge, componentName, ancestry, selector, tagName, text, comment, screenshot }] }`.
+The user clicked **Send** in the pinpoint overlay and pasted the resulting JSON. It looks like:
+`{ "source": "pinpoint", "bridgeUrl", "sessionId", "promptId", "items": [{ badge, componentName, ancestry, selector, tagName, text, comment, screenshot }] }`.
 
 ## Steps
 1. **Parse** the JSON block from the message (ignore any surrounding prose the user added).
@@ -522,7 +522,7 @@ The user clicked **Send** in the frontman-flow overlay and pasted the resulting 
 - The comment is the instruction; an empty comment → ask the user what they want for that item.
 - Surrounding prose the user typed around the JSON is extra context — honor it.
 ```
-- [ ] **Step 2:** Commit: `git add .claude/skills/frontman-flow-paste && git commit -m "feat: frontman-flow-paste skill (ack + apply annotations)"`
+- [ ] **Step 2:** Commit: `git add .claude/skills/pinpoint-paste && git commit -m "feat: pinpoint-paste skill (ack + apply annotations)"`
 
 ## Task 12: Bridge integration test (Node, no browser)
 **Files:** Create `packages/core/integration/bridge-routes.integration.test.ts`
@@ -555,13 +555,13 @@ afterAll(() => server.close());
 const item = (over = {}) => ({ id: "a", badge: 1, componentName: "Hero", ancestry: ["Hero"], selector: "#h", tagName: "H1", text: "hi", rect: { x: 0, y: 0, width: 4, height: 4 }, comment: "bigger", wantScreenshot: false, ...over });
 
 describe("bridge routes", () => {
-  it("/send writes a frontman-flow JSON to the clipboard + saves flagged screenshots", async () => {
+  it("/send writes a pinpoint JSON to the clipboard + saves flagged screenshots", async () => {
     const res = await fetch(`${base}/session/s1/send`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ items: [item({ badge: 1, wantScreenshot: true, selector: "#h" }), item({ id: "a2", badge: 2, componentName: "Nav", wantScreenshot: false })] }) });
     const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.imageCount).toBe(1);
     const payload = JSON.parse(clip.at(-1) as string);
-    expect(payload.source).toBe("frontman-flow");
+    expect(payload.source).toBe("pinpoint");
     expect(payload.items).toHaveLength(2);
     expect(payload.items[0].screenshot).toMatch(/anno-1\.png$/);
     expect(existsSync(payload.items[0].screenshot)).toBe(true);
@@ -585,7 +585,7 @@ describe("bridge routes", () => {
   });
 });
 ```
-- [ ] **Step 2: Run:** `pnpm --filter @frontman-flow/core exec vitest run --config vitest.integration.config.ts bridge-routes`
+- [ ] **Step 2: Run:** `pnpm --filter @pinpoint/core exec vitest run --config vitest.integration.config.ts bridge-routes`
 Expected: PASS (2 tests).
 - [ ] **Step 3:** Commit: `git add packages/core/integration/bridge-routes.integration.test.ts && git commit -m "test(core): bridge routes integration (/send clipboard + /ack SSE)"`
 

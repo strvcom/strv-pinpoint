@@ -69,7 +69,7 @@ One card ↔ one branch. Name the branch (and a worktree, if you use one) `task-
 ```
 git checkout -b task-3--vite-adapter        # feature branch in place (default)
 # or, if you want isolation:
-git worktree add -b task-3--vite-adapter ../frontman-flow-task-3 main
+git worktree add -b task-3--vite-adapter ../pinpoint-task-3 main
 ```
 
 ## Relationship to superpowers & repo docs

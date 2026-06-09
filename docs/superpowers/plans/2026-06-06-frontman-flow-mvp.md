@@ -1,4 +1,4 @@
-# frontman-flow MVP Implementation Plan
+# pinpoint MVP Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -15,14 +15,14 @@
 ## File Structure
 
 ```
-frontman-flow/
+pinpoint/
 ├─ package.json                 # pnpm workspace root + scripts
 ├─ pnpm-workspace.yaml
 ├─ tsconfig.base.json
 ├─ vitest.config.ts
 ├─ .mcp.json                    # Claude Code → bridge SSE wiring (Task 1.13)
 ├─ packages/core/
-│  ├─ package.json              # @frontman-flow/core, bin: frontman-flow
+│  ├─ package.json              # @pinpoint/core, bin: pinpoint
 │  ├─ tsconfig.json
 │  └─ src/
 │     ├─ types.ts                       # shared types (Task 1.2)
@@ -56,10 +56,10 @@ frontman-flow/
 │     └─ index.ts                       # public exports (Task 1.2)
 ├─ examples/nextjs/             # throwaway Next.js app + frontman middleware (Task 0.2)
 └─ docs/superpowers/
-   ├─ specs/2026-06-06-frontman-flow-design.md
+   ├─ specs/2026-06-06-pinpoint-design.md
    ├─ notes/phase0-frontman-contract.md   # Phase 0 deliverable (Task 0.1)
    ├─ notes/phase0-spike-findings.md       # Phase 0 deliverable (Tasks 0.2–0.3)
-   └─ plans/2026-06-06-frontman-flow-mvp.md
+   └─ plans/2026-06-06-pinpoint-mvp.md
 ```
 
 ---
@@ -253,7 +253,7 @@ Phase 1 builds the bridge with TDD against fakes; the real CDP/SDK wiring is pro
 `package.json`:
 ```json
 {
-  "name": "frontman-flow",
+  "name": "pinpoint",
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
@@ -314,10 +314,10 @@ export default defineConfig({
 `packages/core/package.json`:
 ```json
 {
-  "name": "@frontman-flow/core",
+  "name": "@pinpoint/core",
   "version": "0.0.0",
   "type": "module",
-  "bin": { "frontman-flow": "./dist/cli.js" },
+  "bin": { "pinpoint": "./dist/cli.js" },
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -353,7 +353,7 @@ Expected: lockfile created, no errors.
 
 ```bash
 git add package.json pnpm-workspace.yaml tsconfig.base.json vitest.config.ts packages/core/package.json packages/core/tsconfig.json pnpm-lock.yaml
-git commit -m "chore(core): scaffold pnpm workspace + @frontman-flow/core"
+git commit -m "chore(core): scaffold pnpm workspace + @pinpoint/core"
 ```
 
 ## Task 1.2: Shared types
@@ -1021,7 +1021,7 @@ import { SELECTION_PROBE, type RawSelection } from "../cdp/selection-probe.js";
 import { registerTools } from "./register-tools.js";
 
 async function connectedClient(page: FakePage) {
-  const server = new McpServer({ name: "frontman-flow", version: "0.0.0" });
+  const server = new McpServer({ name: "pinpoint", version: "0.0.0" });
   registerTools(server, { page });
   const client = new Client({ name: "test", version: "0.0.0" });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -1225,9 +1225,9 @@ describe("parseConfig", () => {
 
   it("reads overrides and defaults frontmanBaseUrl to appUrl", () => {
     const cfg = parseConfig({
-      FF_MCP_PORT: "9000",
-      FF_CDP_URL: "http://localhost:9333",
-      FF_APP_URL: "http://localhost:4321",
+      PIN_MCP_PORT: "9000",
+      PIN_CDP_URL: "http://localhost:9333",
+      PIN_APP_URL: "http://localhost:4321",
     });
     expect(cfg.mcpPort).toBe(9000);
     expect(cfg.appUrl).toBe("http://localhost:4321");
@@ -1253,12 +1253,12 @@ export interface BridgeConfig {
 }
 
 export function parseConfig(env: Record<string, string | undefined>): BridgeConfig {
-  const appUrl = env.FF_APP_URL ?? "http://localhost:3000";
+  const appUrl = env.PIN_APP_URL ?? "http://localhost:3000";
   return {
-    mcpPort: env.FF_MCP_PORT ? Number(env.FF_MCP_PORT) : 7331,
-    cdpUrl: env.FF_CDP_URL ?? "http://localhost:9222",
+    mcpPort: env.PIN_MCP_PORT ? Number(env.PIN_MCP_PORT) : 7331,
+    cdpUrl: env.PIN_CDP_URL ?? "http://localhost:9222",
     appUrl,
-    frontmanBaseUrl: env.FF_FRONTMAN_BASE_URL ?? appUrl,
+    frontmanBaseUrl: env.PIN_FRONTMAN_BASE_URL ?? appUrl,
   };
 }
 ```
@@ -1293,7 +1293,7 @@ import type { ToolDeps } from "../tools/deps.js";
 import { registerTools } from "./register-tools.js";
 
 export function startSseServer(port: number, deps: ToolDeps): Server {
-  const mcp = new McpServer({ name: "frontman-flow", version: "0.0.0" });
+  const mcp = new McpServer({ name: "pinpoint", version: "0.0.0" });
   registerTools(mcp, deps);
 
   const transports = new Map<string, SSEServerTransport>();
@@ -1349,7 +1349,7 @@ async function main() {
     process.exit(1);
   }
   startSseServer(cfg.mcpPort, { page: connection.page });
-  console.error(`frontman-flow MCP server (SSE) on http://localhost:${cfg.mcpPort}/sse`);
+  console.error(`pinpoint MCP server (SSE) on http://localhost:${cfg.mcpPort}/sse`);
   process.on("SIGINT", async () => {
     await connection.close();
     process.exit(0);
@@ -1366,7 +1366,7 @@ main().catch((err) => {
 
 Run:
 ```bash
-pnpm --filter @frontman-flow/core build
+pnpm --filter @pinpoint/core build
 node packages/core/dist/cli.js & sleep 1; kill %1 2>/dev/null || true
 ```
 Expected: it prints the Chrome-connection error (no Chrome on 9222 yet) and exits 1 — confirming the CLI wires up and the error guidance fires.
@@ -1389,7 +1389,7 @@ git commit -m "feat(core): SSE MCP server + CLI entrypoint"
 ```json
 {
   "mcpServers": {
-    "frontman-flow": {
+    "pinpoint": {
       "type": "sse",
       "url": "http://localhost:7331/sse"
     }
@@ -1399,13 +1399,13 @@ git commit -m "feat(core): SSE MCP server + CLI entrypoint"
 
 - [ ] **Step 2: Document the allowedTools scoping**
 
-Add a short note to `README` later (Phase 4), but record now in the commit body: Claude Code is granted `mcp__frontman-flow__get_selection` and `mcp__frontman-flow__screenshot`.
+Add a short note to `README` later (Phase 4), but record now in the commit body: Claude Code is granted `mcp__pinpoint__get_selection` and `mcp__pinpoint__screenshot`.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add .mcp.json
-git commit -m "feat: wire Claude Code to the frontman-flow SSE MCP server"
+git commit -m "feat: wire Claude Code to the pinpoint SSE MCP server"
 ```
 
 ## Task 1.14: End-to-end integration test (the loop)
@@ -1441,8 +1441,8 @@ import { connect, type Connection } from "../src/cdp/connector.js";
 import { getSelectionTool } from "../src/tools/get-selection.js";
 import { screenshotTool } from "../src/tools/screenshot-tool.js";
 
-const APP_URL = process.env.FF_APP_URL ?? "http://localhost:3000";
-const CDP_URL = process.env.FF_CDP_URL ?? "http://localhost:9222";
+const APP_URL = process.env.PIN_APP_URL ?? "http://localhost:3000";
+const CDP_URL = process.env.PIN_CDP_URL ?? "http://localhost:9222";
 
 let connection: Connection;
 
@@ -1461,7 +1461,7 @@ afterAll(async () => {
   await connection?.close();
 });
 
-describe("frontman-flow loop (integration)", () => {
+describe("pinpoint loop (integration)", () => {
   it("get_selection returns a real source file+line for the selected element", async () => {
     const result = await getSelectionTool({ page: connection.page });
     const payload = JSON.parse((result.content[0] as { text: string }).text);
@@ -1487,7 +1487,7 @@ Run, in order:
 ```bash
 pnpm --dir examples/nextjs dev &                 # terminal A (dev app, Elixir off)
 google-chrome --remote-debugging-port=9222 --user-data-dir=/tmp/ff-chrome http://localhost:3000 &
-pnpm --filter @frontman-flow/core exec vitest run --config vitest.integration.config.ts
+pnpm --filter @pinpoint/core exec vitest run --config vitest.integration.config.ts
 ```
 Expected: PASS (2 tests) — `get_selection` yields a real `.tsx` file+line; `screenshot` yields PNG bytes.
 
@@ -1507,7 +1507,7 @@ git commit -m "test(core): end-to-end loop integration test (get_selection + scr
 
 With the dev app (Elixir off) + Chrome (debug port) up, start the bridge:
 ```bash
-pnpm --filter @frontman-flow/core build && node packages/core/dist/cli.js
+pnpm --filter @pinpoint/core build && node packages/core/dist/cli.js
 ```
 In a Claude Code session (this repo, `.mcp.json` picked up), click an element in the overlay, then ask Claude to "change the selected element's text/spacing." Confirm Claude calls `get_selection`, opens the file with its native tools, edits it, and the dev app HMR-reloads with the change.
 
@@ -1626,21 +1626,21 @@ and record their args. (Same testing pattern as the original Task 1.3 fake.)
 (a string injected via `injectBootstrap`). It must: prepend `EXTRACT_SELECTION_FN` from
 `selection-probe.ts`; render a tiny fixed toolbar (buttons **Pick** / **Region** / **Off**, very high
 z-index); in **Pick** mode outline the hovered element and on click call
-`window.__frontmanFlowExtractSelection(el)` → store on `window.__frontmanFlowSelection` and draw a
+`window.__pinpointExtractSelection(el)` → store on `window.__pinpointSelection` and draw a
 persistent outline + a badge showing `componentName`; in **Region** mode draw a click-drag marquee and
-on mouseup store `{x,y,width,height}` (viewport/clientX-Y coords) on `window.__frontmanFlowRegion`;
+on mouseup store `{x,y,width,height}` (viewport/clientX-Y coords) on `window.__pinpointRegion`;
 `Escape` exits. Keep it dependency-free vanilla JS. Concretely:
 ```ts
 import { EXTRACT_SELECTION_FN, SELECTION_GLOBAL } from "./selection-probe.js";
 
-export const REGION_GLOBAL = "__frontmanFlowRegion";
+export const REGION_GLOBAL = "__pinpointRegion";
 export const REGION_PROBE = `window.${REGION_GLOBAL} ?? null`;
 
 export const OVERLAY_SOURCE = `
 ${EXTRACT_SELECTION_FN}
 (() => {
-  if (window.__frontmanFlowOverlayInstalled) return;
-  window.__frontmanFlowOverlayInstalled = true;
+  if (window.__pinpointOverlayInstalled) return;
+  window.__pinpointOverlayInstalled = true;
   var Z = 2147483640;
   var mode = null; // 'pick' | 'region' | null
   var hi = document.createElement('div');   // hover/selection highlight
@@ -1661,7 +1661,7 @@ ${EXTRACT_SELECTION_FN}
   document.documentElement.appendChild(bar);
   function setMode(m) { mode = m; hi.style.display = 'none'; if (m !== 'region') marquee.style.display = 'none'; document.body.style.cursor = m ? 'crosshair' : ''; }
   document.addEventListener('mousemove', function (e) { if (mode !== 'pick') return; var el = document.elementFromPoint(e.clientX, e.clientY); if (!el || bar.contains(el)) return; var r = el.getBoundingClientRect(); box(hi, r); }, true);
-  document.addEventListener('click', function (e) { if (mode !== 'pick') return; if (bar.contains(e.target)) return; e.preventDefault(); e.stopPropagation(); var el = document.elementFromPoint(e.clientX, e.clientY); if (!el) return; var data = window.__frontmanFlowExtractSelection(el); window['${SELECTION_GLOBAL}'] = data; box(sel, data.rect); badge.style.display = 'block'; badge.style.left = data.rect.x + 'px'; badge.style.top = Math.max(0, data.rect.y - 20) + 'px'; badge.textContent = data.componentName || data.tagName; }, true);
+  document.addEventListener('click', function (e) { if (mode !== 'pick') return; if (bar.contains(e.target)) return; e.preventDefault(); e.stopPropagation(); var el = document.elementFromPoint(e.clientX, e.clientY); if (!el) return; var data = window.__pinpointExtractSelection(el); window['${SELECTION_GLOBAL}'] = data; box(sel, data.rect); badge.style.display = 'block'; badge.style.left = data.rect.x + 'px'; badge.style.top = Math.max(0, data.rect.y - 20) + 'px'; badge.textContent = data.componentName || data.tagName; }, true);
   var drag = null;
   document.addEventListener('mousedown', function (e) { if (mode !== 'region') return; if (bar.contains(e.target)) return; e.preventDefault(); drag = { x: e.clientX, y: e.clientY }; }, true);
   document.addEventListener('mousemove', function (e) { if (mode !== 'region' || !drag) return; var r = { x: Math.min(drag.x, e.clientX), y: Math.min(drag.y, e.clientY), width: Math.abs(e.clientX - drag.x), height: Math.abs(e.clientY - drag.y) }; box(marquee, r); }, true);
@@ -1715,8 +1715,8 @@ calling `get_selection` returns identity JSON).
 
 ## R1.12 — Config
 **Same as original Task 1.11** minus `frontmanBaseUrl`: `{ mcpPort=7331, cdpUrl="http://localhost:9222",
-appUrl="http://localhost:3000" }` with `FF_*` env overrides. **NOTE for this machine:** the example dev
-server runs on **3100** (3000 is taken by Docker), so set `FF_APP_URL=http://localhost:3100`.
+appUrl="http://localhost:3000" }` with `PIN_*` env overrides. **NOTE for this machine:** the example dev
+server runs on **3100** (3000 is taken by Docker), so set `PIN_APP_URL=http://localhost:3100`.
 
 ## R1.13 — SSE server + CLI
 **Same as original Tasks 1.12** (SSE MCP server + `cli.ts`), wiring `{page}` from the connector. CLI
@@ -1724,13 +1724,13 @@ prints the Chrome-connect hint on failure.
 
 ## R1.14 — .mcp.json
 **Same as original Task 1.13**: SSE server at `http://localhost:7331/sse`, tools
-`mcp__frontman-flow__get_selection` and `mcp__frontman-flow__screenshot`.
+`mcp__pinpoint__get_selection` and `mcp__pinpoint__screenshot`.
 
 ## R1.15 — Integration test (the loop)
 Boot `examples/nextjs` (on 3100) + a Chrome with `--remote-debugging-port=9222`. Connect; inject overlay;
-**programmatically** drive the gestures via `page.evaluate` (set `window.__frontmanFlowSelection =
-window.__frontmanFlowExtractSelection(document.querySelector('#ct-heading'))` on `/clienttest`, and set
-`window.__frontmanFlowRegion = {x,y,width,height}`); assert `get_selection` returns
+**programmatically** drive the gestures via `page.evaluate` (set `window.__pinpointSelection =
+window.__pinpointExtractSelection(document.querySelector('#ct-heading'))` on `/clienttest`, and set
+`window.__pinpointRegion = {x,y,width,height}`); assert `get_selection` returns
 `componentName:"ClientTest"` and `screenshot({target:"region"})`/`{target:"selection"}` return PNG bytes
 (>100). Excluded from default `vitest run`; run via the integration config.
 

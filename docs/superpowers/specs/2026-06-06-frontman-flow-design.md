@@ -1,4 +1,4 @@
-# frontman-flow — Design
+# pinpoint — Design
 
 > Status: approved design (brainstorm output), **amended after Phase 0** — see
 > **"Design amendment (post-Phase-0)"** at the end, which supersedes the relevant parts below.
@@ -172,16 +172,16 @@ for the MVP loop (frontman's HTTP tools are deferred/optional, a later phase). T
 
 1. **Element pick** (click): hover highlight → on click, run the validated fiber-identity extractor
    (`packages/core/src/cdp/selection-probe.ts`) → store
-   `{ componentName, ancestry[], selector, tagName, text, rect }` on `window.__frontmanFlowSelection`;
+   `{ componentName, ancestry[], selector, tagName, text, rect }` on `window.__pinpointSelection`;
    show a persistent outline + a component-name badge.
 2. **Region capture** (click-and-drag marquee, like a standard partial-screenshot picker): draw a
-   rubber-band rectangle → store the arbitrary `{ x, y, width, height }` on `window.__frontmanFlowRegion`.
+   rubber-band rectangle → store the arbitrary `{ x, y, width, height }` on `window.__pinpointRegion`.
 
 MCP tools exposed to Claude Code over SSE (names unchanged):
 
 | Tool | Returns | How |
 |---|---|---|
-| `get_selection` | `{ componentName, ancestry, selector, tagName, text, rect }` or `{status:"none"}` | read `__frontmanFlowSelection` via CDP. **No resolved file** — Claude greps the repo by component name + text to locate source. |
+| `get_selection` | `{ componentName, ancestry, selector, tagName, text, rect }` or `{status:"none"}` | read `__pinpointSelection` via CDP. **No resolved file** — Claude greps the repo by component name + text to locate source. |
 | `screenshot` | PNG of `viewport` \| `region` (the drag-selected rect) \| `selection` (selected element's rect) \| a CSS selector | CDP capture; partial captures use `page.screenshot({ clip })`. |
 
 The loop: dev picks an element and/or drags a region in the CDP-attached Chrome → tells Claude "change
