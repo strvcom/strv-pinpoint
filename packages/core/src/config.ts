@@ -15,6 +15,6 @@ export function parseConfig(env: Record<string, string | undefined>): BridgeConf
     cdpUrl: env.PIN_CDP_URL ?? "http://localhost:9222",
     appUrl: env.PIN_APP_URL ?? "http://localhost:5173",
     chromePath: env.PIN_CHROME_PATH,
-    profileDir: env.PIN_CHROME_PROFILE ?? join(tmpdir(), "ff-chrome"),
+    profileDir: env.PIN_CHROME_PROFILE ?? join(tmpdir(), "pp-chrome"),
   };
 }

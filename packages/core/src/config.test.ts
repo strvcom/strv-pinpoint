@@ -31,7 +31,7 @@ describe("parseConfig", () => {
   });
 
   it("defaults profileDir and overrides from PIN_CHROME_PROFILE", () => {
-    expect(parseConfig({}).profileDir).toMatch(/ff-chrome/);
+    expect(parseConfig({}).profileDir).toMatch(/pp-chrome/);
     expect(parseConfig({ PIN_CHROME_PROFILE: "/p" }).profileDir).toBe("/p");
   });
 });

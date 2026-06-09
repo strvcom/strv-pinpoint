@@ -6,8 +6,8 @@ import type { Annotation } from "../types.js";
 // Hide/show the injected overlay (anything tagged data-pinpoint) so its badges/cards/outlines
 // don't appear in captured screenshots. Evaluated in the page; a no-op for non-DOM pages.
 const HIDE_OVERLAY =
-  "(()=>{var s=document.getElementById('__ffHide')||document.createElement('style');s.id='__ffHide';s.textContent='[data-pinpoint]{visibility:hidden!important}';document.documentElement.appendChild(s);})()";
-const SHOW_OVERLAY = "(()=>{var s=document.getElementById('__ffHide');if(s)s.remove();})()";
+  "(()=>{var s=document.getElementById('__ppHide')||document.createElement('style');s.id='__ppHide';s.textContent='[data-pinpoint]{visibility:hidden!important}';document.documentElement.appendChild(s);})()";
+const SHOW_OVERLAY = "(()=>{var s=document.getElementById('__ppHide');if(s)s.remove();})()";
 
 /** Capture a PNG for each wantScreenshot item; returns badge -> absolute path (or null). */
 export async function saveScreenshots(

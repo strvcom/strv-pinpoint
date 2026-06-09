@@ -36,7 +36,7 @@ export async function connect(opts: ConnectOptions): Promise<Connection> {
   if (!(await isCdpUp(base))) {
     const chromePath = opts.chromePath ?? findChrome();
     const port = Number(new URL(base).port || 9222);
-    const profileDir = opts.profileDir ?? "/tmp/ff-chrome";
+    const profileDir = opts.profileDir ?? "/tmp/pp-chrome";
     const child = launchChrome({ chromePath, port, profileDir, appUrl: opts.appUrl });
     kill = () => child.kill();
     // A bad binary path emits an async 'error' (ENOENT); surface it as a clear

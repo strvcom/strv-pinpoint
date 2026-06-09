@@ -22,7 +22,7 @@ async function main() {
   } catch (err) {
     console.error(
       `Could not connect to Chrome at ${cfg.cdpUrl}. Launch Chrome with:\n` +
-        `  <chrome> --remote-debugging-port=9222 --user-data-dir=/tmp/ff-chrome ${cfg.appUrl}\n` +
+        `  <chrome> --remote-debugging-port=9222 --user-data-dir=/tmp/pp-chrome ${cfg.appUrl}\n` +
         `Original error: ${(err as Error).message}`,
     );
     process.exit(1);

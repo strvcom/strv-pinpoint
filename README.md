@@ -41,7 +41,7 @@ PIN_APP_URL=http://localhost:5180 node packages/core/dist/cli.js
 ```
 
 If a debug Chrome is already listening on `:9222`, the bridge **attaches** to it instead of launching one (so you can reuse your own session — start it with
-`"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222 --user-data-dir=/tmp/ff-chrome http://localhost:5180`).
+`"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222 --user-data-dir=/tmp/pp-chrome http://localhost:5180`).
 
 Then click in the overlay, comment, **Send**, and paste the copied JSON into a Claude Code session — the `pinpoint-paste` skill applies it.
 
@@ -64,7 +64,7 @@ The kickoff: `/pinpoint:start` launches the bridge (which opens Chrome + injects
 ## Limitations
 
 - Identity is best-effort: client components resolve via the React fiber chain; component names can be `null` for some trees — Claude then falls back to visible text + CSS selector + screenshot.
-- Region screenshots clip the **current viewport**, so pick/drag what's on screen (don't scroll the target off-view first).
+- Region screenshots clip the **current viewport**, so pick/drag what's on screen (don't scroll the target opp-view first).
 - React only for now (fiber-based identity). Other frameworks/Astro islands are future work (see the board).
 
 ## Project layout & conventions
