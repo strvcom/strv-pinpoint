@@ -3,7 +3,8 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { type Connection, connect } from "../src/cdp/connector.js";
+import { createCdpDriver } from "../src/driver/cdp-driver.js";
+import type { DriverSession } from "../src/driver/driver.js";
 import { startBridgeServer } from "../src/server/bridge-server.js";
 import { SessionRegistry } from "../src/server/sessions.js";
 import type { SelectionFound } from "../src/types.js";
@@ -22,14 +23,17 @@ const APP_URL = process.env.PIN_VITE_URL ?? "http://localhost:5180";
 const CDP_URL = process.env.PIN_CDP_URL ?? "http://localhost:9222";
 const tmpRoot = join(tmpdir(), `pp-loop-${Math.floor(Math.random() * 1e9)}`);
 
-let connection: Connection;
+let connection: DriverSession;
 let server: ReturnType<typeof startBridgeServer>;
 let base: string;
 const clip: string[] = [];
 
 beforeAll(async () => {
-  connection = await connect({
+  const driver = createCdpDriver({
     cdpUrl: CDP_URL,
+    profileDir: "/tmp/pp-chrome",
+  });
+  connection = await driver.connect({
     appUrl: APP_URL,
     bridgeUrl: "http://localhost:7331",
   });
@@ -43,6 +47,8 @@ beforeAll(async () => {
     tmpRoot,
     appUrl: APP_URL,
     sessionId: connection.sessionId,
+    projectName: "test",
+    projectDir: process.cwd(),
   });
   await new Promise((r) => server.on("listening", r));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

@@ -16,6 +16,8 @@ beforeAll(async () => {
     tmpRoot: "/tmp/pp-health-test",
     appUrl: "http://localhost:5180",
     sessionId: "sess-123",
+    projectName: "my-app",
+    projectDir: "/home/user/projects/my-app",
   });
   await new Promise((r) => server.on("listening", r));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -27,7 +29,19 @@ describe("bridge /health", () => {
     const res = await fetch(`${base}/health`);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toEqual({ ok: true, appUrl: "http://localhost:5180", sessionId: "sess-123" });
+    expect(body).toEqual({
+      ok: true,
+      appUrl: "http://localhost:5180",
+      sessionId: "sess-123",
+      project: { name: "my-app", dir: "/home/user/projects/my-app" },
+    });
+  });
+
+  it("GET /health includes project identity matching deps", async () => {
+    const res = await fetch(`${base}/health`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.project).toEqual({ name: "my-app", dir: "/home/user/projects/my-app" });
   });
 
   it("unknown route still returns 404", async () => {

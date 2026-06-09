@@ -1,10 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { type Connection, connect } from "../src/cdp/connector.js";
+import { createCdpDriver } from "../src/driver/cdp-driver.js";
+import type { DriverSession } from "../src/driver/driver.js";
 import type { SelectionFound } from "../src/types.js";
 
 /**
  * Proves the CDP + fiber-identity bridge works on Vite + React. The extractor
- * runs in-page (window.__pinpointExtractSelection), injected by connect().
+ * runs in-page (window.__pinpointExtractSelection), injected by the CDP driver's connect().
  * Requires examples/vite-react running + Chrome on 9222.
  *
  *   pnpm --dir examples/vite-react exec vite --port 5180 --strictPort &
@@ -14,11 +15,14 @@ import type { SelectionFound } from "../src/types.js";
 const APP_URL = process.env.PIN_VITE_URL ?? "http://localhost:5180";
 const CDP_URL = process.env.PIN_CDP_URL ?? "http://localhost:9222";
 
-let connection: Connection;
+let connection: DriverSession;
 
 beforeAll(async () => {
-  connection = await connect({
+  const driver = createCdpDriver({
     cdpUrl: CDP_URL,
+    profileDir: "/tmp/pp-chrome",
+  });
+  connection = await driver.connect({
     appUrl: APP_URL,
     bridgeUrl: "http://localhost:7331",
   });
