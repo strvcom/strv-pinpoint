@@ -47,6 +47,8 @@ beforeAll(async () => {
     tmpRoot,
     appUrl: APP_URL,
     sessionId: connection.sessionId,
+    projectName: "test",
+    projectDir: process.cwd(),
   });
   await new Promise((r) => server.on("listening", r));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

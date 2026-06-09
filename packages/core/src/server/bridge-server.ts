@@ -19,6 +19,10 @@ export interface BridgeServerDeps {
   appUrl: string;
   /** The session id injected into the overlay (reported by /health). */
   sessionId: string;
+  /** Human-facing project name (basename of cwd) — for multi-session disambiguation. */
+  projectName: string;
+  /** Absolute project dir — for multi-session disambiguation. */
+  projectDir: string;
 }
 
 function cors(res: ServerResponse): void {
@@ -43,9 +47,14 @@ export function startBridgeServer(port: number, deps: BridgeServerDeps): Server 
     }
 
     if (req.method === "GET" && url.pathname === "/health") {
-      res
-        .writeHead(200, { "Content-Type": "application/json" })
-        .end(JSON.stringify({ ok: true, appUrl: deps.appUrl, sessionId: deps.sessionId }));
+      res.writeHead(200, { "Content-Type": "application/json" }).end(
+        JSON.stringify({
+          ok: true,
+          appUrl: deps.appUrl,
+          sessionId: deps.sessionId,
+          project: { name: deps.projectName, dir: deps.projectDir },
+        }),
+      );
       return;
     }
 

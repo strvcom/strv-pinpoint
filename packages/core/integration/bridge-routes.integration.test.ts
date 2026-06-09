@@ -25,6 +25,8 @@ beforeAll(async () => {
     tmpRoot,
     appUrl: "http://localhost:5180",
     sessionId: "test-session",
+    projectName: "test",
+    projectDir: "/tmp",
   });
   await new Promise((r) => server.on("listening", r));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

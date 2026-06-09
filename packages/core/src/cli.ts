@@ -1,22 +1,53 @@
 #!/usr/bin/env node
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { homedir, tmpdir } from "node:os";
+import { basename, join } from "node:path";
 import { systemClipboard } from "./clipboard/write.js";
+import { readPinpointConfig } from "./config/pinpoint-config.js";
+import { resolveProfileDir } from "./config/profile-dir.js";
 import { parseConfig } from "./config.js";
 import { createCdpDriver } from "./driver/cdp-driver.js";
 import type { Driver, DriverSession } from "./driver/driver.js";
 import { startBridgeServer } from "./server/bridge-server.js";
 import { SessionRegistry } from "./server/sessions.js";
+import { runSetup } from "./setup/run-setup.js";
 
-async function main() {
+function buildDriver(cfg: ReturnType<typeof parseConfig>, profileDir: string): Driver {
+  return createCdpDriver({ cdpUrl: cfg.cdpUrl, chromePath: cfg.chromePath, profileDir });
+}
+
+async function setup(profileMode: "home" | "repo") {
+  const cwd = process.cwd();
   const cfg = parseConfig(process.env as Record<string, string | undefined>);
-  const bridgeUrl = `http://localhost:${cfg.port}`;
-
-  const driver: Driver = createCdpDriver({
-    cdpUrl: cfg.cdpUrl,
-    chromePath: cfg.chromePath,
-    profileDir: cfg.profileDir,
+  const profileDir = resolveProfileDir({ cwd, home: homedir(), mode: profileMode });
+  const res = await runSetup({
+    cwd,
+    home: homedir(),
+    profileMode,
+    driver: buildDriver(cfg, profileDir),
   });
+  if (!res.ok) {
+    console.error(`pinpoint setup: ${res.reason}\n${res.remedy}`);
+    process.exit(1);
+  }
+  console.error(
+    `pinpoint setup: driver=${res.driver} profile=${res.profileDir}\nwrote ${res.configPath}`,
+  );
+}
+
+async function start() {
+  const cwd = process.cwd();
+  const env = parseConfig(process.env as Record<string, string | undefined>);
+  const file = readPinpointConfig(cwd) ?? {};
+  // Precedence: explicit env override > config file > built-in default.
+  const cfg = {
+    ...env,
+    port: process.env.PIN_PORT ? env.port : (file.port ?? env.port),
+    profileDir: process.env.PIN_CHROME_PROFILE
+      ? env.profileDir
+      : (file.profileDir ?? env.profileDir),
+  };
+  const bridgeUrl = `http://localhost:${cfg.port}`;
+  const driver = buildDriver(cfg, cfg.profileDir);
 
   const health = await driver.healthCheck();
   if (!health.ok) {
@@ -46,12 +77,26 @@ async function main() {
     tmpRoot: join(tmpdir(), "pinpoint"),
     appUrl: cfg.appUrl,
     sessionId: session.sessionId,
+    projectName: basename(cwd),
+    projectDir: cwd,
   });
   console.error(`pinpoint bridge on ${bridgeUrl} · session ${session.sessionId}`);
   process.on("SIGINT", async () => {
     await session.close();
     process.exit(0);
   });
+}
+
+async function main() {
+  const [cmd, ...rest] = process.argv.slice(2);
+  if (cmd === "setup") {
+    const mode = rest.includes("--profile-mode")
+      ? (rest[rest.indexOf("--profile-mode") + 1] as "home" | "repo")
+      : "home";
+    await setup(mode === "repo" ? "repo" : "home");
+    return;
+  }
+  await start();
 }
 
 main().catch((e) => {
