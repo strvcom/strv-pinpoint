@@ -11,6 +11,8 @@ const result = await build({
   platform: "browser",
   target: "es2020",
   write: false,
+  jsx: "automatic",
+  jsxImportSource: "preact",
 });
 const code = result.outputFiles[0].text;
 const out = join(here, "../src/cdp/overlay-source.generated.ts");
