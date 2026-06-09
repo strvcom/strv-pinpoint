@@ -28,7 +28,7 @@ export function createCdpDriver(config: CdpDriverConfig, deps: CdpDriverDeps = {
       if (await cdpUp(config.cdpUrl)) return { ok: true };
       try {
         const path = config.chromePath ?? findChrome({ env, exists });
-        if (exists(path) || config.chromePath) return { ok: true };
+        if (exists(path)) return { ok: true };
         return { ok: false, reason: `Chrome not found at ${path}`, remedy: REMEDY };
       } catch (e) {
         return { ok: false, reason: (e as Error).message, remedy: REMEDY };

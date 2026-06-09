@@ -28,6 +28,15 @@ describe("createCdpDriver().healthCheck", () => {
     }
   });
 
+  it("not ok when explicit chromePath does not exist", async () => {
+    const d = createCdpDriver(
+      { cdpUrl: "http://localhost:9222", profileDir: "/tmp/p", chromePath: "/no/such/chrome" },
+      { isCdpUp: async () => false, exists: () => false, env: {} },
+    );
+    const h = await d.healthCheck();
+    expect(h.ok).toBe(false);
+  });
+
   it("exposes its name", () => {
     expect(createCdpDriver(cfg).name).toBe("cdp");
   });
