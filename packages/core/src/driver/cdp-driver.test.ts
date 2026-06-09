@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createCdpDriver } from "./cdp-driver.js";
 
 const cfg = { cdpUrl: "http://localhost:9222", profileDir: "/tmp/p" };
@@ -41,3 +41,37 @@ describe("createCdpDriver().healthCheck", () => {
     expect(createCdpDriver(cfg).name).toBe("cdp");
   });
 });
+
+describe("createCdpDriver().connect", () => {
+  it("attaches to an up CDP endpoint, injects the overlay, returns a session", async () => {
+    const injected: string[] = [];
+    const fakePage = {
+      injectBootstrap: async (src: string) => void injected.push(src),
+    } as unknown as DriverSessionPage;
+    const cdp = { send: vi.fn(async () => ({})), close: vi.fn() };
+
+    const d = createCdpDriver(
+      { cdpUrl: "http://localhost:9222", profileDir: "/tmp/p" },
+      {
+        isCdpUp: async () => true, // already up → no launch
+        discoverPageTarget: async () => "ws://localhost:9222/devtools/page/AB",
+        attach: async () => cdp,
+        makePage: () => fakePage,
+      },
+    );
+
+    const session = await d.connect({
+      appUrl: "http://localhost:5173",
+      bridgeUrl: "http://localhost:7331",
+    });
+    expect(cdp.send).toHaveBeenCalledWith("Page.enable");
+    expect(injected[0]).toContain("__pinpointConfig");
+    expect(injected[0]).toContain("http://localhost:7331");
+    expect(typeof session.sessionId).toBe("string");
+    await session.close();
+    expect(cdp.close).toHaveBeenCalled();
+  });
+});
+
+// minimal structural type for the fake (kept local to the test)
+type DriverSessionPage = import("../cdp/page.js").BridgePage;
