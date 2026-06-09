@@ -3,9 +3,10 @@ id: TASK-19
 title: >-
   Make the injected overlay testable: author as TS modules + esbuild bundle +
   DOM unit tests
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-09 18:05'
+updated_date: '2026-06-09 21:55'
 labels:
   - refactor
 dependencies: []
