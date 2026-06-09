@@ -38,7 +38,7 @@ function setup(overrides: Partial<MarksLayerProps> = {}) {
     open: {},
     fabOpen: true,
     confirming: false,
-    pressingBadgeId: null,
+    pressingBadgeRef: { current: null },
     registerNode: vi.fn(),
     onBadgeToggle: vi.fn(),
     onBadgePressStart: vi.fn(),

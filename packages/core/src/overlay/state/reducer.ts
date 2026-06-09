@@ -128,6 +128,14 @@ export function reducer(state: OverlayState, action: Action): OverlayState {
     case "consumeRunning":
       return { ...state, items: [], open: {}, ready: false, copied: false };
 
+    case "setCardOffset": {
+      // View-only: update cardOffset without dirtying ready/copied.
+      const updatedItems = state.items.map((item) =>
+        item.id === action.id ? { ...item, cardOffset: { x: action.x, y: action.y } } : item,
+      );
+      return { ...state, items: updatedItems };
+    }
+
     default:
       return state;
   }

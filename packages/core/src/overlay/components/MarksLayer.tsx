@@ -9,7 +9,8 @@ export interface MarksLayerProps {
   open: Record<string, boolean>;
   fabOpen: boolean;
   confirming: boolean;
-  pressingBadgeId: string | null;
+  /** Live ref used by Card's focus-out guard (CRITICAL #1 / TASK-18 #3). */
+  pressingBadgeRef: { current: string | null };
   registerNode: (id: string, part: "box" | "badge" | "card" | "hb", el: HTMLElement | null) => void;
   onBadgeToggle: (id: string) => void;
   onBadgePressStart: (id: string) => void;
@@ -26,7 +27,7 @@ export function MarksLayer({
   open,
   fabOpen,
   confirming,
-  pressingBadgeId,
+  pressingBadgeRef,
   registerNode,
   onBadgeToggle,
   onBadgePressStart,
@@ -70,7 +71,7 @@ export function MarksLayer({
                 item={item}
                 n={i + 1}
                 confirming={confirming}
-                pressingBadge={pressingBadgeId === item.id}
+                pressingBadgeRef={pressingBadgeRef}
                 onComment={(v) => onComment(item.id, v)}
                 onToggleScreenshot={() => onToggleScreenshot(item.id)}
                 onMinimize={() => onMinimize(item.id)}

@@ -50,14 +50,21 @@ export interface UsePositioningArgs {
  * Sets up scroll/resize/mousemove listeners + an rAF-throttled `positionAll`
  * that writes computed positions directly to the DOM nodes held in `registry`.
  * Port of install.ts:529-594 (positionAll) and install.ts:610-631 (listener setup).
+ *
+ * Returns a stable `reposition()` function that schedules an rAF-throttled
+ * re-position — useful for card-drag updates in OverlayRoot.
  */
-export function usePositioning(args: UsePositioningArgs): void {
+export function usePositioning(args: UsePositioningArgs): { reposition: () => void } {
   const { itemsRef, openRef, mouseRef, fabOpen, registry } = args;
 
   // Keep a stable ref to the latest fabOpen so the mousemove guard can read it
   // without re-subscribing.
   const fabOpenRef = useRef(fabOpen);
   fabOpenRef.current = fabOpen;
+
+  // scheduleRepositionRef lets us expose a stable `reposition()` to callers
+  // (e.g. OverlayRoot for card-drag) without recreating the function on each render.
+  const scheduleRepositionRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     let raf: number | null = null;
@@ -128,6 +135,9 @@ export function usePositioning(args: UsePositioningArgs): void {
       });
     }
 
+    // Expose via ref so the stable wrapper below can delegate to the current closure.
+    scheduleRepositionRef.current = scheduleReposition;
+
     function onScroll() {
       scheduleReposition();
     }
@@ -156,4 +166,8 @@ export function usePositioning(args: UsePositioningArgs): void {
       if (raf !== null) cancelAnimationFrame(raf);
     };
   }, [fabOpen]); // re-subscribe when fabOpen changes; refs are stable
+
+  // Stable wrapper — always delegates to the current scheduleReposition closure.
+  const repositionRef = useRef(() => scheduleRepositionRef.current());
+  return { reposition: repositionRef.current };
 }

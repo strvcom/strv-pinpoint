@@ -399,6 +399,34 @@ describe("consumeRunning", () => {
   });
 });
 
+// ─── setCardOffset ────────────────────────────────────────────────────────────
+describe("setCardOffset", () => {
+  it("updates item.cardOffset without dirtying ready/copied", () => {
+    const s0 = reducer(createInitialState(), { type: "addElement", data: elementData });
+    const withReady: OverlayState = { ...s0, ready: true, copied: true };
+    const id = withReady.items[0].id;
+    const s1 = reducer(withReady, { type: "setCardOffset", id, x: 50, y: 30 });
+    expect(s1.items[0].cardOffset).toEqual({ x: 50, y: 30 });
+    expect(s1.ready).toBe(true);
+    expect(s1.copied).toBe(true);
+  });
+
+  it("is a no-op for unknown id", () => {
+    const s0 = reducer(createInitialState(), { type: "addElement", data: elementData });
+    const s1 = reducer(s0, { type: "setCardOffset", id: "a999", x: 10, y: 10 });
+    expect(s1.items).toEqual(s0.items);
+  });
+
+  it("is included in non-dirtying actions matrix", () => {
+    const s0 = reducer(createInitialState(), { type: "addElement", data: elementData });
+    const id = s0.items[0].id;
+    const withReady: OverlayState = { ...s0, ready: true, copied: true };
+    const s1 = reducer(withReady, { type: "setCardOffset", id, x: 5, y: 5 });
+    expect(s1.ready).toBe(true);
+    expect(s1.copied).toBe(true);
+  });
+});
+
 // ─── Dirty invariant matrix ───────────────────────────────────────────────────
 describe("dirty invariant", () => {
   it("all item-mutating actions set ready=false AND copied=false", () => {
@@ -447,6 +475,7 @@ describe("dirty invariant", () => {
       { type: "setFabPos", right: 10, bottom: 10 },
       { type: "setConfirming", confirming: true },
       { type: "clearCopied" },
+      { type: "setCardOffset", id: "x", x: 0, y: 0 },
     ];
     for (const action of nonDirtyActions) {
       const next = reducer(cleanState, action);

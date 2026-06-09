@@ -9,7 +9,7 @@ export function Card({
   item,
   n,
   confirming,
-  pressingBadge,
+  pressingBadgeRef,
   onComment,
   onToggleScreenshot,
   onMinimize,
@@ -22,7 +22,8 @@ export function Card({
   item: Item;
   n: number;
   confirming: boolean;
-  pressingBadge: boolean;
+  /** Live ref: focus-out guard checks if THIS item's badge is being pressed. */
+  pressingBadgeRef: { current: string | null };
   onComment: (value: string) => void;
   onToggleScreenshot: () => void;
   onMinimize: () => void;
@@ -113,7 +114,10 @@ export function Card({
   }
 
   function handleFocusOut(e: FocusEvent) {
-    if (confirming || pressingBadge) return;
+    // Read pressingBadgeRef LIVE — this fires synchronously with no re-render
+    // between badge pointerdown and the card's focusout (TASK-18 #3 / CRITICAL #1).
+    if (showConfirm || pressingBadgeRef.current === item.id) return;
+    if (confirming) return;
     const card = cardRef.current;
     if (!card) return;
     if (!card.contains(e.relatedTarget as Node | null)) {

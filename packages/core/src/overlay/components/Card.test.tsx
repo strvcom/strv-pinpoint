@@ -38,7 +38,7 @@ function setup(item: Item, overrides: Partial<Parameters<typeof Card>[0]> = {}) 
     item,
     n: 1,
     confirming: false,
-    pressingBadge: false,
+    pressingBadgeRef: { current: null as string | null },
     onComment: vi.fn(),
     onToggleScreenshot: vi.fn(),
     onMinimize: vi.fn(),
@@ -248,7 +248,11 @@ describe("focus-out guard", () => {
 
   it("focusout to an element outside the card calls onMinimize when not confirming and not pressingBadge", () => {
     const onMinimize = vi.fn();
-    const { card } = setup(makeItem(), { onMinimize, confirming: false, pressingBadge: false });
+    const { card } = setup(makeItem(), {
+      onMinimize,
+      confirming: false,
+      pressingBadgeRef: { current: null },
+    });
 
     const outside = document.createElement("button");
     document.body.appendChild(outside);
@@ -261,7 +265,11 @@ describe("focus-out guard", () => {
 
   it("focusout is suppressed when confirming=true (TASK-18 #3)", () => {
     const onMinimize = vi.fn();
-    const { card } = setup(makeItem(), { onMinimize, confirming: true, pressingBadge: false });
+    const { card } = setup(makeItem(), {
+      onMinimize,
+      confirming: true,
+      pressingBadgeRef: { current: null },
+    });
 
     const outside = document.createElement("button");
     document.body.appendChild(outside);
@@ -272,9 +280,14 @@ describe("focus-out guard", () => {
     outside.remove();
   });
 
-  it("focusout is suppressed when pressingBadge=true (TASK-18 #3)", () => {
+  it("focusout is suppressed when pressingBadgeRef.current === item.id (TASK-18 #3 CRITICAL #1)", () => {
     const onMinimize = vi.fn();
-    const { card } = setup(makeItem(), { onMinimize, confirming: false, pressingBadge: true });
+    const item = makeItem(); // id = "i1"
+    const { card } = setup(item, {
+      onMinimize,
+      confirming: false,
+      pressingBadgeRef: { current: "i1" }, // matches item.id — simulates live badge press
+    });
 
     const outside = document.createElement("button");
     document.body.appendChild(outside);
@@ -282,6 +295,24 @@ describe("focus-out guard", () => {
     card.dispatchEvent(new FocusEvent("focusout", { bubbles: true, relatedTarget: outside }));
 
     expect(onMinimize).not.toHaveBeenCalled();
+    outside.remove();
+  });
+
+  it("focusout fires when pressingBadgeRef.current is a DIFFERENT item id", () => {
+    const onMinimize = vi.fn();
+    const item = makeItem(); // id = "i1"
+    const { card } = setup(item, {
+      onMinimize,
+      confirming: false,
+      pressingBadgeRef: { current: "i2" }, // different id — should NOT suppress
+    });
+
+    const outside = document.createElement("button");
+    document.body.appendChild(outside);
+
+    card.dispatchEvent(new FocusEvent("focusout", { bubbles: true, relatedTarget: outside }));
+
+    expect(onMinimize).toHaveBeenCalledOnce();
     outside.remove();
   });
 

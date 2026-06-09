@@ -59,4 +59,5 @@ export type Action =
   | { type: "markCopied" }
   | { type: "clearCopied" }
   | { type: "setConfirming"; confirming: boolean }
-  | { type: "consumeRunning" };
+  | { type: "consumeRunning" }
+  | { type: "setCardOffset"; id: string; x: number; y: number };
