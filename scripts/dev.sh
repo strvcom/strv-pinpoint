@@ -11,7 +11,7 @@ set -euo pipefail
 APP_URL="${1:-http://localhost:5173}"
 CDP_PORT="${PIN_CDP_PORT:-9222}"
 CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
-PROFILE="${PIN_CHROME_PROFILE:-/tmp/ff-chrome}"
+PROFILE="${PIN_CHROME_PROFILE:-/tmp/pp-chrome}"
 
 if [ ! -f packages/core/dist/cli.js ]; then
   echo "→ building @pinpoint/core…"

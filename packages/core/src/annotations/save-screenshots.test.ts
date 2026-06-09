@@ -19,7 +19,7 @@ const item = (over = {}) => ({
   ...over,
 });
 
-const dir = join(tmpdir(), `ff-test-${Math.floor(Math.random() * 1e9)}`);
+const dir = join(tmpdir(), `pp-test-${Math.floor(Math.random() * 1e9)}`);
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 describe("saveScreenshots", () => {
@@ -37,7 +37,7 @@ describe("saveScreenshots", () => {
     expect(existsSync(paths[1] as string)).toBe(true);
     expect(paths[2]).toBeNull();
     // overlay is hidden during capture so it doesn't appear in the screenshot
-    expect(page.evaluatedExpressions.some((e) => e.includes("__ffHide"))).toBe(true);
+    expect(page.evaluatedExpressions.some((e) => e.includes("__ppHide"))).toBe(true);
   });
 
   it("uses a rect clip for screenshot annotations (empty selector)", async () => {

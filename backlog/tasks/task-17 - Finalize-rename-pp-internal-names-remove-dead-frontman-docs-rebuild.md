@@ -1,9 +1,10 @@
 ---
 id: TASK-17
 title: 'Finalize rename: pp- internal names + remove dead frontman docs + rebuild'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-06-09 16:57'
+updated_date: '2026-06-09 16:59'
 labels:
   - chore
 dependencies: []
@@ -18,7 +19,7 @@ Tail of the pinpoint rename. (a) Rename internal ff- vestiges -> pp-: overlay CS
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 ff-/__ff renamed to pp-/__pp across src + dev.sh + README; overlay style string + className usages consistent
-- [ ] #2 START_HERE.md + phase0-frontman-contract.md deleted; CLAUDE.md START_HERE pointer updated (no dangling ref)
-- [ ] #3 pnpm build rebuilds bin/pinpoint + core dist from renamed source; gates green
+- [x] #1 ff-/__ff renamed to pp-/__pp across src + dev.sh + README; overlay style string + className usages consistent
+- [x] #2 START_HERE.md + phase0-frontman-contract.md deleted; CLAUDE.md START_HERE pointer updated (no dangling ref)
+- [x] #3 pnpm build rebuilds bin/pinpoint + core dist from renamed source; gates green
 <!-- AC:END -->

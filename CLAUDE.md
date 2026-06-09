@@ -17,9 +17,8 @@ nuance. The engine (`packages/core`) is agent-agnostic; integrations are thin pa
 on it and re-package it for a specific agent harness.
 For the current design, read `docs/superpowers/specs/` (the **amendment** section is
 authoritative); `docs/superpowers/notes/phase0-spike-findings.md` records the Phase-0 findings
-(why the original source-map approach was dropped). `START_HERE.md` is the historical original
-brief, kept for context. The project is now standalone — it studies/depends on no external
-upstream at runtime or in source.
+(why the original source-map approach was dropped). The project is standalone — it studies/depends
+on no external upstream at runtime or in source.
 
 ## How we work: Superpowers
 This project uses the **Superpowers** plugin. Follow its brainstorm → plan → execute discipline:

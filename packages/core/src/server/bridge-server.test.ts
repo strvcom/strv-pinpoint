@@ -13,7 +13,7 @@ beforeAll(async () => {
     sessions: new SessionRegistry(),
     writeClipboard: async () => {},
     bridgeUrl: "http://localhost:0",
-    tmpRoot: "/tmp/ff-health-test",
+    tmpRoot: "/tmp/pp-health-test",
     appUrl: "http://localhost:5180",
     sessionId: "sess-123",
   });
