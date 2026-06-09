@@ -3,10 +3,10 @@ id: TASK-14
 title: >-
   start command robustness: login-shell launches + node-PATH recovery +
   ready-line detection
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-06-09 14:52'
-updated_date: '2026-06-09 14:53'
+updated_date: '2026-06-09 15:03'
 labels:
   - enhancement
 dependencies: []
@@ -21,12 +21,22 @@ From the live TASK-10 run, the loop came up but took 2 restarts + ~9 extra calls
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 dev server + bridge are launched via the user's login shell so their toolchain PATH applies (no hardcoded node version)
-- [ ] #2 exit 127 / node-not-found is recovered by locating node across common version managers, then retrying
-- [ ] #3 bridge readiness is detected via the printed ready line (or GET /health), not '404 means up'
-- [ ] #4 does not depend on the host project's CLAUDE.md/notes for runtime PATH
-- [ ] #5 loop comes up without manual PATH fixes in a fresh project checkout
+- [x] #1 dev server + bridge are launched via the user's login shell so their toolchain PATH applies (no hardcoded node version)
+- [x] #2 exit 127 / node-not-found is recovered by locating node across common version managers, then retrying
+- [x] #3 bridge readiness is detected via the printed ready line (or GET /health), not '404 means up'
+- [x] #4 does not depend on the host project's CLAUDE.md/notes for runtime PATH
+- [x] #5 loop comes up without manual PATH fixes in a fresh project checkout
 <!-- AC:END -->
+
+
+
+
+
+
+
+
+
+
 
 ## Implementation Notes
 
