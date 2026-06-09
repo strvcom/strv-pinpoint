@@ -1,3 +1,4 @@
+import { badgeClickAction } from "./card-toggle.js";
 import { ANNOTATIONS_GLOBAL, REGION_GLOBAL, SELECTION_GLOBAL } from "./globals.js";
 import { renderSendButton } from "./send-button.js";
 import { createOverlayState } from "./state.js";
@@ -369,7 +370,7 @@ export function installOverlay(): void {
       ";color:#06210f;font:bold 11px system-ui;left:0;top:0";
     badge.onclick = function (e) {
       e.stopPropagation();
-      if (state.open[it.id]) closeCard(it);
+      if (badgeClickAction(state, it.id) === "close") closeCard(it);
       else {
         state.open[it.id] = true;
         draw();
