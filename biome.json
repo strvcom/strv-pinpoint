@@ -9,7 +9,8 @@
       "!.reference",
       "!.claude",
       "!examples",
-      "!**/*.tsbuildinfo"
+      "!**/*.tsbuildinfo",
+      "!packages/core/src/cdp/overlay-source.generated.ts"
     ]
   },
   "formatter": {
@@ -50,6 +51,21 @@
         "rules": {
           "security": { "noGlobalEval": "off" },
           "complexity": { "noCommaOperator": "off" }
+        }
+      }
+    },
+    {
+      "includes": ["packages/core/src/overlay/**"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noExplicitAny": "off" },
+          "security": { "noGlobalEval": "off" },
+          "style": {
+            "useTemplate": "off",
+            "noNonNullAssertion": "off"
+          },
+          "complexity": { "useArrowFunction": "off", "useOptionalChain": "off" },
+          "correctness": { "noInnerDeclarations": "off" }
         }
       }
     }
