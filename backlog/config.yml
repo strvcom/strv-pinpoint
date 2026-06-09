@@ -1,4 +1,4 @@
-project_name: "frontman-flow"
+project_name: "pinpoint"
 default_status: "To Do"
 statuses: ["To Do", "In Progress", "Done"]
 labels: []

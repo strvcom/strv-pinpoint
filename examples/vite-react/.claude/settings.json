@@ -1,13 +1,18 @@
 {
-  "extraKnownMarketplaces": {
-    "pinpoint": {
-      "source": { "source": "directory", "path": "../../" }
-    }
+  "permissions": {
+    "allow": [
+      "Bash"
+    ]
   },
   "enabledPlugins": {
     "pinpoint@pinpoint": true
   },
-  "permissions": {
-    "allow": ["Bash"]
+  "extraKnownMarketplaces": {
+    "pinpoint": {
+      "source": {
+        "source": "directory",
+        "path": "../../"
+      }
+    }
   }
 }
