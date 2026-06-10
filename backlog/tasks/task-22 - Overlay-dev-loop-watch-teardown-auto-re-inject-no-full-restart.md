@@ -1,9 +1,10 @@
 ---
 id: TASK-22
 title: 'Overlay dev loop: watch + teardown + auto re-inject (no full restart)'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-06-10 14:32'
+updated_date: '2026-06-10 14:58'
 labels:
   - feature
 dependencies: []
@@ -25,3 +26,9 @@ Make the injected overlay hot-iterable in dev so you don't rebuild the bin + res
 - [ ] #5 Production path unchanged: default 'pinpoint' (no PIN_DEV) does not watch/rebuild and behaves exactly as today; shipped bin has no source-tree dependency
 - [ ] #6 Annotation-state behavior on reload is defined and documented (v1 may reset state on re-inject; note it in the spec)
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+docs/superpowers/plans/2026-06-10-overlay-dev-loop.md
+<!-- SECTION:PLAN:END -->
