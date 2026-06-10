@@ -15,6 +15,7 @@ export class FakePage implements BridgePage {
   readonly injectedSources: string[] = [];
   readonly clips: Rect[] = [];
   readonly elementSelectors: string[] = [];
+  readonly reinjectCalls: Array<{ preamble: string; source: string }> = [];
 
   constructor(private readonly opts: FakePageOptions = {}) {}
 
@@ -28,6 +29,10 @@ export class FakePage implements BridgePage {
 
   async injectBootstrap(source: string): Promise<void> {
     this.injectedSources.push(source);
+  }
+
+  async reinject(preamble: string, source: string): Promise<void> {
+    this.reinjectCalls.push({ preamble, source });
   }
 
   async screenshotViewport(): Promise<Buffer> {

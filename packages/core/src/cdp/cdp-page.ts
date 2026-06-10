@@ -9,6 +9,8 @@ interface EvalResult {
 
 /** Implements the bridge's page surface using only raw CDP commands. */
 export class CdpPage implements BridgePage {
+  private bootstrapScriptId: string | null = null;
+
   constructor(private readonly cdp: CdpConnection) {}
 
   async evaluate<T>(expression: string): Promise<T> {
@@ -22,8 +24,33 @@ export class CdpPage implements BridgePage {
   }
 
   async injectBootstrap(source: string): Promise<void> {
-    await this.cdp.send("Page.addScriptToEvaluateOnNewDocument", { source });
+    const { identifier } = await this.cdp.send<{ identifier: string }>(
+      "Page.addScriptToEvaluateOnNewDocument",
+      { source },
+    );
+    this.bootstrapScriptId = identifier;
     await this.cdp.send("Runtime.evaluate", { expression: source });
+  }
+
+  async reinject(preamble: string, source: string): Promise<void> {
+    const combined = `${preamble}\n${source}`;
+    // 1. Clean unmount of the live overlay (guarded — no-op if not yet installed).
+    await this.cdp.send("Runtime.evaluate", {
+      expression: "window.__pinpointTeardown && window.__pinpointTeardown()",
+    });
+    // 2. Swap the on-new-document bootstrap so a manual reload uses the fresh code.
+    if (this.bootstrapScriptId) {
+      await this.cdp.send("Page.removeScriptToEvaluateOnNewDocument", {
+        identifier: this.bootstrapScriptId,
+      });
+    }
+    const { identifier } = await this.cdp.send<{ identifier: string }>(
+      "Page.addScriptToEvaluateOnNewDocument",
+      { source: combined },
+    );
+    this.bootstrapScriptId = identifier;
+    // 3. Mount the fresh overlay now.
+    await this.cdp.send("Runtime.evaluate", { expression: combined });
   }
 
   async screenshotViewport(): Promise<Buffer> {

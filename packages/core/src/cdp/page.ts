@@ -9,6 +9,11 @@ export interface BridgePage {
   evaluate<T>(expression: string): Promise<T>;
   /** Inject source that runs on the current page AND on every future navigation. */
   injectBootstrap(source: string): Promise<void>;
+  /**
+   * Dev hot-reload: tear down the live overlay, swap the on-new-document bootstrap so page
+   * reloads use the fresh code, then evaluate `preamble + "\n" + source` to remount.
+   */
+  reinject(preamble: string, source: string): Promise<void>;
   /** PNG bytes of the current viewport. */
   screenshotViewport(): Promise<Buffer>;
   /** PNG bytes of an arbitrary viewport-relative rect (partial screenshot). */
