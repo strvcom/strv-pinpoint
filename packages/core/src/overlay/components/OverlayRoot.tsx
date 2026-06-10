@@ -111,8 +111,7 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
   // immediately on pick/open/close/delete/clear and when the FAB opens — not only
   // after the next mouse move. Refs (itemsRef/openRef) are synced in the render body
   // above, and card/badge nodes are registered during commit, so reposition() (next
-  // rAF) sees the current items + DOM nodes.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reposition is stable; we re-run on structural changes only.
+  // rAF) sees the current items + DOM nodes. reposition is stable (ref-wrapped).
   useEffect(() => {
     reposition();
   }, [state.items, state.open, state.fabOpen]);
