@@ -1,6 +1,6 @@
 // Attaches window.__pinpointExtractSelection — ported verbatim from the old
 // EXTRACT_SELECTION_FN String.raw block (cdp/selection-probe.ts).
-export function installSelectionProbe(): void {
+export function installSelectionProbe(): () => void {
   (window as any).__pinpointExtractSelection = function (el: Element) {
     // Framework component names to drop so the user's component surfaces.
     var FRAMEWORK =
@@ -85,5 +85,8 @@ export function installSelectionProbe(): void {
       componentName: ancestry[0] || null,
       ancestry: ancestry.slice(0, 8),
     };
+  };
+  return function disposeSelectionProbe() {
+    delete (window as any).__pinpointExtractSelection;
   };
 }
