@@ -65,7 +65,12 @@
             "noNonNullAssertion": "off"
           },
           "complexity": { "useArrowFunction": "off", "useOptionalChain": "off" },
-          "correctness": { "noInnerDeclarations": "off" }
+          "correctness": { "noInnerDeclarations": "off" },
+          "a11y": {
+            "noStaticElementInteractions": "off",
+            "useKeyWithClickEvents": "off",
+            "useSemanticElements": "off"
+          }
         }
       }
     }

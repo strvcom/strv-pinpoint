@@ -5,12 +5,14 @@ import { build } from "esbuild";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const result = await build({
-  entryPoints: [join(here, "../src/overlay/index.ts")],
+  entryPoints: [join(here, "../src/overlay/index.tsx")],
   bundle: true,
   format: "iife",
   platform: "browser",
   target: "es2020",
   write: false,
+  jsx: "automatic",
+  jsxImportSource: "preact",
 });
 const code = result.outputFiles[0].text;
 const out = join(here, "../src/cdp/overlay-source.generated.ts");
