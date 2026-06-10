@@ -105,6 +105,18 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
     (window as unknown as Record<string, unknown>)[SELECTION_GLOBAL] = latestSelection(snap);
   }, [state]);
 
+  // ─── Reposition on structural change ──────────────────────────────────────
+  // The positioning rAF loop only fires on scroll/resize/mousemove. install.ts also
+  // called positionAll() after every mutation (draw()), so badges/cards are placed
+  // immediately on pick/open/close/delete/clear and when the FAB opens — not only
+  // after the next mouse move. Refs (itemsRef/openRef) are synced in the render body
+  // above, and card/badge nodes are registered during commit, so reposition() (next
+  // rAF) sees the current items + DOM nodes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reposition is stable; we re-run on structural changes only.
+  useEffect(() => {
+    reposition();
+  }, [state.items, state.open, state.fabOpen]);
+
   // ─── Copy flow ────────────────────────────────────────────────────────────
   const copyTimer = useRef<number | undefined>(undefined);
   const lastPromptId = useRef<string | null>(null);
