@@ -3,8 +3,6 @@ import { ICON, Icon } from "../icons.js";
 import type { Mode } from "../state/types.js";
 import { CopyButton } from "./CopyButton.js";
 
-const Z = 2147483640;
-
 export interface FabProps {
   fabOpen: boolean;
   mode: Mode;
@@ -90,7 +88,8 @@ export function Fab({
     }
   }, [fabOpen]);
 
-  const containerStyle = `position:fixed;z-index:${Z + 3};display:flex;align-items:center;gap:6px;font:12px system-ui;color:#fff`;
+  // position:relative — the Toolbar wrapper owns the fixed bottom-right anchor + z-index.
+  const containerStyle = `position:relative;display:flex;align-items:center;gap:6px;font:12px system-ui;color:#fff`;
 
   const pillStyle =
     "align-items:center;gap:4px;background:#1b1b1b;border:1px solid #444;border-radius:22px;padding:5px 8px";
