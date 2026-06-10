@@ -3,9 +3,10 @@ id: TASK-21
 title: >-
   Overlay render layer: declarative state/render (Solid-class) + Shadow DOM
   isolation
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-09 22:12'
+updated_date: '2026-06-10 00:04'
 labels:
   - refactor
 dependencies: []
