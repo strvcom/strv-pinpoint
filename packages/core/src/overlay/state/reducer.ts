@@ -21,12 +21,21 @@ function dirty(_state: OverlayState): Partial<OverlayState> {
   return { ready: false, copied: false };
 }
 
+/** Drop any existing unsaved draft (there is at most one) and its open entry (TASK-30). */
+function dropDraft(state: OverlayState): { items: Item[]; open: Record<string, boolean> } {
+  const items = state.items.filter((it) => it.saved);
+  const open = { ...state.open };
+  for (const it of state.items) if (!it.saved) delete open[it.id];
+  return { items, open };
+}
+
 export function reducer(state: OverlayState, action: Action): OverlayState {
   switch (action.type) {
     case "setMode":
       return { ...state, mode: action.mode };
 
     case "addElement": {
+      const { items: kept, open } = dropDraft(state); // one draft at a time (TASK-30)
       const id = `a${state.nextId}`;
       const item: Item = {
         id,
@@ -39,17 +48,19 @@ export function reducer(state: OverlayState, action: Action): OverlayState {
         rect: { ...action.data.rect },
         comment: "",
         wantScreenshot: true, // TASK-18 #5: element picks default to including a screenshot
+        saved: false, // TASK-30: new picks are unsaved drafts
       };
       return {
         ...state,
         ...dirty(state),
-        items: [...state.items, item],
-        open: { ...state.open, [id]: true },
+        items: [...kept, item],
+        open: { ...open, [id]: true },
         nextId: state.nextId + 1,
       };
     }
 
     case "addScreenshot": {
+      const { items: kept, open } = dropDraft(state); // one draft at a time (TASK-30)
       const id = `a${state.nextId}`;
       const item: Item = {
         id,
@@ -64,12 +75,13 @@ export function reducer(state: OverlayState, action: Action): OverlayState {
         pageY: action.pageY,
         comment: "",
         wantScreenshot: true,
+        saved: false, // TASK-30: new screenshots are unsaved drafts
       };
       return {
         ...state,
         ...dirty(state),
-        items: [...state.items, item],
-        open: { ...state.open, [id]: true },
+        items: [...kept, item],
+        open: { ...open, [id]: true },
         nextId: state.nextId + 1,
       };
     }
@@ -134,6 +146,12 @@ export function reducer(state: OverlayState, action: Action): OverlayState {
         item.id === action.id ? { ...item, cardOffset: { x: action.x, y: action.y } } : item,
       );
       return { ...state, items: updatedItems };
+    }
+
+    case "saveItem": {
+      // Commit a draft (TASK-30): mark saved + collapse the card to its badge.
+      const items = state.items.map((it) => (it.id === action.id ? { ...it, saved: true } : it));
+      return { ...state, ...dirty(state), items, open: { ...state.open, [action.id]: false } };
     }
 
     default:
