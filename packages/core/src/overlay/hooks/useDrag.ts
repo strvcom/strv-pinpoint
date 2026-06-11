@@ -1,12 +1,22 @@
 import { useRef } from "preact/hooks";
 
 /**
+ * Travel (in px, |dx|+|dy|) a press must exceed before it counts as a drag.
+ * Below this deadzone the press is treated as a click: `onMove` never fires and
+ * `onEnd(false)` is reported, so a click with slight pointer jitter toggles the
+ * FAB / badge instead of nudging it (TASK-23 #2).
+ */
+const DRAG_THRESHOLD = 4;
+
+/**
  * Callbacks for useDrag.
  *
- * - onMove(dx, dy): called on every pointermove with the delta from start.
+ * - onMove(dx, dy): called with the delta from start, but ONLY after travel
+ *                   exceeds DRAG_THRESHOLD (the deadzone). dx/dy are always
+ *                   measured from the original pointerdown.
  * - onStart():      called on pointerdown.
- * - onEnd(moved):   called on pointerup; `moved` is true when the pointer
- *                   travelled more than 3px (used to suppress click).
+ * - onEnd(moved):   called on pointerup; `moved` is true once the deadzone was
+ *                   crossed (used to suppress the click that follows a drag).
  *
  * Port of install.ts:160-184 (FAB drag) and install.ts:467-486 (card drag).
  */
@@ -40,7 +50,10 @@ export function useDrag(handlers: DragHandlers): (e: PointerEvent) => void {
       function onMove(ev: PointerEvent) {
         const dx = ev.clientX - sx;
         const dy = ev.clientY - sy;
-        if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+        // Deadzone: stay a click until travel crosses the threshold. Once it
+        // does, the press is a drag for the rest of its lifetime.
+        if (!moved && Math.abs(dx) + Math.abs(dy) <= DRAG_THRESHOLD) return;
+        moved = true;
         handlersRef.current.onMove(dx, dy);
       }
 
