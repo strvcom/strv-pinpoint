@@ -6,6 +6,7 @@ import { usePicker } from "../hooks/usePicker.js";
 import type { NodeRegistry } from "../hooks/usePositioning.js";
 import { computeVRect, usePositioning } from "../hooks/usePositioning.js";
 import { useScreenshotRegion } from "../hooks/useScreenshotRegion.js";
+import { useUnloadGuard } from "../hooks/useUnloadGuard.js";
 import { createInitialState, reducer } from "../state/reducer.js";
 import { latestSelection, serializeState } from "../state/serialize.js";
 import type { Rect } from "../state/types.js";
@@ -96,6 +97,11 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
 
   // ─── Escape hook ──────────────────────────────────────────────────────────
   useEscape(() => dispatch({ type: "setMode", mode: null }));
+
+  // ─── Unload guard ───────────────────────────────────────────────────────────
+  // Warn (native browser prompt) before closing/refreshing the page while annotations exist,
+  // so in-progress work isn't lost (TASK-29).
+  useUnloadGuard(state.items.length > 0);
 
   // ─── Force a neutral cursor while a selection tool is active (TASK-23) ──────
   // When picking/screenshotting, the user is selecting elements/regions, not interacting with
