@@ -33,7 +33,12 @@ export function usePicker({ mode, hostEl, onHover, onPick }: UsePickerArgs): voi
 
     function onMouseMove(e: MouseEvent) {
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      if (!el || isHostHit(el)) return;
+      // Over the overlay's own UI (toolbar/card/badge) or off any element → clear the highlight
+      // rather than leaving the last page-element rect painted (TASK-29).
+      if (!el || isHostHit(el)) {
+        onHover(null);
+        return;
+      }
       onHover(el.getBoundingClientRect() as Rect);
     }
 
