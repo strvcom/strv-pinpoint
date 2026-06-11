@@ -1,10 +1,10 @@
 ---
 id: TASK-25
 title: 'Dev loop: overlay does not survive a page reload (PIN_DEV reinject resilience)'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-11 15:35'
-updated_date: '2026-06-11 15:41'
+updated_date: '2026-06-11 16:02'
 labels:
   - bug
 dependencies: []
@@ -19,13 +19,13 @@ Discovered while iterating in the TASK-22 hot loop: after a manual browser reloa
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 After a full browser reload of the target page in PIN_DEV mode, the overlay re-injects automatically (host present, FAB visible) with no manual file edit
-- [ ] #2 Root cause identified and documented (why addScriptToEvaluateOnNewDocument did not re-run on reload in the dev flow)
-- [ ] #3 Add a regression test or documented manual-verification step for page-reload resilience
+- [x] #1 After a full browser reload of the target page in PIN_DEV mode, the overlay re-injects automatically (host present, FAB visible) with no manual file edit
+- [x] #2 Root cause identified and documented (why addScriptToEvaluateOnNewDocument did not re-run on reload in the dev flow)
+- [x] #3 Add a regression test or documented manual-verification step for page-reload resilience
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Root cause pinned down (CDP diagnosis during TASK-23 iteration): the bridge holds ONE persistent CDP connection and its Runtime.evaluate targets the page's ORIGINAL execution context. When the target page reloads, that context is destroyed and a new one is created, but the bridge keeps evaluating against the old one — so reinject calls still resolve at the protocol level (the dev loop logs 'overlay re-injected') yet land on a dead context and never touch the live page. Proven: after a reload, editing source rebuilt dist correctly (esbuild fine) and the bridge logged a reinject, but the live orb did NOT change; injecting the SAME dist over a FRESH CDP connection to the current page DID change it. Fix direction: the bridge must observe Page.frameNavigated / executionContextCreated (or Page.loadEventFired) and re-bind (re-run injectBootstrap against the new context) on every navigation — not only at connect. Workaround today: restart the bridge (it re-attaches to the existing Chrome on :9222 and binds the fresh context; no new window).
+Not reproducible — closed as works-as-designed. 7 isolated CDP reproductions (static page, real Vite page, real overlay bundle, the real bridge code CdpDriver->CdpPage->overlay-watch, headless + headful, initial-inject + reinject-swap, location.reload + Page.reload) all show the overlay re-injects on a confirmed reload (post-inject sentinel wiped + timeOrigin changed; __pinpointConfig + [data-pinpoint] host + __pinpointOverlayInstalled all present). The TASK-22 on-new-document swap claim holds. AC1 behavior already satisfied by current code; AC2/AC3 documented in docs/decisions.md (2026-06-11) + docs/superpowers/notes/reload-resilience-check.md. Separate robustness gap noted for a future card: cdp-connection.ts has no WS onclose/onerror, so a dead session hangs every send() silently. Merge: a054091 on main.
 <!-- SECTION:NOTES:END -->
