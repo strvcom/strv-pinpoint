@@ -17,7 +17,7 @@ type EditorOpts = {
   value: string;
   onChange: (md: string) => void;
   onSave: () => void;
-  onDiscard: () => void;
+  onEscape: () => void;
 };
 const lastEditorOpts = (): EditorOpts => {
   const calls = (createMarkdownEditor as unknown as { mock: { calls: unknown[][] } }).mock.calls;
@@ -159,14 +159,106 @@ describe("markdown comment editor", () => {
     expect(onMinimize).toHaveBeenCalledOnce();
   });
 
-  it("draft card: editor onSave saves; onDiscard deletes", () => {
+  it("draft card: editor onSave saves", () => {
     const onSave = vi.fn();
-    const onDelete = vi.fn();
-    setup(makeItem({ saved: false }), { onSave, onDelete });
+    setup(makeItem({ saved: false }), { onSave });
     lastEditorOpts().onSave();
     expect(onSave).toHaveBeenCalledOnce();
-    lastEditorOpts().onDiscard();
+  });
+});
+
+// ─── Escape behavior (TASK-31) ─────────────────────────────────────────────────
+
+const discardOverlay = (card: HTMLElement) =>
+  Array.from(card.querySelectorAll(".pp-confirm")).find((o) =>
+    o.textContent?.includes("Discard changes?"),
+  ) as HTMLElement | undefined;
+
+describe("escape behavior", () => {
+  it("empty draft: Escape deletes immediately (no prompt)", () => {
+    const onDelete = vi.fn();
+    const { card } = setup(makeItem({ saved: false, comment: "" }), { onDelete });
+    act(() => lastEditorOpts().onEscape());
     expect(onDelete).toHaveBeenCalledOnce();
+    expect(discardOverlay(card)).toBeUndefined();
+  });
+
+  it("draft with typed content: Escape opens the discard prompt instead of deleting", () => {
+    const onDelete = vi.fn();
+    const { card } = setup(makeItem({ saved: false, comment: "" }), { onDelete });
+    act(() => lastEditorOpts().onChange("typed something"));
+    act(() => lastEditorOpts().onEscape());
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(discardOverlay(card)).toBeDefined();
+  });
+
+  it("draft discard prompt → Discard deletes the draft", () => {
+    const onDelete = vi.fn();
+    const { card } = setup(makeItem({ saved: false, comment: "draft text" }), { onDelete });
+    act(() => lastEditorOpts().onEscape());
+    const discardBtn = Array.from(discardOverlay(card)!.querySelectorAll("button")).find(
+      (b) => b.textContent === "Discard",
+    )!;
+    act(() => discardBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(onDelete).toHaveBeenCalledOnce();
+  });
+
+  it("saved card with no changes: Escape just minimizes", () => {
+    const onMinimize = vi.fn();
+    const { card } = setup(makeItem({ saved: true, comment: "kept" }), { onMinimize });
+    act(() => lastEditorOpts().onEscape());
+    expect(onMinimize).toHaveBeenCalledOnce();
+    expect(discardOverlay(card)).toBeUndefined();
+  });
+
+  it("saved card with edits: Escape opens the discard prompt", () => {
+    const onMinimize = vi.fn();
+    const { card } = setup(makeItem({ saved: true, comment: "kept" }), { onMinimize });
+    act(() => lastEditorOpts().onChange("kept + edits"));
+    act(() => lastEditorOpts().onEscape());
+    expect(onMinimize).not.toHaveBeenCalled();
+    expect(discardOverlay(card)).toBeDefined();
+  });
+
+  it("saved discard prompt → Discard reverts to last-saved text then minimizes", () => {
+    const onComment = vi.fn();
+    const onMinimize = vi.fn();
+    const { card } = setup(makeItem({ saved: true, comment: "kept" }), { onComment, onMinimize });
+    act(() => lastEditorOpts().onChange("kept + edits"));
+    act(() => lastEditorOpts().onEscape());
+    const discardBtn = Array.from(discardOverlay(card)!.querySelectorAll("button")).find(
+      (b) => b.textContent === "Discard",
+    )!;
+    act(() => discardBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(onComment).toHaveBeenLastCalledWith("kept"); // reverted
+    expect(onMinimize).toHaveBeenCalledOnce();
+  });
+
+  it("discard prompt → Cancel hides it without deleting or minimizing", () => {
+    const onDelete = vi.fn();
+    const onMinimize = vi.fn();
+    const { card } = setup(makeItem({ saved: true, comment: "kept" }), { onDelete, onMinimize });
+    act(() => lastEditorOpts().onChange("kept + edits"));
+    act(() => lastEditorOpts().onEscape());
+    const cancelBtn = Array.from(discardOverlay(card)!.querySelectorAll("button")).find(
+      (b) => b.textContent === "Cancel",
+    )!;
+    act(() => cancelBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onMinimize).not.toHaveBeenCalled();
+    expect(discardOverlay(card)).toBeUndefined();
+  });
+
+  it("saved card: editing then saving (Shift+Enter) rebaselines so a later Escape is clean", () => {
+    const onMinimize = vi.fn();
+    const { card } = setup(makeItem({ saved: true, comment: "kept" }), { onMinimize });
+    act(() => lastEditorOpts().onChange("edited"));
+    act(() => lastEditorOpts().onSave()); // saved card: onSave minimizes + rebaselines
+    expect(onMinimize).toHaveBeenCalledOnce();
+    // reopen-less check: a subsequent Escape with current === new baseline is clean
+    act(() => lastEditorOpts().onEscape());
+    expect(discardOverlay(card)).toBeUndefined();
+    expect(onMinimize).toHaveBeenCalledTimes(2);
   });
 });
 
