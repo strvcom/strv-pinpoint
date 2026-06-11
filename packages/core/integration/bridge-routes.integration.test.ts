@@ -52,7 +52,19 @@ describe("bridge routes", () => {
       body: JSON.stringify({
         items: [
           item({ badge: 1, wantScreenshot: true }),
-          item({ id: "a2", badge: 2, selected: [{ selector: "#h", tagName: "H1", text: "nav", react: { componentName: "Nav", ancestry: ["Nav"] } }], wantScreenshot: false }),
+          item({
+            id: "a2",
+            badge: 2,
+            selected: [
+              {
+                selector: "#h",
+                tagName: "H1",
+                text: "nav",
+                react: { componentName: "Nav", ancestry: ["Nav"] },
+              },
+            ],
+            wantScreenshot: false,
+          }),
         ],
       }),
     });

@@ -5,20 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ANNOTATIONS_GLOBAL } from "../globals.js";
 import { OverlayRoot } from "./OverlayRoot.js";
 
-// Cards mount a ProseMirror editor, which needs a real contenteditable (not in happy-dom). Mock it
-// so Cards render; capture the editor's onChange to simulate comment edits (TASK-31).
-vi.mock("../markdown/editor.js", () => ({
-  createMarkdownEditor: vi.fn(() => ({ destroy: vi.fn(), focus: vi.fn() })),
-}));
-
-import { createMarkdownEditor } from "../markdown/editor.js";
-
-const lastEditorOnChange = (): ((md: string) => void) => {
-  const calls = (createMarkdownEditor as unknown as { mock: { calls: unknown[][] } }).mock.calls;
-  return (calls[calls.length - 1][1] as { onChange: (md: string) => void }).onChange;
-};
-
 let container: HTMLDivElement;
+
+// Type into the open card's comment textarea, dispatching the input event (TASK-31).
+const typeComment = (value: string) => {
+  const ta = container.querySelector("textarea")!;
+  Object.defineProperty(ta, "value", { value, writable: true, configurable: true });
+  ta.dispatchEvent(new Event("input", { bubbles: true }));
+};
 
 afterEach(() => {
   if (container) {
@@ -320,9 +314,9 @@ describe("copy flow (with fake timers)", () => {
         .dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    // Editing the comment via the editor's onChange dispatches setComment → dirty → copied=false
+    // Editing the comment via the textarea dispatches setComment → dirty → copied=false
     act(() => {
-      lastEditorOnChange()("my comment");
+      typeComment("my comment");
     });
     // The Copy button should have reverted immediately
     expect(copyBtn.textContent).toBe("Copy");
@@ -444,9 +438,9 @@ describe("pick-while-drafting confirm (TASK-30)", () => {
     act(() => {
       document.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 5, clientY: 5 }));
     });
-    // Give the draft comment text (via the editor's onChange) so the next pick is gated.
+    // Give the draft comment text (via the textarea) so the next pick is gated.
     act(() => {
-      lastEditorOnChange()("make it blue");
+      typeComment("make it blue");
     });
 
     // Second pick (different element) → should be GATED behind the confirm
@@ -512,7 +506,7 @@ describe("draft badge stays open (TASK-30)", () => {
     act(() => {
       document.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 5, clientY: 5 }));
     });
-    expect(container.querySelector(".pp-md")).not.toBeNull(); // draft open
+    expect(container.querySelector("textarea")).not.toBeNull(); // draft open
 
     // Click the badge — a saved card would collapse, but a draft must stay open.
     act(() => {
@@ -520,7 +514,7 @@ describe("draft badge stays open (TASK-30)", () => {
         .querySelector<HTMLElement>(".pp-badge")!
         .dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
-    expect(container.querySelector(".pp-md")).not.toBeNull(); // still open
+    expect(container.querySelector("textarea")).not.toBeNull(); // still open
 
     el.remove();
     document.elementFromPoint = originalFromPoint;

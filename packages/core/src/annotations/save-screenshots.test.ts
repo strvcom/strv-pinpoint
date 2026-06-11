@@ -24,10 +24,7 @@ describe("saveScreenshots", () => {
     const page = new FakePage({ elementPng: { "#h": Buffer.from("PNG") } });
     const paths = await saveScreenshots(
       page,
-      [
-        item({ badge: 1, wantScreenshot: true }),
-        item({ badge: 2, wantScreenshot: false }),
-      ],
+      [item({ badge: 1, wantScreenshot: true }), item({ badge: 2, wantScreenshot: false })],
       dir,
     );
     expect(paths[1]).toBe(join(dir, "anno-1.png"));

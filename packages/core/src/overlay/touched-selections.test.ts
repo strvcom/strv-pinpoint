@@ -8,7 +8,8 @@ const rect = (x: number, y: number, w: number, h: number) => ({ x, y, width: w, 
 function makeDeps(opts: { stacksByPoint: FakeEl[][]; host?: FakeEl }) {
   const points: FakeEl[][] = [...opts.stacksByPoint];
   return {
-    elementsFromPoint: () => (points.length > 1 ? points.shift()! : points[0]) as unknown as Element[],
+    elementsFromPoint: () =>
+      (points.length > 1 ? points.shift()! : points[0]) as unknown as Element[],
     getRect: (el: unknown) => (el as FakeEl).rect,
     isHost: (el: unknown) => !!opts.host && (el as FakeEl).id === opts.host.id,
     extract: (el: unknown) =>
@@ -31,7 +32,13 @@ describe("resolveTouchedSelections", () => {
     const region = rect(0, 0, 100, 100);
     const a = { id: "a", rect: rect(1, 1, 5, 5) };
     const card = { id: "card", rect: rect(0, 0, 100, 100) };
-    const deps = makeDeps({ stacksByPoint: [[a, card], [a, card], [a, card]] });
+    const deps = makeDeps({
+      stacksByPoint: [
+        [a, card],
+        [a, card],
+        [a, card],
+      ],
+    });
     const out = resolveTouchedSelections(region, deps);
     expect(out.map((s) => s.selector).sort()).toEqual(["#a", "#card"]);
   });

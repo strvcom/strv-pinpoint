@@ -11,13 +11,7 @@
     "start": "node ./dist/cli.js"
   },
   "devDependencies": {
-    "@lexical/code": "^0.45.0",
-    "@lexical/list": "^0.45.0",
-    "@lexical/markdown": "^0.45.0",
-    "@lexical/rich-text": "^0.45.0",
-    "@lexical/utils": "^0.45.0",
     "esbuild": "^0.28.0",
-    "lexical": "^0.45.0",
     "preact": "^10.24.0"
   }
 }

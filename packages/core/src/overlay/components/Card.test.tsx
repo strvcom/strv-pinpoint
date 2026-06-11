@@ -5,25 +5,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Item } from "../state/types.js";
 import { Card } from "./Card.js";
 
-// ProseMirror needs a real contenteditable/selection (not in happy-dom) — mock the editor module
-// at the boundary so the Card mounts; assert wiring via the captured options (TASK-31).
-vi.mock("../markdown/editor.js", () => ({
-  createMarkdownEditor: vi.fn(() => ({ destroy: vi.fn(), focus: vi.fn() })),
-}));
-
-import { createMarkdownEditor } from "../markdown/editor.js";
-
-type EditorOpts = {
-  value: string;
-  onChange: (md: string) => void;
-  onSave: () => void;
-  onDiscard: () => void;
-};
-const lastEditorOpts = (): EditorOpts => {
-  const calls = (createMarkdownEditor as unknown as { mock: { calls: unknown[][] } }).mock.calls;
-  return calls[calls.length - 1][1] as EditorOpts;
-};
-
 let container: HTMLDivElement;
 
 afterEach(() => {
@@ -74,9 +55,7 @@ function setup(item: Item, overrides: Partial<Parameters<typeof Card>[0]> = {}) 
     ...overrides,
   };
 
-  act(() => {
-    render(<Card {...props} />, container);
-  }); // flush effects (animate-in + editor mount)
+  render(<Card {...props} />, container);
 
   const card = container.querySelector(".pp-card") as HTMLDivElement;
   return { container, card, props };
@@ -131,42 +110,35 @@ describe("camera button — screenshot kind", () => {
   });
 });
 
-// ─── Markdown comment editor (TASK-31) ─────────────────────────────────────────
+// ─── Textarea ────────────────────────────────────────────────────────────────
 
-describe("markdown comment editor", () => {
-  it("renders a markdown editor host (.pp-md), not a textarea", () => {
-    const { card } = setup(makeItem());
-    expect(card.querySelector(".pp-md")).not.toBeNull();
-    expect(card.querySelector("textarea")).toBeNull();
-  });
-
-  it("mounts the editor with the item's comment as initial value", () => {
-    setup(makeItem({ comment: "- a\n- b" }));
-    expect(lastEditorOpts().value).toBe("- a\n- b");
-  });
-
-  it("the editor's onChange forwards to onComment", () => {
+describe("textarea", () => {
+  it("typing in the textarea calls onComment with the new value", () => {
     const onComment = vi.fn();
-    setup(makeItem(), { onComment });
-    lastEditorOpts().onChange("new md");
-    expect(onComment).toHaveBeenCalledWith("new md");
+    const { card } = setup(makeItem(), { onComment });
+    const ta = card.querySelector("textarea")!;
+    // Simulate input event
+    Object.defineProperty(ta, "value", { value: "new text", writable: true });
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    expect(onComment).toHaveBeenCalledWith("new text");
   });
 
-  it("saved card: editor onSave minimizes (Shift+Enter behavior)", () => {
+  it("Shift+Enter calls onMinimize", () => {
     const onMinimize = vi.fn();
-    setup(makeItem({ saved: true }), { onMinimize });
-    lastEditorOpts().onSave();
+    const { card } = setup(makeItem(), { onMinimize });
+    const ta = card.querySelector("textarea")!;
+    ta.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true }));
     expect(onMinimize).toHaveBeenCalledOnce();
   });
 
-  it("draft card: editor onSave saves; onDiscard deletes", () => {
-    const onSave = vi.fn();
-    const onDelete = vi.fn();
-    setup(makeItem({ saved: false }), { onSave, onDelete });
-    lastEditorOpts().onSave();
-    expect(onSave).toHaveBeenCalledOnce();
-    lastEditorOpts().onDiscard();
-    expect(onDelete).toHaveBeenCalledOnce();
+  it("plain Enter does NOT call onMinimize", () => {
+    const onMinimize = vi.fn();
+    const { card } = setup(makeItem(), { onMinimize });
+    const ta = card.querySelector("textarea")!;
+    ta.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", shiftKey: false, bubbles: true }),
+    );
+    expect(onMinimize).not.toHaveBeenCalled();
   });
 });
 
@@ -353,9 +325,9 @@ describe("focus-out guard", () => {
     const onMinimize = vi.fn();
     const { card } = setup(makeItem(), { onMinimize, confirming: false, pressingBadge: false });
 
-    // An element inside the card (the markdown editor host)
-    const inside = card.querySelector(".pp-md")!;
-    card.dispatchEvent(new FocusEvent("focusout", { bubbles: true, relatedTarget: inside }));
+    // The textarea is inside the card
+    const ta = card.querySelector("textarea")!;
+    card.dispatchEvent(new FocusEvent("focusout", { bubbles: true, relatedTarget: ta }));
 
     expect(onMinimize).not.toHaveBeenCalled();
   });
@@ -431,6 +403,17 @@ describe("draft vs saved card (TASK-30)", () => {
     expect(card.querySelector('button[title="minimize"]')).toBeNull();
   });
 
+  it("Shift+Enter on a draft saves", () => {
+    const { card, props } = setup(makeItem({ saved: false }));
+    const ta = card.querySelector("textarea")!;
+    act(() => {
+      ta.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true }),
+      );
+    });
+    expect(props.onSave).toHaveBeenCalled();
+  });
+
   it("clicking Save on a draft calls onSave", () => {
     const { card, props } = setup(makeItem({ saved: false }));
     const save = card.querySelector<HTMLButtonElement>('button[title="save annotation"]')!;
@@ -454,5 +437,113 @@ describe("draft vs saved card (TASK-30)", () => {
     });
     expect(props.onDelete).toHaveBeenCalled();
     expect(card.querySelector(".pp-confirm")).toBeNull();
+  });
+});
+
+// ─── Escape behavior (TASK-31 logic, on the textarea) ──────────────────────────
+
+const pressEscape = (card: HTMLElement) => {
+  const ta = card.querySelector("textarea")!;
+  act(() => {
+    ta.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  });
+};
+const discardOverlay = (card: HTMLElement) =>
+  Array.from(card.querySelectorAll(".pp-confirm")).find((o) =>
+    o.textContent?.includes("Discard changes?"),
+  ) as HTMLElement | undefined;
+
+describe("escape behavior", () => {
+  it("empty draft: Escape deletes immediately (no prompt)", () => {
+    const onDelete = vi.fn();
+    const { card } = setup(makeItem({ saved: false, comment: "" }), { onDelete });
+    pressEscape(card);
+    expect(onDelete).toHaveBeenCalledOnce();
+    expect(discardOverlay(card)).toBeUndefined();
+  });
+
+  it("draft with content: Escape opens the discard prompt instead of deleting", () => {
+    const onDelete = vi.fn();
+    const { card } = setup(makeItem({ saved: false, comment: "draft text" }), { onDelete });
+    pressEscape(card);
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(discardOverlay(card)).toBeDefined();
+  });
+
+  it("draft discard prompt → Discard deletes the draft", () => {
+    const onDelete = vi.fn();
+    const { card } = setup(makeItem({ saved: false, comment: "draft text" }), { onDelete });
+    pressEscape(card);
+    const discardBtn = Array.from(discardOverlay(card)!.querySelectorAll("button")).find(
+      (b) => b.textContent === "Discard",
+    )!;
+    act(() => discardBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(onDelete).toHaveBeenCalledOnce();
+  });
+
+  it("saved card with no changes: Escape just minimizes", () => {
+    const onMinimize = vi.fn();
+    const { card } = setup(makeItem({ saved: true, comment: "kept" }), { onMinimize });
+    pressEscape(card);
+    expect(onMinimize).toHaveBeenCalledOnce();
+    expect(discardOverlay(card)).toBeUndefined();
+  });
+
+  it("saved card with edits: Escape opens the discard prompt; Discard reverts then minimizes", () => {
+    // The textarea is controlled by item.comment, so an "edit" = the parent re-rendering the Card
+    // with a new item.comment. initialComment was captured at first mount ("kept"), so this is dirty.
+    const onComment = vi.fn();
+    const onMinimize = vi.fn();
+    const cont = document.createElement("div");
+    document.body.appendChild(cont);
+    const base = {
+      n: 1,
+      confirming: false,
+      pressingBadgeRef: { current: null as string | null },
+      onComment,
+      onToggleScreenshot: vi.fn(),
+      onMinimize,
+      onDelete: vi.fn(),
+      onSave: vi.fn(),
+      onSetConfirming: vi.fn(),
+      onDragDelta: vi.fn(),
+      nodeRef: vi.fn(),
+      hbRef: vi.fn(),
+    };
+    const item = makeItem({ saved: true, comment: "kept" });
+    render(<Card {...base} item={item} />, cont);
+    render(<Card {...base} item={{ ...item, comment: "kept + edits" }} />, cont); // simulate edit
+    const card = cont.querySelector(".pp-card") as HTMLDivElement;
+
+    pressEscape(card);
+    expect(onMinimize).not.toHaveBeenCalled();
+    expect(discardOverlay(card)).toBeDefined();
+
+    const discardBtn = Array.from(discardOverlay(card)!.querySelectorAll("button")).find(
+      (b) => b.textContent === "Discard",
+    )!;
+    act(() => discardBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(onComment).toHaveBeenLastCalledWith("kept"); // reverted to last-saved text
+    expect(onMinimize).toHaveBeenCalledOnce();
+
+    render(null, cont);
+    cont.remove();
+  });
+
+  it("discard prompt → Cancel hides it without deleting or minimizing", () => {
+    const onDelete = vi.fn();
+    const onMinimize = vi.fn();
+    const { card } = setup(makeItem({ saved: false, comment: "draft text" }), {
+      onDelete,
+      onMinimize,
+    });
+    pressEscape(card);
+    const cancelBtn = Array.from(discardOverlay(card)!.querySelectorAll("button")).find(
+      (b) => b.textContent === "Cancel",
+    )!;
+    act(() => cancelBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onMinimize).not.toHaveBeenCalled();
+    expect(discardOverlay(card)).toBeUndefined();
   });
 });

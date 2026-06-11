@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { ICON, Icon } from "../icons.js";
-import { createMarkdownEditor, type MarkdownEditorHandle } from "../markdown/editor.js";
 import type { Item } from "../state/types.js";
 import { ConfirmRow } from "./ConfirmRow.js";
 
@@ -37,10 +36,13 @@ export function Card({
   hbRef: (el: HTMLSpanElement | null) => void;
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showDiscard, setShowDiscard] = useState(false);
   const [visible, setVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const hostRef = useRef<HTMLDivElement | null>(null);
-  const editorRef = useRef<MarkdownEditorHandle | null>(null);
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
+  // Baseline for the discard prompt: the comment at open / last save. The textarea is controlled
+  // by item.comment, so item.comment is itself the live value to compare against.
+  const initialComment = useRef(item.comment);
 
   // Animate in on mount
   useEffect(() => {
@@ -50,28 +52,32 @@ export function Card({
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  // Focus textarea on mount, caret at end
+  useEffect(() => {
+    const ta = taRef.current;
+    if (!ta) return;
+    try {
+      ta.focus({ preventScroll: true });
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    } catch (_) {}
+  }, []);
+
   const isDraft = !item.saved; // TASK-30: drafts have a Save button + no minimize/close
   const color = item.kind === "screenshot" ? "#a855f7" : "#22c55e";
 
-  // Mount the markdown editor into the host once per card mount; comment is uncontrolled after
-  // init (matches the old textarea). Shift+Enter / Escape live in the editor keymap (TASK-31).
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-    editorRef.current = createMarkdownEditor(host, {
-      value: item.comment,
-      onChange: onComment,
-      onSave: () => (isDraft ? onSave() : onMinimize()),
-      onDiscard: () => {
-        if (isDraft) onDelete();
-      },
-    });
-    editorRef.current.focus();
-    return () => {
-      editorRef.current?.destroy();
-      editorRef.current = null;
-    };
-  }, []);
+  // Escape: empty draft → delete; dirty draft / dirty saved card → "Discard changes?" prompt;
+  // clean saved card → just minimize. "Dirty" = comment differs from the value at open/last save.
+  function handleEscape() {
+    const dirty = item.comment !== initialComment.current;
+    if (isDraft) {
+      if (item.comment.trim() === "") onDelete();
+      else openDiscard();
+    } else if (dirty) {
+      openDiscard();
+    } else {
+      onMinimize();
+    }
+  }
 
   const cardStyle =
     `position:absolute;pointer-events:auto;width:208px;background:#1b1b1b;border:1px solid #2a6;border-radius:8px;padding:8px;box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:${Z + 6};left:0;top:0;` +
@@ -85,6 +91,9 @@ export function Card({
   const labelStyle = "flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
 
   const iconBtnStyle = "width:24px;height:24px;border-radius:6px";
+
+  const taStyle =
+    "width:100%;box-sizing:border-box;background:#0e0e0e;color:#fff;border:1px solid #333;border-radius:4px;font:12px system-ui;resize:vertical";
 
   function handleHeaderPointerDown(e: PointerEvent) {
     const target = e.target as Element;
@@ -121,7 +130,30 @@ export function Card({
     onSetConfirming(false);
     setShowConfirm(false);
     try {
-      editorRef.current?.focus();
+      taRef.current?.focus({ preventScroll: true });
+    } catch (_) {}
+  }
+
+  function openDiscard() {
+    onSetConfirming(true); // suppress the focus-out minimize while the prompt is up
+    setShowDiscard(true);
+  }
+
+  function handleDiscardYes() {
+    onSetConfirming(false);
+    if (isDraft) {
+      onDelete(); // discarding a draft throws the whole thing away
+    } else {
+      onComment(initialComment.current); // revert saved edits to the last-saved text, then close
+      onMinimize();
+    }
+  }
+
+  function handleDiscardNo() {
+    onSetConfirming(false);
+    setShowDiscard(false);
+    try {
+      taRef.current?.focus({ preventScroll: true });
     } catch (_) {}
   }
 
@@ -129,7 +161,7 @@ export function Card({
     if (isDraft) return; // TASK-30: drafts never minimize on blur — save or discard explicitly
     // Read pressingBadgeRef LIVE — this fires synchronously with no re-render
     // between badge pointerdown and the card's focusout (TASK-18 #3 / CRITICAL #1).
-    if (showConfirm || pressingBadgeRef.current === item.id) return;
+    if (showConfirm || showDiscard || pressingBadgeRef.current === item.id) return;
     if (confirming) return;
     const card = cardRef.current;
     if (!card) return;
@@ -205,13 +237,28 @@ export function Card({
         </button>
       </div>
 
-      {/* Markdown comment editor (lists only) — host for the ProseMirror view (TASK-31).
-          Shift+Enter (save) / Escape (discard draft) are handled by the editor's keymap. */}
-      <div
-        class="pp-md"
-        ref={hostRef}
+      {/* Comment textarea. Shift+Enter saves (draft) / minimizes (saved); Escape closes with
+          intent (empty draft → delete; dirty → discard prompt; clean saved → minimize). */}
+      <textarea
+        ref={taRef}
+        rows={2}
+        value={item.comment}
+        placeholder={isDraft ? "What should change?  (Shift+Enter to save)" : "What should change?"}
+        style={taStyle}
+        onInput={(e) => onComment((e.target as HTMLTextAreaElement).value)}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && e.shiftKey) {
+            e.preventDefault();
+            initialComment.current = item.comment; // saving rebaselines, so a later Escape is clean
+            if (isDraft) onSave();
+            else onMinimize();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            handleEscape();
+          }
+        }}
       />
 
       {/* Save button — drafts only, bottom-right (TASK-30) */}
@@ -219,9 +266,9 @@ export function Card({
         <div style="display:flex;justify-content:flex-end;margin-top:6px">
           <button
             type="button"
-            class="pp-icon"
+            class="pp-icon pp-active"
             title="save annotation"
-            style="min-width:56px;height:26px;border-radius:6px;font:600 12px system-ui;background:#2962ff;color:#fff"
+            style="min-width:56px;height:26px;border-radius:6px;font:600 12px system-ui"
             onClick={(e) => {
               e.stopPropagation();
               onSave();
@@ -240,6 +287,17 @@ export function Card({
         >
           <div style="font:600 12px system-ui;color:#fff">Delete this annotation?</div>
           <ConfirmRow yesLabel="Delete" onYes={handleConfirmYes} onNo={handleConfirmNo} />
+        </div>
+      )}
+
+      {/* Discard-changes overlay — Escape on a dirty draft / dirty saved card */}
+      {showDiscard && (
+        <div
+          class="pp-confirm"
+          style="position:absolute;inset:0;background:rgba(18,18,18,.97);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px;z-index:3"
+        >
+          <div style="font:600 12px system-ui;color:#fff">Discard changes?</div>
+          <ConfirmRow yesLabel="Discard" onYes={handleDiscardYes} onNo={handleDiscardNo} />
         </div>
       )}
     </div>

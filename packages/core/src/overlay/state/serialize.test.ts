@@ -237,7 +237,12 @@ describe("selected array", () => {
 describe("serialize excludes drafts (TASK-30)", () => {
   it("only saved items appear, renumbered over the saved set", () => {
     const sel = (name: string) => [
-      { selector: `#${name}`, tagName: "DIV", text: name, react: { componentName: name, ancestry: [name] } },
+      {
+        selector: `#${name}`,
+        tagName: "DIV",
+        text: name,
+        react: { componentName: name, ancestry: [name] },
+      },
     ];
     const state = makeState({
       items: [

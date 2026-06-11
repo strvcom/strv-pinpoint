@@ -25,7 +25,14 @@ function elementItem(overrides: Partial<Item> & { selector?: string } = {}): Ite
   return {
     id: "e1",
     kind: "element",
-    selected: [{ selector: selector ?? "#my-el", tagName: "div", text: "", react: { componentName: "MyComponent", ancestry: [] } }],
+    selected: [
+      {
+        selector: selector ?? "#my-el",
+        tagName: "div",
+        text: "",
+        react: { componentName: "MyComponent", ancestry: [] },
+      },
+    ],
     rect: { x: 10, y: 20, width: 80, height: 30 },
     comment: "",
     wantScreenshot: false,

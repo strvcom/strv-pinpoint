@@ -111,7 +111,8 @@ export function installSelectionProbe(): () => void {
       componentName: string;
       ancestry: string[];
       source?: { file: string; line: number };
-    } | null = ancestry.length > 0 ? { componentName: ancestry[0], ancestry: ancestry.slice(0, 8) } : null;
+    } | null =
+      ancestry.length > 0 ? { componentName: ancestry[0], ancestry: ancestry.slice(0, 8) } : null;
     if (react) {
       var src = sourceFromFiber(f);
       if (src) react.source = src;
