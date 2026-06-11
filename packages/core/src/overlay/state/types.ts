@@ -1,5 +1,12 @@
 export type Mode = "pick" | "screenshot" | null;
 export type Kind = "element" | "screenshot";
+/** Identity unit (wire-mirrored in core types.ts — keep structurally identical). */
+export interface Selection {
+  selector: string;
+  tagName: string;
+  text: string;
+  react: { componentName: string; ancestry: string[] } | null;
+}
 export interface Rect {
   x: number;
   y: number;
@@ -9,11 +16,7 @@ export interface Rect {
 export interface Item {
   id: string;
   kind: Kind;
-  componentName: string | null;
-  ancestry: string[];
-  selector: string;
-  tagName: string;
-  text: string;
+  selected: Selection[];
   rect: Rect;
   pageX?: number;
   pageY?: number; // screenshot kind only
@@ -37,18 +40,8 @@ export interface OverlayState {
 }
 export type Action =
   | { type: "setMode"; mode: Mode }
-  | {
-      type: "addElement";
-      data: {
-        componentName: string | null;
-        ancestry: string[];
-        selector: string;
-        tagName: string;
-        text: string;
-        rect: Rect;
-      };
-    }
-  | { type: "addScreenshot"; rect: Rect; pageX: number; pageY: number }
+  | { type: "addElement"; data: { selected: Selection[]; rect: Rect } }
+  | { type: "addScreenshot"; rect: Rect; pageX: number; pageY: number; selected: Selection[] }
   | { type: "setComment"; id: string; comment: string }
   | { type: "toggleScreenshot"; id: string }
   | { type: "openCard"; id: string }

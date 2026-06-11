@@ -40,11 +40,7 @@ export function reducer(state: OverlayState, action: Action): OverlayState {
       const item: Item = {
         id,
         kind: "element",
-        componentName: action.data.componentName,
-        ancestry: [...action.data.ancestry],
-        selector: action.data.selector,
-        tagName: action.data.tagName,
-        text: action.data.text,
+        selected: action.data.selected,
         rect: { ...action.data.rect },
         comment: "",
         wantScreenshot: true, // TASK-18 #5: element picks default to including a screenshot
@@ -65,11 +61,7 @@ export function reducer(state: OverlayState, action: Action): OverlayState {
       const item: Item = {
         id,
         kind: "screenshot",
-        componentName: null,
-        ancestry: [],
-        selector: "",
-        tagName: "",
-        text: "",
+        selected: action.selected,
         rect: { ...action.rect },
         pageX: action.pageX,
         pageY: action.pageY,

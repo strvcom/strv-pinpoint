@@ -27,7 +27,9 @@ export async function saveScreenshots(
       }
       let png: Buffer | null = null;
       try {
-        if (it.selector) png = await page.screenshotElement(it.selector);
+        if (it.kind === "element" && it.selected[0]?.selector) {
+          png = await page.screenshotElement(it.selected[0].selector);
+        }
         if (!png) png = await page.screenshotClip(it.rect);
       } catch {
         png = null;

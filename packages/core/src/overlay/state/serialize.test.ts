@@ -9,12 +9,14 @@ function makeItem(overrides: Partial<Item> & { id: string }): Item {
   return {
     id: overrides.id,
     kind: overrides.kind ?? "element",
-    componentName:
-      "componentName" in overrides ? (overrides.componentName as string | null) : "Button",
-    ancestry: overrides.ancestry ?? ["App"],
-    selector: overrides.selector ?? ".btn",
-    tagName: overrides.tagName ?? "button",
-    text: overrides.text ?? "Click me",
+    selected: overrides.selected ?? [
+      {
+        selector: ".btn",
+        tagName: "button",
+        text: "Click me",
+        react: { componentName: "Button", ancestry: ["App"] },
+      },
+    ],
     rect: overrides.rect ?? { x: 0, y: 0, width: 0, height: 0 },
     comment: overrides.comment ?? "",
     wantScreenshot: overrides.wantScreenshot ?? true,
@@ -53,11 +55,15 @@ const vrectStub = (it: Item): Rect => ({
 describe("serializeState — golden test (2 items)", () => {
   const item1 = makeItem({
     id: "a1",
-    componentName: "Header",
-    ancestry: ["App", "Nav"],
-    selector: "#header",
-    tagName: "header",
-    text: "My App",
+    kind: "element",
+    selected: [
+      {
+        selector: "#header",
+        tagName: "header",
+        text: "My App",
+        react: { componentName: "Header", ancestry: ["App", "Nav"] },
+      },
+    ],
     rect: { x: 9, y: 9, width: 9, height: 9 }, // must NOT appear in output
     comment: "look at this",
     wantScreenshot: true,
@@ -65,11 +71,15 @@ describe("serializeState — golden test (2 items)", () => {
 
   const item2 = makeItem({
     id: "a2",
-    componentName: "Footer",
-    ancestry: ["App"],
-    selector: "#footer",
-    tagName: "footer",
-    text: "© 2026",
+    kind: "element",
+    selected: [
+      {
+        selector: "#footer",
+        tagName: "footer",
+        text: "© 2026",
+        react: { componentName: "Footer", ancestry: ["App"] },
+      },
+    ],
     rect: { x: 8, y: 8, width: 8, height: 8 }, // must NOT appear in output
     comment: "",
     wantScreenshot: false,
@@ -88,11 +98,15 @@ describe("serializeState — golden test (2 items)", () => {
     expect(snap.items[0]).toEqual({
       id: "a1",
       badge: 1,
-      componentName: "Header",
-      ancestry: ["App", "Nav"],
-      selector: "#header",
-      tagName: "header",
-      text: "My App",
+      kind: "element",
+      selected: [
+        {
+          selector: "#header",
+          tagName: "header",
+          text: "My App",
+          react: { componentName: "Header", ancestry: ["App", "Nav"] },
+        },
+      ],
       rect: { x: 1001, y: 2001, width: 300, height: 400 }, // from vrect
       comment: "look at this",
       wantScreenshot: true,
@@ -103,11 +117,15 @@ describe("serializeState — golden test (2 items)", () => {
     expect(snap.items[1]).toEqual({
       id: "a2",
       badge: 2,
-      componentName: "Footer",
-      ancestry: ["App"],
-      selector: "#footer",
-      tagName: "footer",
-      text: "© 2026",
+      kind: "element",
+      selected: [
+        {
+          selector: "#footer",
+          tagName: "footer",
+          text: "© 2026",
+          react: { componentName: "Footer", ancestry: ["App"] },
+        },
+      ],
       rect: { x: 1002, y: 2002, width: 300, height: 400 }, // from vrect
       comment: "",
       wantScreenshot: false,
@@ -118,6 +136,11 @@ describe("serializeState — golden test (2 items)", () => {
     // item1.rect is {9,9,9,9}; vrect returns {1001,2001,300,400}
     expect(snap.items[0].rect).not.toEqual(item1.rect);
     expect(snap.items[0].rect).toEqual({ x: 1001, y: 2001, width: 300, height: 400 });
+  });
+
+  it("serialized items do NOT have flat componentName field", () => {
+    expect(snap.items[0]).not.toHaveProperty("componentName");
+    expect(snap.items[1]).not.toHaveProperty("componentName");
   });
 });
 
@@ -188,28 +211,43 @@ describe("vrect called exactly once per item", () => {
   });
 });
 
-// ─── componentName: null survives round-trip ──────────────────────────────────
-describe("componentName null", () => {
-  it("null componentName is preserved (not coerced to empty string)", () => {
+// ─── selected array preserved round-trip ─────────────────────────────────────
+describe("selected array", () => {
+  it("empty selected array is preserved", () => {
     const state = makeState({
-      items: [makeItem({ id: "a1", componentName: null })],
+      items: [makeItem({ id: "a1", selected: [] })],
     });
     const snap = serializeState(state, vrectStub);
-    expect(snap.items[0].componentName).toBeNull();
+    expect(snap.items[0].selected).toEqual([]);
+  });
+
+  it("multiple selections are preserved in order", () => {
+    const selections = [
+      { selector: "#a", tagName: "div", text: "A", react: null },
+      { selector: "#b", tagName: "span", text: "B", react: { componentName: "Foo", ancestry: [] } },
+    ];
+    const state = makeState({
+      items: [makeItem({ id: "a1", selected: selections })],
+    });
+    const snap = serializeState(state, vrectStub);
+    expect(snap.items[0].selected).toEqual(selections);
   });
 });
 
 describe("serialize excludes drafts (TASK-30)", () => {
   it("only saved items appear, renumbered over the saved set", () => {
+    const sel = (name: string) => [
+      { selector: `#${name}`, tagName: "DIV", text: name, react: { componentName: name, ancestry: [name] } },
+    ];
     const state = makeState({
       items: [
-        makeItem({ id: "a1", componentName: "A", saved: true }),
-        makeItem({ id: "a2", componentName: "Draft", saved: false }),
-        makeItem({ id: "a3", componentName: "B", saved: true }),
+        makeItem({ id: "a1", selected: sel("A"), saved: true }),
+        makeItem({ id: "a2", selected: sel("Draft"), saved: false }),
+        makeItem({ id: "a3", selected: sel("B"), saved: true }),
       ],
     });
     const snap = serializeState(state, vrectStub);
-    expect(snap.items.map((i) => i.componentName)).toEqual(["A", "B"]);
+    expect(snap.items.map((i) => i.selected[0].react?.componentName)).toEqual(["A", "B"]);
     expect(snap.items.map((i) => i.badge)).toEqual([1, 2]);
   });
 });

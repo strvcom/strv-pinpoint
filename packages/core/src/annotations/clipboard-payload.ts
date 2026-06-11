@@ -12,17 +12,14 @@ export interface ClipboardPayloadArgs {
 export function buildClipboardJson(args: ClipboardPayloadArgs): string {
   const payload = {
     source: "pinpoint",
-    version: 1,
+    version: 2,
     bridgeUrl: args.bridgeUrl,
     sessionId: args.sessionId,
     promptId: args.promptId,
     items: args.items.map((it) => ({
       badge: it.badge,
-      componentName: it.componentName,
-      ancestry: it.ancestry,
-      selector: it.selector,
-      tagName: it.tagName,
-      text: it.text,
+      kind: it.kind,
+      selected: it.selected,
       comment: it.comment,
       screenshot: args.screenshotPaths[it.badge] ?? null,
     })),

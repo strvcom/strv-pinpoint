@@ -18,11 +18,9 @@ function makeItem(overrides: Partial<Item> = {}): Item {
   return {
     id: "i1",
     kind: "element",
-    componentName: "MyButton",
-    ancestry: [],
-    selector: "button",
-    tagName: "BUTTON",
-    text: "Click me",
+    selected: [
+      { selector: "button", tagName: "BUTTON", text: "Click me", react: { componentName: "MyButton", ancestry: [] } },
+    ],
     rect: { x: 0, y: 0, width: 100, height: 40 },
     comment: "initial comment",
     wantScreenshot: false,
@@ -361,17 +359,21 @@ describe("header badge", () => {
 
 describe("label", () => {
   it("shows componentName when available", () => {
-    const { card } = setup(makeItem({ componentName: "FancyBtn" }));
+    const { card } = setup(makeItem({
+      selected: [{ selector: "button", tagName: "BUTTON", text: "", react: { componentName: "FancyBtn", ancestry: [] } }],
+    }));
     expect(card.textContent).toContain("FancyBtn");
   });
 
-  it("falls back to tagName when componentName is null", () => {
-    const { card } = setup(makeItem({ componentName: null, tagName: "SECTION" }));
+  it("falls back to tagName when react is null", () => {
+    const { card } = setup(makeItem({
+      selected: [{ selector: "section", tagName: "SECTION", text: "", react: null }],
+    }));
     expect(card.textContent).toContain("SECTION");
   });
 
-  it("falls back to screenshot when both are null/empty", () => {
-    const { card } = setup(makeItem({ componentName: null, tagName: "", kind: "screenshot" }));
+  it("falls back to screenshot when selected is empty", () => {
+    const { card } = setup(makeItem({ selected: [], kind: "screenshot" }));
     expect(card.textContent).toContain("screenshot");
   });
 });

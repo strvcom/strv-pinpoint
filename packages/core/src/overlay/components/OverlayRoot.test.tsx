@@ -200,12 +200,11 @@ describe("copy flow (with fake timers)", () => {
     document.elementFromPoint = () => fakeEl;
 
     (window as unknown as Record<string, unknown>).__pinpointExtractSelection = () => ({
-      componentName: "TestBtn",
-      ancestry: ["App"],
       selector: "button.test-el",
       tagName: "BUTTON",
       text: "test",
       rect: { x: 10, y: 10, width: 80, height: 30 },
+      react: { componentName: "TestBtn", ancestry: ["TestBtn", "App"] },
     });
 
     const { container } = setup();
@@ -229,18 +228,28 @@ describe("copy flow (with fake timers)", () => {
       );
     });
 
-    // Verify item was added: CopyButton should be enabled.
+    // The pick creates an unsaved DRAFT (TASK-30); drafts are excluded from the serialized
+    // payload until saved. Verify the item was added: CopyButton should be enabled.
     const copyBtn = container.querySelector<HTMLButtonElement>(
       'button[title="Copy annotations to clipboard (then Cmd+Shift+V into Claude)"]',
     )!;
     expect(copyBtn).not.toBeNull();
     expect(copyBtn.disabled).toBe(false);
 
-    // Click copy → shows Copied ✓
+    // Click copy → saves the draft (TASK-30) and shows Copied ✓
     act(() => {
       copyBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     expect(copyBtn.textContent).toContain("Copied");
+
+    // Now the saved item is in the serialized global — verify onPick propagated the React
+    // identity (FAILS if onPick stops reading d.react / dropping it on the item).
+    const snap = (window as unknown as Record<string, unknown>)[ANNOTATIONS_GLOBAL] as {
+      items: { kind: string; selected: { react: { componentName: string } | null }[] }[];
+    };
+    expect(snap.items).toHaveLength(1);
+    expect(snap.items[0].kind).toBe("element");
+    expect(snap.items[0].selected[0].react?.componentName).toBe("TestBtn");
 
     // Advance 1600ms → reverts to "Copy"
     act(() => {
@@ -262,12 +271,11 @@ describe("copy flow (with fake timers)", () => {
     document.elementFromPoint = () => fakeEl;
 
     (window as unknown as Record<string, unknown>).__pinpointExtractSelection = () => ({
-      componentName: "Comp",
-      ancestry: [],
       selector: "span.test-el2",
       tagName: "SPAN",
       text: "t",
       rect: { x: 5, y: 5, width: 50, height: 20 },
+      react: { componentName: "Comp", ancestry: [] },
     });
 
     const { container } = setup();

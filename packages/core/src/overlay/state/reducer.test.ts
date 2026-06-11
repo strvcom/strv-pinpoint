@@ -3,12 +3,15 @@ import { createInitialState, reducer } from "./reducer.js";
 import type { OverlayState } from "./types.js";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+const sel = {
+  selector: "#x",
+  tagName: "H1",
+  text: "hi",
+  react: { componentName: "Hero", ancestry: ["Hero"] },
+};
+
 const elementData = {
-  componentName: "Button",
-  ancestry: ["App", "Form"],
-  selector: ".btn",
-  tagName: "button",
-  text: "Click me",
+  selected: [sel],
   rect: { x: 10, y: 20, width: 100, height: 40 },
 };
 
@@ -53,6 +56,7 @@ describe("purity", () => {
       rect: { x: 0, y: 0, width: 10, height: 10 },
       pageX: 5,
       pageY: 5,
+      selected: [],
     });
     expect(initial.items).toBe(itemsRef); // same reference — we never touched it
     expect(initial.items).toHaveLength(0);
@@ -76,11 +80,7 @@ describe("addElement", () => {
     const item = s.items[0];
     expect(item.id).toBe("a1");
     expect(item.kind).toBe("element");
-    expect(item.componentName).toBe("Button");
-    expect(item.ancestry).toEqual(["App", "Form"]);
-    expect(item.selector).toBe(".btn");
-    expect(item.tagName).toBe("button");
-    expect(item.text).toBe("Click me");
+    expect(item.selected).toEqual([sel]);
     expect(item.rect).toEqual({ x: 10, y: 20, width: 100, height: 40 });
     expect(item.comment).toBe("");
   });
@@ -121,16 +121,18 @@ describe("addScreenshot", () => {
   const rect = { x: 5, y: 10, width: 200, height: 150 };
 
   it("pushes a screenshot item with correct fields", () => {
-    const s = reducer(createInitialState(), { type: "addScreenshot", rect, pageX: 50, pageY: 100 });
+    const s = reducer(createInitialState(), {
+      type: "addScreenshot",
+      rect,
+      pageX: 50,
+      pageY: 100,
+      selected: [sel],
+    });
     expect(s.items).toHaveLength(1);
     const item = s.items[0];
     expect(item.id).toBe("a1");
     expect(item.kind).toBe("screenshot");
-    expect(item.componentName).toBeNull();
-    expect(item.ancestry).toEqual([]);
-    expect(item.selector).toBe("");
-    expect(item.tagName).toBe("");
-    expect(item.text).toBe("");
+    expect(item.selected).toEqual([sel]);
     expect(item.rect).toEqual(rect);
     expect(item.pageX).toBe(50);
     expect(item.pageY).toBe(100);
@@ -139,14 +141,20 @@ describe("addScreenshot", () => {
   });
 
   it("increments nextId and opens card", () => {
-    const s = reducer(createInitialState(), { type: "addScreenshot", rect, pageX: 0, pageY: 0 });
+    const s = reducer(createInitialState(), {
+      type: "addScreenshot",
+      rect,
+      pageX: 0,
+      pageY: 0,
+      selected: [],
+    });
     expect(s.nextId).toBe(2);
     expect(s.open.a1).toBe(true);
   });
 
   it("dirties", () => {
     const pre: OverlayState = { ...createInitialState(), ready: true, copied: true };
-    const s = reducer(pre, { type: "addScreenshot", rect, pageX: 0, pageY: 0 });
+    const s = reducer(pre, { type: "addScreenshot", rect, pageX: 0, pageY: 0, selected: [] });
     expect(s.ready).toBe(false);
     expect(s.copied).toBe(false);
   });
@@ -256,7 +264,7 @@ describe("deleteItem", () => {
     const s1saved = reducer(s1, { type: "saveItem", id: "a1" }); // TASK-30: keep both (one draft rule)
     const s2 = reducer(s1saved, {
       type: "addElement",
-      data: { ...elementData, componentName: "Other" },
+      data: { ...elementData, selected: [{ ...sel, selector: "#y" }] },
     });
     expect(s2.items).toHaveLength(2);
     const s3 = reducer(s2, { type: "deleteItem", id: "a1" });
@@ -445,12 +453,12 @@ describe("dirty invariant", () => {
 
     // addScreenshot
     const rect = { x: 0, y: 0, width: 1, height: 1 };
-    expect(reducer(dirtyFrom, { type: "addScreenshot", rect, pageX: 0, pageY: 0 }).ready).toBe(
-      false,
-    );
-    expect(reducer(dirtyFrom, { type: "addScreenshot", rect, pageX: 0, pageY: 0 }).copied).toBe(
-      false,
-    );
+    expect(
+      reducer(dirtyFrom, { type: "addScreenshot", rect, pageX: 0, pageY: 0, selected: [] }).ready,
+    ).toBe(false);
+    expect(
+      reducer(dirtyFrom, { type: "addScreenshot", rect, pageX: 0, pageY: 0, selected: [] }).copied,
+    ).toBe(false);
 
     // setComment — need an item first
     const withItem = reducer(createInitialState(), { type: "addElement", data: elementData });
@@ -492,11 +500,9 @@ describe("save/draft (TASK-30)", () => {
     return reducer(createInitialState(), {
       type: "addElement",
       data: {
-        componentName: "Btn",
-        ancestry: ["Btn"],
-        selector: "#b",
-        tagName: "BUTTON",
-        text: "x",
+        selected: [
+          { selector: "#b", tagName: "BUTTON", text: "x", react: { componentName: "Btn", ancestry: ["Btn"] } },
+        ],
         rect: { x: 0, y: 0, width: 10, height: 10 },
       },
     });
@@ -513,16 +519,14 @@ describe("save/draft (TASK-30)", () => {
     const s2 = reducer(withElement(), {
       type: "addElement",
       data: {
-        componentName: "Two",
-        ancestry: ["Two"],
-        selector: "#t",
-        tagName: "DIV",
-        text: "y",
+        selected: [
+          { selector: "#t", tagName: "DIV", text: "y", react: { componentName: "Two", ancestry: ["Two"] } },
+        ],
         rect: { x: 0, y: 0, width: 5, height: 5 },
       },
     });
     expect(s2.items).toHaveLength(1);
-    expect(s2.items[0].componentName).toBe("Two");
+    expect(s2.items[0].selected[0].react?.componentName).toBe("Two");
     expect(s2.items[0].saved).toBe(false);
   });
 

@@ -36,11 +36,8 @@ afterAll(() => server.close());
 const item = (over = {}) => ({
   id: "a",
   badge: 1,
-  componentName: "Hero",
-  ancestry: ["Hero"],
-  selector: "#h",
-  tagName: "H1",
-  text: "hi",
+  kind: "element",
+  selected: [{ selector: "#h", tagName: "H1", text: "hi", react: null }],
   rect: { x: 0, y: 0, width: 4, height: 4 },
   comment: "bigger",
   wantScreenshot: false,
@@ -54,8 +51,8 @@ describe("bridge routes", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         items: [
-          item({ badge: 1, wantScreenshot: true, selector: "#h" }),
-          item({ id: "a2", badge: 2, componentName: "Nav", wantScreenshot: false }),
+          item({ badge: 1, wantScreenshot: true }),
+          item({ id: "a2", badge: 2, selected: [{ selector: "#h", tagName: "H1", text: "nav", react: { componentName: "Nav", ancestry: ["Nav"] } }], wantScreenshot: false }),
         ],
       }),
     });
@@ -64,6 +61,7 @@ describe("bridge routes", () => {
     expect(body.imageCount).toBe(1);
     const payload = JSON.parse(clip.at(-1) as string);
     expect(payload.source).toBe("pinpoint");
+    expect(payload.version).toBe(2);
     expect(payload.items).toHaveLength(2);
     expect(payload.items[0].screenshot).toMatch(/anno-1\.png$/);
     expect(existsSync(payload.items[0].screenshot)).toBe(true);

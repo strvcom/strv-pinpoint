@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createCdpDriver } from "../src/driver/cdp-driver.js";
 import type { DriverSession } from "../src/driver/driver.js";
-import type { SelectionFound } from "../src/types.js";
+import type { Rect, Selection } from "../src/types.js";
 
 /**
  * Proves the CDP + fiber-identity bridge works on Vite + React. The extractor
@@ -34,11 +34,11 @@ afterAll(async () => {
 
 describe("pinpoint identity extraction on Vite + React (integration)", () => {
   it("extracts the user component identity for the picked element", async () => {
-    const sel = await connection.page.evaluate<SelectionFound>(
+    const sel = await connection.page.evaluate<Selection & { rect: Rect }>(
       "window.__pinpointExtractSelection(document.querySelector('#hero-heading'))",
     );
-    expect(sel.componentName).toBe("Hero");
-    expect(sel.ancestry).toEqual(["Hero", "App"]);
+    expect(sel.react?.componentName).toBe("Hero");
+    expect(sel.react?.ancestry).toEqual(["Hero", "App"]);
     expect(sel.tagName).toBe("H1");
     expect(typeof sel.selector).toBe("string");
   });

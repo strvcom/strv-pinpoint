@@ -77,13 +77,16 @@ export function installSelectionProbe(): () => void {
     };
 
     var r = el.getBoundingClientRect();
+    var react =
+      ancestry.length > 0
+        ? { componentName: ancestry[0], ancestry: ancestry.slice(0, 8) }
+        : null;
     return {
       selector: selectorFor(el),
       tagName: el.tagName,
       text: ((el as any).innerText || el.textContent || "").trim().slice(0, 120),
       rect: { x: r.x, y: r.y, width: r.width, height: r.height },
-      componentName: ancestry[0] || null,
-      ancestry: ancestry.slice(0, 8),
+      react: react,
     };
   };
   return function disposeSelectionProbe() {

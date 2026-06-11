@@ -144,7 +144,7 @@ export function Card({
         <span ref={hbRef} style={badgeStyle}>
           {n}
         </span>
-        <span style={labelStyle}>{item.componentName || item.tagName || "screenshot"}</span>
+        <span style={labelStyle}>{item.selected[0]?.react?.componentName || item.selected[0]?.tagName || "screenshot"}</span>
 
         {/* Camera button — element kind ONLY (TASK-18 #4) */}
         {item.kind === "element" && (

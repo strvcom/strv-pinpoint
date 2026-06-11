@@ -20,6 +20,15 @@ export interface SelectionFound {
   rect: Rect;
 }
 
+/** v2 annotation identity unit. `react` is null for plain (non-React) DOM.
+ *  Extended additively by TASK-28 (source/identifiers). */
+export interface Selection {
+  selector: string;
+  tagName: string;
+  text: string;
+  react: { componentName: string; ancestry: string[] } | null;
+}
+
 export interface NoSelection {
   status: "none";
   message: string;
@@ -42,11 +51,8 @@ export interface CapturedImage {
 export interface Annotation {
   id: string;
   badge: number;
-  componentName: string | null;
-  ancestry: string[];
-  selector: string;
-  tagName: string;
-  text: string;
+  kind: "element" | "screenshot";
+  selected: Selection[];
   rect: Rect;
   comment: string;
   wantScreenshot: boolean;
