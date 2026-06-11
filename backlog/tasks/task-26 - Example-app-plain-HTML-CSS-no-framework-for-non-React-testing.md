@@ -1,10 +1,10 @@
 ---
 id: TASK-26
 title: 'Example app: plain HTML/CSS (no framework) for non-React testing'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-11 16:14'
-updated_date: '2026-06-11 16:52'
+updated_date: '2026-06-11 17:01'
 labels:
   - feature
 dependencies: []
