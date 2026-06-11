@@ -11,7 +11,11 @@ export function installOverlayApp(): void {
   const disposeLink = installBridgeLink();
   const host = document.createElement("div");
   host.setAttribute("data-pinpoint", "1"); // C2: the single hideable host for screenshots
-  host.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:2147483640";
+  // No layout styles (TASK-23 #1). Every overlay layer inside the shadow root is position:fixed and
+  // anchors to the viewport on its own, so the host needs no position/inset/z-index. As a
+  // zero-footprint element it can't cover the page (so it can't intercept clicks or affect page
+  // scroll), which is why pointer-events:none is no longer needed. Each layer manages its own
+  // pointer-events: the Toolbar sets auto (interactive); MarksLayer/Hover/Marquee set none (click-through).
   document.documentElement.appendChild(host);
   const root = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");

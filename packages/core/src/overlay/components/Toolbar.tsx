@@ -49,7 +49,7 @@ export function Toolbar({
     // viewport corner and the orb stays put when the pill collapses (parity with install.ts setFabPos).
     // The clear panel below is position:absolute, anchoring to this fixed element.
     <div
-      style={`position:fixed;z-index:2147483643;right:${right}px;bottom:${bottom}px;left:auto;top:auto`}
+      style={`position:fixed;z-index:2147483643;right:${right}px;bottom:${bottom}px;left:auto;top:auto;pointer-events:auto`}
     >
       <Fab
         fabOpen={fabOpen}
