@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import type { Mode, Rect } from "../state/types.js";
 
 export interface UseScreenshotRegionArgs {
@@ -39,6 +39,14 @@ export function useScreenshotRegion({
   onMarquee,
   onCapture,
 }: UseScreenshotRegionArgs): void {
+  // Keep the callbacks in a ref so the listener effect depends only on [mode, hostEl].
+  // onCapture is an inline arrow in OverlayRoot (new identity every render); if the effect
+  // depended on it, the marquee's own setMarqueeRect re-render would tear down and re-run the
+  // effect mid-drag, resetting `sdrag` to null — so the region never grew past the first move
+  // (TASK-23: screenshot drag was stuck at ~0×0 and couldn't expand).
+  const cbRef = useRef({ onMarquee, onCapture });
+  cbRef.current = { onMarquee, onCapture };
+
   useEffect(() => {
     let sdrag: { x: number; y: number } | null = null;
 
@@ -56,16 +64,16 @@ export function useScreenshotRegion({
 
     function onMouseMove(e: MouseEvent) {
       if (mode !== "screenshot" || !sdrag) return;
-      onMarquee(rectOf(sdrag, e));
+      cbRef.current.onMarquee(rectOf(sdrag, e));
     }
 
     function onMouseUp(e: MouseEvent) {
       if (mode !== "screenshot" || !sdrag) return;
       const r = rectOf(sdrag, e);
       sdrag = null;
-      onMarquee(null);
+      cbRef.current.onMarquee(null);
       if (r.width > 6 && r.height > 6) {
-        onCapture(r);
+        cbRef.current.onCapture(r);
       }
     }
 
@@ -78,5 +86,5 @@ export function useScreenshotRegion({
       document.removeEventListener("mousemove", onMouseMove, true);
       document.removeEventListener("mouseup", onMouseUp, true);
     };
-  }, [mode, hostEl, onMarquee, onCapture]);
+  }, [mode, hostEl]);
 }
