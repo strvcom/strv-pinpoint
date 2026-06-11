@@ -3,12 +3,15 @@ id: TASK-27
 title: >-
   Annotation payload v2: selected[] array of selection objects (+ screenshot
   multi-selection)
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-06-11 16:14'
+updated_date: '2026-06-11 17:32'
 labels:
   - feature
 dependencies: []
+references:
+  - docs/superpowers/specs/2026-06-11-annotation-payload-v2-design.md
 ordinal: 27000
 ---
 
