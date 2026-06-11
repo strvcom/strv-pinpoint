@@ -1,10 +1,10 @@
 ---
 id: TASK-30
 title: 'Annotation save/draft flow: not persisted until saved'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-11 18:09'
-updated_date: '2026-06-11 18:10'
+updated_date: '2026-06-11 19:16'
 labels:
   - feature
 dependencies: []
