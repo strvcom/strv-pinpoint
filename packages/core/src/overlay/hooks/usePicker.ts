@@ -18,20 +18,31 @@ export interface UsePickerArgs {
  */
 export function usePicker({ mode, hostEl, onHover, onPick }: UsePickerArgs): void {
   useEffect(() => {
+    // Not picking → clear any lingering hover highlight (tool deselected, toolbar closed, or
+    // switched to screenshot) and attach nothing. Without this the last hover rect stays painted
+    // on screen forever (TASK-29).
+    if (mode !== "pick") {
+      onHover(null);
+      return;
+    }
+
     function isHostHit(el: Element | null): boolean {
       if (!el) return false;
       return el === hostEl || !!hostEl?.contains(el);
     }
 
     function onMouseMove(e: MouseEvent) {
-      if (mode !== "pick") return;
       const el = document.elementFromPoint(e.clientX, e.clientY);
-      if (!el || isHostHit(el)) return;
+      // Over the overlay's own UI (toolbar/card/badge) or off any element → clear the highlight
+      // rather than leaving the last page-element rect painted (TASK-29).
+      if (!el || isHostHit(el)) {
+        onHover(null);
+        return;
+      }
       onHover(el.getBoundingClientRect() as Rect);
     }
 
     function onClick(e: MouseEvent) {
-      if (mode !== "pick") return;
       if (isHostHit(e.target as Element | null)) return;
       e.preventDefault();
       e.stopPropagation();
@@ -44,12 +55,19 @@ export function usePicker({ mode, hostEl, onHover, onPick }: UsePickerArgs): voi
       onPick(data);
     }
 
+    // Pointer left the document/window (no element it moved into) → clear the highlight (TASK-29).
+    function onMouseOut(e: MouseEvent) {
+      if (!e.relatedTarget) onHover(null);
+    }
+
     document.addEventListener("mousemove", onMouseMove, true);
     document.addEventListener("click", onClick, true);
+    document.addEventListener("mouseout", onMouseOut, true);
 
     return () => {
       document.removeEventListener("mousemove", onMouseMove, true);
       document.removeEventListener("click", onClick, true);
+      document.removeEventListener("mouseout", onMouseOut, true);
     };
   }, [mode, hostEl, onHover, onPick]);
 }
