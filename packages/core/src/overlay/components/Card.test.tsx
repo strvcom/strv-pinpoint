@@ -5,6 +5,25 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Item } from "../state/types.js";
 import { Card } from "./Card.js";
 
+// ProseMirror needs a real contenteditable/selection (not in happy-dom) — mock the editor module
+// at the boundary so the Card mounts; assert wiring via the captured options (TASK-31).
+vi.mock("../markdown/editor.js", () => ({
+  createMarkdownEditor: vi.fn(() => ({ destroy: vi.fn(), focus: vi.fn() })),
+}));
+
+import { createMarkdownEditor } from "../markdown/editor.js";
+
+type EditorOpts = {
+  value: string;
+  onChange: (md: string) => void;
+  onSave: () => void;
+  onDiscard: () => void;
+};
+const lastEditorOpts = (): EditorOpts => {
+  const calls = (createMarkdownEditor as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+  return calls[calls.length - 1][1] as EditorOpts;
+};
+
 let container: HTMLDivElement;
 
 afterEach(() => {
@@ -19,7 +38,12 @@ function makeItem(overrides: Partial<Item> = {}): Item {
     id: "i1",
     kind: "element",
     selected: [
-      { selector: "button", tagName: "BUTTON", text: "Click me", react: { componentName: "MyButton", ancestry: [] } },
+      {
+        selector: "button",
+        tagName: "BUTTON",
+        text: "Click me",
+        react: { componentName: "MyButton", ancestry: [] },
+      },
     ],
     rect: { x: 0, y: 0, width: 100, height: 40 },
     comment: "initial comment",
@@ -50,7 +74,9 @@ function setup(item: Item, overrides: Partial<Parameters<typeof Card>[0]> = {}) 
     ...overrides,
   };
 
-  render(<Card {...props} />, container);
+  act(() => {
+    render(<Card {...props} />, container);
+  }); // flush effects (animate-in + editor mount)
 
   const card = container.querySelector(".pp-card") as HTMLDivElement;
   return { container, card, props };
@@ -105,35 +131,42 @@ describe("camera button — screenshot kind", () => {
   });
 });
 
-// ─── Textarea ────────────────────────────────────────────────────────────────
+// ─── Markdown comment editor (TASK-31) ─────────────────────────────────────────
 
-describe("textarea", () => {
-  it("typing in the textarea calls onComment with the new value", () => {
-    const onComment = vi.fn();
-    const { card } = setup(makeItem(), { onComment });
-    const ta = card.querySelector("textarea")!;
-    // Simulate input event
-    Object.defineProperty(ta, "value", { value: "new text", writable: true });
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-    expect(onComment).toHaveBeenCalledWith("new text");
+describe("markdown comment editor", () => {
+  it("renders a markdown editor host (.pp-md), not a textarea", () => {
+    const { card } = setup(makeItem());
+    expect(card.querySelector(".pp-md")).not.toBeNull();
+    expect(card.querySelector("textarea")).toBeNull();
   });
 
-  it("Shift+Enter calls onMinimize", () => {
+  it("mounts the editor with the item's comment as initial value", () => {
+    setup(makeItem({ comment: "- a\n- b" }));
+    expect(lastEditorOpts().value).toBe("- a\n- b");
+  });
+
+  it("the editor's onChange forwards to onComment", () => {
+    const onComment = vi.fn();
+    setup(makeItem(), { onComment });
+    lastEditorOpts().onChange("new md");
+    expect(onComment).toHaveBeenCalledWith("new md");
+  });
+
+  it("saved card: editor onSave minimizes (Shift+Enter behavior)", () => {
     const onMinimize = vi.fn();
-    const { card } = setup(makeItem(), { onMinimize });
-    const ta = card.querySelector("textarea")!;
-    ta.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true }));
+    setup(makeItem({ saved: true }), { onMinimize });
+    lastEditorOpts().onSave();
     expect(onMinimize).toHaveBeenCalledOnce();
   });
 
-  it("plain Enter does NOT call onMinimize", () => {
-    const onMinimize = vi.fn();
-    const { card } = setup(makeItem(), { onMinimize });
-    const ta = card.querySelector("textarea")!;
-    ta.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Enter", shiftKey: false, bubbles: true }),
-    );
-    expect(onMinimize).not.toHaveBeenCalled();
+  it("draft card: editor onSave saves; onDiscard deletes", () => {
+    const onSave = vi.fn();
+    const onDelete = vi.fn();
+    setup(makeItem({ saved: false }), { onSave, onDelete });
+    lastEditorOpts().onSave();
+    expect(onSave).toHaveBeenCalledOnce();
+    lastEditorOpts().onDiscard();
+    expect(onDelete).toHaveBeenCalledOnce();
   });
 });
 
@@ -320,9 +353,9 @@ describe("focus-out guard", () => {
     const onMinimize = vi.fn();
     const { card } = setup(makeItem(), { onMinimize, confirming: false, pressingBadge: false });
 
-    // The textarea is inside the card
-    const ta = card.querySelector("textarea")!;
-    card.dispatchEvent(new FocusEvent("focusout", { bubbles: true, relatedTarget: ta }));
+    // An element inside the card (the markdown editor host)
+    const inside = card.querySelector(".pp-md")!;
+    card.dispatchEvent(new FocusEvent("focusout", { bubbles: true, relatedTarget: inside }));
 
     expect(onMinimize).not.toHaveBeenCalled();
   });
@@ -359,16 +392,27 @@ describe("header badge", () => {
 
 describe("label", () => {
   it("shows componentName when available", () => {
-    const { card } = setup(makeItem({
-      selected: [{ selector: "button", tagName: "BUTTON", text: "", react: { componentName: "FancyBtn", ancestry: [] } }],
-    }));
+    const { card } = setup(
+      makeItem({
+        selected: [
+          {
+            selector: "button",
+            tagName: "BUTTON",
+            text: "",
+            react: { componentName: "FancyBtn", ancestry: [] },
+          },
+        ],
+      }),
+    );
     expect(card.textContent).toContain("FancyBtn");
   });
 
   it("falls back to tagName when react is null", () => {
-    const { card } = setup(makeItem({
-      selected: [{ selector: "section", tagName: "SECTION", text: "", react: null }],
-    }));
+    const { card } = setup(
+      makeItem({
+        selected: [{ selector: "section", tagName: "SECTION", text: "", react: null }],
+      }),
+    );
     expect(card.textContent).toContain("SECTION");
   });
 
@@ -385,26 +429,6 @@ describe("draft vs saved card (TASK-30)", () => {
     const { card } = setup(makeItem({ saved: false }));
     expect(card.querySelector('button[title="save annotation"]')).not.toBeNull();
     expect(card.querySelector('button[title="minimize"]')).toBeNull();
-  });
-
-  it("Shift+Enter on a draft saves", () => {
-    const { card, props } = setup(makeItem({ saved: false }));
-    const ta = card.querySelector("textarea")!;
-    act(() => {
-      ta.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true }),
-      );
-    });
-    expect(props.onSave).toHaveBeenCalled();
-  });
-
-  it("Escape on a draft discards (onDelete)", () => {
-    const { card, props } = setup(makeItem({ saved: false }));
-    const ta = card.querySelector("textarea")!;
-    act(() => {
-      ta.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    });
-    expect(props.onDelete).toHaveBeenCalled();
   });
 
   it("clicking Save on a draft calls onSave", () => {
