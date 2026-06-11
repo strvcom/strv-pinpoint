@@ -5,14 +5,11 @@ import { afterAll, describe, expect, it } from "vitest";
 import { FakePage } from "../cdp/fake-page.js";
 import { saveScreenshots } from "./save-screenshots.js";
 
-const item = (over = {}) => ({
+const item = (over: Record<string, unknown> = {}) => ({
   id: "a",
   badge: 1,
-  componentName: "Hero",
-  ancestry: [],
-  selector: "#h",
-  tagName: "H1",
-  text: "",
+  kind: "element" as const,
+  selected: [{ selector: "#h", tagName: "H1", text: "", react: null }],
   rect: { x: 0, y: 0, width: 4, height: 4 },
   comment: "",
   wantScreenshot: false,
@@ -28,7 +25,7 @@ describe("saveScreenshots", () => {
     const paths = await saveScreenshots(
       page,
       [
-        item({ badge: 1, wantScreenshot: true, selector: "#h" }),
+        item({ badge: 1, wantScreenshot: true }),
         item({ badge: 2, wantScreenshot: false }),
       ],
       dir,
@@ -40,15 +37,38 @@ describe("saveScreenshots", () => {
     expect(page.evaluatedExpressions.some((e) => e.includes("__ppHide"))).toBe(true);
   });
 
-  it("uses a rect clip for screenshot annotations (empty selector)", async () => {
+  it("uses a rect clip for screenshot annotations (kind=screenshot)", async () => {
     const { readFileSync } = await import("node:fs");
     const page = new FakePage({ clipPng: Buffer.from("CLIP") });
     const paths = await saveScreenshots(
       page,
-      [item({ badge: 3, wantScreenshot: true, selector: "" })],
+      [item({ badge: 3, kind: "screenshot" as const, selected: [], wantScreenshot: true })],
       dir,
     );
     expect(paths[3]).toBe(join(dir, "anno-3.png"));
     expect(readFileSync(paths[3] as string).toString()).toBe("CLIP");
+    // CRITICAL: a screenshot-kind item must clip the region, never call screenshotElement
+    expect(page.elementSelectors).toHaveLength(0);
+  });
+
+  it("uses screenshotElement for element annotations (kind=element)", async () => {
+    const page = new FakePage({ elementPng: { "#nav": Buffer.from("ELEM") } });
+    const paths = await saveScreenshots(
+      page,
+      [
+        item({
+          badge: 4,
+          kind: "element" as const,
+          selected: [{ selector: "#nav", tagName: "NAV", text: "", react: null }],
+          wantScreenshot: true,
+        }),
+      ],
+      dir,
+    );
+    expect(paths[4]).toBe(join(dir, "anno-4.png"));
+    const { readFileSync } = await import("node:fs");
+    expect(readFileSync(paths[4] as string).toString()).toBe("ELEM");
+    // converse guard: when screenshotElement succeeds, the rect clip must NOT also be taken
+    expect(page.clips).toHaveLength(0);
   });
 });

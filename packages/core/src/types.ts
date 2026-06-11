@@ -51,11 +51,8 @@ export interface CapturedImage {
 export interface Annotation {
   id: string;
   badge: number;
-  componentName: string | null;
-  ancestry: string[];
-  selector: string;
-  tagName: string;
-  text: string;
+  kind: "element" | "screenshot";
+  selected: Selection[];
   rect: Rect;
   comment: string;
   wantScreenshot: boolean;
