@@ -3,10 +3,10 @@ id: TASK-27
 title: >-
   Annotation payload v2: selected[] array of selection objects (+ screenshot
   multi-selection)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-11 16:14'
-updated_date: '2026-06-11 17:32'
+updated_date: '2026-06-11 19:52'
 labels:
   - feature
 dependencies: []
@@ -23,8 +23,14 @@ Restructure the bridge-contract annotation payload so element/component identity
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A selection type (selector, tagName, text, optional react: componentName+ancestry) exists and annotations expose selected: selection[]
-- [ ] #2 Element pick yields selected length 1; screenshot yields the outermost + innermost touched elements (deduped), React-fiber-aware when available
-- [ ] #3 serialize.ts contract + types + reducer updated, and the pinpoint-paste skill reads the new selected[] shape
-- [ ] #4 Non-React elements yield a selection with react omitted/null and no errors
+- [x] #1 A selection type (selector, tagName, text, optional react: componentName+ancestry) exists and annotations expose selected: selection[]
+- [x] #2 Element pick yields selected length 1; screenshot yields the outermost + innermost touched elements (deduped), React-fiber-aware when available
+- [x] #3 serialize.ts contract + types + reducer updated, and the pinpoint-paste skill reads the new selected[] shape
+- [x] #4 Non-React elements yield a selection with react omitted/null and no errors
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Done (merged 743b444). selected[] v2: Selection={selector,tagName,text,react:{componentName,ancestry}|null}; element pick→1 selection, screenshot→grid-sampled elementsFromPoint reduced to outermost-in-region container + innermost leaf per stack (deduped, fiber-aware), best-effort grep targets. Hard-cut v2 (payload version 2, no flat fields); added kind to wire so save-screenshots clips region for screenshots. Touched: selection-probe, new touched-selections.ts, reducer/serialize/types, OverlayRoot producers, Card/usePositioning consumers, clipboard-payload, save-screenshots, pinpoint-paste skill. 6-task subagent-driven TDD + per-task + final review. Live-verified on vite-react: extractor react identity on real fiber, screenshot drag→container+leaf, fiber-less elem→react:null (AC4). Merged onto TASK-29/30 which landed mid-flight (resolved OverlayRoot requestAdd/draft + serialize saved-filter conflicts; migrated TASK-30 draft tests to v2). 253 tests green. Designed for additive TASK-28 (source/identifiers per selection).
+<!-- SECTION:NOTES:END -->
