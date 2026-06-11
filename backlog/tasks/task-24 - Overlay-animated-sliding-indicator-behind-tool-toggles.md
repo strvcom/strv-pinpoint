@@ -1,12 +1,15 @@
 ---
 id: TASK-24
 title: 'Overlay: animated sliding indicator behind tool toggles'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-06-11 13:35'
+updated_date: '2026-06-11 16:16'
 labels:
   - feature
 dependencies: []
+references:
+  - docs/superpowers/plans/2026-06-11-tool-indicator.md
 ordinal: 24000
 ---
 

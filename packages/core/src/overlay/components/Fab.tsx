@@ -16,23 +16,35 @@ export interface FabProps {
   onHandlePointerDown: (e: PointerEvent) => void;
 }
 
+// Tool-toggle geometry (px). The two tool buttons are fixed, equal width so the sliding
+// indicator's position is derived from constants — no layout measurement (happy-dom has none).
+const TOOL_W = 34;
+const TOOL_GAP = 4;
+
 function IconButton({
   svg,
   title,
   active,
+  width,
   onClick,
 }: {
   svg: string;
   title: string;
   active?: boolean;
+  /** Fixed width for tool toggles; renders above the sliding indicator (z-index:1). */
+  width?: number;
   onClick: (e: MouseEvent) => void;
 }) {
+  const style =
+    width != null
+      ? `width:${width}px;height:26px;padding:0;border-radius:14px;position:relative;z-index:1;font:12px system-ui`
+      : "min-width:30px;height:26px;padding:0 8px;border-radius:14px;font:12px system-ui";
   return (
     <button
       type="button"
       class={"pp-icon" + (active ? " pp-active" : "")}
       title={title}
-      style="min-width:30px;height:26px;padding:0 8px;border-radius:14px;font:12px system-ui"
+      style={style}
       onClick={(e: MouseEvent) => {
         e.stopPropagation();
         onClick(e);
@@ -58,6 +70,18 @@ export function Fab({
   const pillRef = useRef<HTMLDivElement | null>(null);
   // Track whether pill is in "display:none" state (after animation out)
   const hiddenRef = useRef(!fabOpen);
+
+  // Sliding tool indicator: position follows the last *selected* tool so deselecting
+  // floats the pill out in place (rather than snapping back to the Pick slot).
+  const lastToolRef = useRef<Mode>(mode);
+  if (mode) lastToolRef.current = mode;
+  const indicatorX = lastToolRef.current === "screenshot" ? TOOL_W + TOOL_GAP : 0;
+  const toolSelected = mode !== null;
+  const indicatorStyle =
+    `position:absolute;left:0;top:0;width:${TOOL_W}px;height:26px;border-radius:14px;` +
+    `background:#2962ff;z-index:0;pointer-events:none;` +
+    `transform:translateX(${indicatorX}px) scale(${toolSelected ? 1 : 0.6});` +
+    `opacity:${toolSelected ? 1 : 0}`;
 
   // Animate pill open/close
   useEffect(() => {
@@ -111,21 +135,28 @@ export function Fab({
           <Icon svg={ICON.grip} />
         </span>
 
-        {/* Pick button */}
-        <IconButton
-          svg={ICON.pick}
-          title="Pick an element"
-          active={mode === "pick"}
-          onClick={() => onSetMode("pick")}
-        />
+        {/* Tool toggles (Pick / Screenshot) with the sliding indicator behind them */}
+        <div class="pp-tools" style={`position:relative;display:flex;gap:${TOOL_GAP}px`}>
+          <div class="pp-tool-indicator" style={indicatorStyle} />
 
-        {/* Screenshot button */}
-        <IconButton
-          svg={ICON.shot}
-          title="Drag a region to screenshot"
-          active={mode === "screenshot"}
-          onClick={() => onSetMode("screenshot")}
-        />
+          {/* Pick button */}
+          <IconButton
+            svg={ICON.pick}
+            title="Pick an element"
+            active={mode === "pick"}
+            width={TOOL_W}
+            onClick={() => onSetMode("pick")}
+          />
+
+          {/* Screenshot button */}
+          <IconButton
+            svg={ICON.shot}
+            title="Drag a region to screenshot"
+            active={mode === "screenshot"}
+            width={TOOL_W}
+            onClick={() => onSetMode("screenshot")}
+          />
+        </div>
 
         {/* Clear button */}
         <IconButton svg={ICON.trash} title="Clear all annotations" onClick={() => onClear()} />
