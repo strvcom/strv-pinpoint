@@ -76,16 +76,53 @@ export function installSelectionProbe(): () => void {
       return parts.join(" > ");
     };
 
+    var identifiersOf = function (node: Element) {
+      var out: Record<string, string> = {};
+      var id = node.id;
+      if (id) out.id = id;
+      var testId = node.getAttribute("data-testid") || node.getAttribute("data-test");
+      if (testId) out.testId = testId;
+      var aria = node.getAttribute("aria-label");
+      if (aria) out.ariaLabel = aria;
+      var role = node.getAttribute("role");
+      if (role) out.role = role;
+      var nm2 = node.getAttribute("name");
+      if (nm2) out.name = nm2;
+      return out;
+    };
+    var sourceFromFiber = function (fiber: any) {
+      var stackStr = fiber && fiber._debugStack && (fiber._debugStack.stack || fiber._debugStack);
+      if (typeof stackStr !== "string") return undefined;
+      var lines = stackStr.split("\n");
+      for (var i = 0; i < lines.length; i++) {
+        var m = lines[i].match(/(https?:\/\/[^\s()]+):(\d+):(\d+)\)?\s*$/);
+        if (!m) continue;
+        var url = m[1];
+        if (url.indexOf("/node_modules/") >= 0 || url.indexOf("/.vite/") >= 0) continue;
+        try {
+          return { file: new URL(url).pathname, line: Number(m[2]) };
+        } catch (_e) {
+          return undefined;
+        }
+      }
+      return undefined;
+    };
+    var react: {
+      componentName: string;
+      ancestry: string[];
+      source?: { file: string; line: number };
+    } | null = ancestry.length > 0 ? { componentName: ancestry[0], ancestry: ancestry.slice(0, 8) } : null;
+    if (react) {
+      var src = sourceFromFiber(f);
+      if (src) react.source = src;
+    }
     var r = el.getBoundingClientRect();
-    var react =
-      ancestry.length > 0
-        ? { componentName: ancestry[0], ancestry: ancestry.slice(0, 8) }
-        : null;
     return {
       selector: selectorFor(el),
       tagName: el.tagName,
       text: ((el as any).innerText || el.textContent || "").trim().slice(0, 120),
       rect: { x: r.x, y: r.y, width: r.width, height: r.height },
+      identifiers: identifiersOf(el),
       react: react,
     };
   };
