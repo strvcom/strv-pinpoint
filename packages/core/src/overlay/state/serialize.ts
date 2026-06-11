@@ -1,6 +1,5 @@
 // Snapshot serialization, ported verbatim from install.ts:207-234.
-// This is the BRIDGE CONTRACT — the shape written to window globals and
-// pasted into the Claude Code session.  Do NOT change field names or ordering.
+// v2 contract — see docs/superpowers/specs/2026-06-11-annotation-payload-v2-design.md
 
 import type { Item, Kind, OverlayState, Rect, Selection } from "./types.js";
 

@@ -38,4 +38,5 @@ The user clicked **Send** in the pinpoint overlay and pasted the resulting JSON.
 - Prose the user typed around the JSON is extra context — honor it.
 - This flow is fully decoupled: the ack is a plain HTTP call (no MCP needed). If `curl` fails
   (bridge not running), proceed with the edits and tell the user the browser won't auto-clear.
+- A screenshot item may have an empty `selected: []` (region dragged over blank space) — in that case rely on the `screenshot` image (and any prose the user added) to locate the change.
 - A future version may also send a final `status:"done"` ack.

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createCdpDriver } from "../src/driver/cdp-driver.js";
 import type { DriverSession } from "../src/driver/driver.js";
-import type { SelectionFound } from "../src/types.js";
+import type { Rect, Selection } from "../src/types.js";
 
 /**
  * Proves the identity extractor degrades gracefully on a NON-React page: no fiber → empty React
@@ -28,12 +28,11 @@ afterAll(async () => {
 });
 
 describe("pinpoint identity extraction on plain HTML/CSS (no framework, integration)", () => {
-  it("returns DOM identity with empty React fields for a non-React element", async () => {
-    const sel = await connection.page.evaluate<SelectionFound>(
+  it("returns DOM identity with null React field for a non-React element", async () => {
+    const sel = await connection.page.evaluate<Selection & { rect: Rect }>(
       `window.__pinpointExtractSelection(document.querySelector('[data-testid="primary-action"]'))`,
     );
-    expect(sel.componentName).toBeNull();
-    expect(sel.ancestry).toEqual([]);
+    expect(sel.react).toBeNull();
     expect(sel.tagName).toBe("BUTTON");
     expect(sel.selector.length).toBeGreaterThan(0);
     expect(typeof sel.text).toBe("string");
@@ -41,11 +40,10 @@ describe("pinpoint identity extraction on plain HTML/CSS (no framework, integrat
   });
 
   it("still resolves a stable selector for a deeply-nested element", async () => {
-    const sel = await connection.page.evaluate<SelectionFound>(
+    const sel = await connection.page.evaluate<Selection & { rect: Rect }>(
       `window.__pinpointExtractSelection(document.querySelector('[data-testid="buy"]'))`,
     );
-    expect(sel.componentName).toBeNull();
-    expect(sel.ancestry).toEqual([]);
+    expect(sel.react).toBeNull();
     expect(sel.tagName).toBe("BUTTON");
     expect(sel.selector).toContain(">"); // nested path, not a bare tag
   });
