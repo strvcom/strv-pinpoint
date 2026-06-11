@@ -2,16 +2,13 @@
 // This is the BRIDGE CONTRACT — the shape written to window globals and
 // pasted into the Claude Code session.  Do NOT change field names or ordering.
 
-import type { Item, OverlayState, Rect } from "./types.js";
+import type { Item, Kind, OverlayState, Rect, Selection } from "./types.js";
 
 export interface SerializedItem {
   id: string;
   badge: number; // 1-based array index
-  componentName: string | null;
-  ancestry: string[];
-  selector: string;
-  tagName: string;
-  text: string;
+  kind: Kind;
+  selected: Selection[];
   rect: Rect; // live rect from vrect(), NOT item.rect
   comment: string;
   wantScreenshot: boolean;
@@ -40,11 +37,8 @@ export function serializeState(state: OverlayState, vrect: (it: Item) => Rect): 
       return {
         id: it.id,
         badge: i + 1,
-        componentName: it.componentName,
-        ancestry: it.ancestry,
-        selector: it.selector,
-        tagName: it.tagName,
-        text: it.text,
+        kind: it.kind,
+        selected: it.selected,
         rect: { x: r.x, y: r.y, width: r.width, height: r.height },
         comment: it.comment,
         wantScreenshot: it.wantScreenshot,

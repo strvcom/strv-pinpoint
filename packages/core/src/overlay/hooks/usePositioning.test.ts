@@ -9,11 +9,7 @@ function screenshotItem(overrides: Partial<Item> = {}): Item {
   return {
     id: "s1",
     kind: "screenshot",
-    componentName: null,
-    ancestry: [],
-    selector: "",
-    tagName: "",
-    text: "",
+    selected: [],
     rect: { x: 0, y: 0, width: 100, height: 50 },
     pageX: 200,
     pageY: 400,
@@ -24,19 +20,16 @@ function screenshotItem(overrides: Partial<Item> = {}): Item {
 }
 
 // Minimal factory for an element item
-function elementItem(overrides: Partial<Item> = {}): Item {
+function elementItem(overrides: Partial<Item> & { selector?: string } = {}): Item {
+  const { selector, ...rest } = overrides;
   return {
     id: "e1",
     kind: "element",
-    componentName: "MyComponent",
-    ancestry: [],
-    selector: "#my-el",
-    tagName: "div",
-    text: "",
+    selected: [{ selector: selector ?? "#my-el", tagName: "div", text: "", react: { componentName: "MyComponent", ancestry: [] } }],
     rect: { x: 10, y: 20, width: 80, height: 30 },
     comment: "",
     wantScreenshot: false,
-    ...overrides,
+    ...rest,
   };
 }
 

@@ -31,7 +31,8 @@ export function computeVRect(item: Item): Rect {
       height: item.rect.height,
     };
   }
-  const el = item.selector ? document.querySelector(item.selector) : null;
+  const selector = item.selected[0]?.selector;
+  const el = selector ? document.querySelector(selector) : null;
   if (el) return el.getBoundingClientRect() as Rect;
   return item.rect;
 }

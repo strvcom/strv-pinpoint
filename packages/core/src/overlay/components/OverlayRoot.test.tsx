@@ -200,12 +200,11 @@ describe("copy flow (with fake timers)", () => {
     document.elementFromPoint = () => fakeEl;
 
     (window as unknown as Record<string, unknown>).__pinpointExtractSelection = () => ({
-      componentName: "TestBtn",
-      ancestry: ["App"],
       selector: "button.test-el",
       tagName: "BUTTON",
       text: "test",
       rect: { x: 10, y: 10, width: 80, height: 30 },
+      react: { componentName: "TestBtn", ancestry: ["TestBtn", "App"] },
     });
 
     const { container } = setup();
@@ -228,6 +227,16 @@ describe("copy flow (with fake timers)", () => {
         }),
       );
     });
+
+    // Verify onPick propagated the React identity into the picked item: the
+    // serialized annotations global should carry react.componentName from the
+    // stub (this FAILS if onPick stops reading d.react / dropping it on the item).
+    const snap = (window as unknown as Record<string, unknown>)[ANNOTATIONS_GLOBAL] as {
+      items: { kind: string; selected: { react: { componentName: string } | null }[] }[];
+    };
+    expect(snap.items).toHaveLength(1);
+    expect(snap.items[0].kind).toBe("element");
+    expect(snap.items[0].selected[0].react?.componentName).toBe("TestBtn");
 
     // Verify item was added: CopyButton should be enabled.
     const copyBtn = container.querySelector<HTMLButtonElement>(
@@ -262,12 +271,11 @@ describe("copy flow (with fake timers)", () => {
     document.elementFromPoint = () => fakeEl;
 
     (window as unknown as Record<string, unknown>).__pinpointExtractSelection = () => ({
-      componentName: "Comp",
-      ancestry: [],
       selector: "span.test-el2",
       tagName: "SPAN",
       text: "t",
       rect: { x: 5, y: 5, width: 50, height: 20 },
+      react: { componentName: "Comp", ancestry: [] },
     });
 
     const { container } = setup();

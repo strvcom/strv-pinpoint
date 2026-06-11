@@ -16,11 +16,7 @@ export interface Rect {
 export interface Item {
   id: string;
   kind: Kind;
-  componentName: string | null;
-  ancestry: string[];
-  selector: string;
-  tagName: string;
-  text: string;
+  selected: Selection[];
   rect: Rect;
   pageX?: number;
   pageY?: number; // screenshot kind only
@@ -43,18 +39,8 @@ export interface OverlayState {
 }
 export type Action =
   | { type: "setMode"; mode: Mode }
-  | {
-      type: "addElement";
-      data: {
-        componentName: string | null;
-        ancestry: string[];
-        selector: string;
-        tagName: string;
-        text: string;
-        rect: Rect;
-      };
-    }
-  | { type: "addScreenshot"; rect: Rect; pageX: number; pageY: number }
+  | { type: "addElement"; data: { selected: Selection[]; rect: Rect } }
+  | { type: "addScreenshot"; rect: Rect; pageX: number; pageY: number; selected: Selection[] }
   | { type: "setComment"; id: string; comment: string }
   | { type: "toggleScreenshot"; id: string }
   | { type: "openCard"; id: string }

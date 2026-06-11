@@ -6,9 +6,10 @@ import { usePicker } from "../hooks/usePicker.js";
 import type { NodeRegistry } from "../hooks/usePositioning.js";
 import { computeVRect, usePositioning } from "../hooks/usePositioning.js";
 import { useScreenshotRegion } from "../hooks/useScreenshotRegion.js";
+import { resolveTouchedSelections } from "../touched-selections.js";
 import { createInitialState, reducer } from "../state/reducer.js";
 import { latestSelection, serializeState } from "../state/serialize.js";
-import type { Rect } from "../state/types.js";
+import type { Rect, Selection } from "../state/types.js";
 import { HoverLayer } from "./HoverLayer.js";
 import { MarksLayer } from "./MarksLayer.js";
 import { MarqueeLayer } from "./MarqueeLayer.js";
@@ -53,26 +54,17 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
     hostEl,
     onHover: setHoverRect,
     onPick: (data: unknown) => {
-      const d = data as
-        | {
-            componentName?: string | null;
-            ancestry?: string[];
-            selector?: string;
-            tagName?: string;
-            text?: string;
-            rect?: Rect;
-          }
-        | undefined;
+      const d = data as (Selection & { rect?: Rect }) | undefined;
+      if (!d) return;
+      const selection: Selection = {
+        selector: d.selector ?? "",
+        tagName: d.tagName ?? "",
+        text: d.text ?? "",
+        react: d.react ?? null,
+      };
       dispatch({
         type: "addElement",
-        data: {
-          componentName: d?.componentName ?? null,
-          ancestry: d?.ancestry ?? [],
-          selector: d?.selector ?? "",
-          tagName: d?.tagName ?? "",
-          text: d?.text ?? "",
-          rect: d?.rect ?? { x: 0, y: 0, width: 0, height: 0 },
-        },
+        data: { selected: [selection], rect: d.rect ?? { x: 0, y: 0, width: 0, height: 0 } },
       });
       // Mode stays "pick" after each pick — matching install.ts:659-665 behavior.
     },
@@ -84,11 +76,23 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
     hostEl,
     onMarquee: setMarqueeRect,
     onCapture: (rect: Rect) => {
+      const extract = (window as unknown as Record<string, (el: Element) => Selection>)
+        .__pinpointExtractSelection;
+      const selected =
+        typeof extract === "function"
+          ? resolveTouchedSelections(rect, {
+              elementsFromPoint: (x, y) => Array.from(document.elementsFromPoint(x, y)),
+              getRect: (el) => el.getBoundingClientRect(),
+              isHost: (el) => el === hostEl || !!hostEl?.contains(el),
+              extract,
+            })
+          : [];
       dispatch({
         type: "addScreenshot",
         rect,
         pageX: rect.x + window.scrollX,
         pageY: rect.y + window.scrollY,
+        selected,
       });
       (window as unknown as Record<string, unknown>)[REGION_GLOBAL] = rect;
     },
