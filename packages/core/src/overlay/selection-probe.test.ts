@@ -68,7 +68,13 @@ it("identifiers: maps id, data-testid, aria-label, role, name when present", () 
   el.setAttribute("name", "saveField");
   document.body.appendChild(el);
   const r = (window as any).__pinpointExtractSelection(el);
-  expect(r.identifiers).toEqual({ id: "save-btn", testId: "save", ariaLabel: "Save", role: "button", name: "saveField" });
+  expect(r.identifiers).toEqual({
+    id: "save-btn",
+    testId: "save",
+    ariaLabel: "Save",
+    role: "button",
+    name: "saveField",
+  });
 });
 
 it("identifiers: data-test is used when data-testid absent; empty object when none", () => {

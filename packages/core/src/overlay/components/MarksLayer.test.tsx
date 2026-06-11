@@ -18,7 +18,9 @@ function makeItem(id: string, kind: Item["kind"] = "element"): Item {
   return {
     id,
     kind,
-    selected: [{ selector: "div", tagName: "DIV", text: "", react: { componentName: "Comp", ancestry: [] } }],
+    selected: [
+      { selector: "div", tagName: "DIV", text: "", react: { componentName: "Comp", ancestry: [] } },
+    ],
     rect: { x: 10, y: 10, width: 80, height: 30 },
     comment: "",
     wantScreenshot: false,

@@ -5,7 +5,14 @@ const item = (over: Record<string, unknown> = {}) => ({
   id: "a1",
   badge: 1,
   kind: "element" as const,
-  selected: [{ selector: "#x", tagName: "H1", text: "t", react: { componentName: "Hero", ancestry: ["Hero"] } }],
+  selected: [
+    {
+      selector: "#x",
+      tagName: "H1",
+      text: "t",
+      react: { componentName: "Hero", ancestry: ["Hero"] },
+    },
+  ],
   rect: { x: 0, y: 0, width: 1, height: 1 },
   comment: "c",
   wantScreenshot: true,
@@ -23,7 +30,14 @@ describe("buildClipboardJson", () => {
         item({
           id: "a2",
           badge: 2,
-          selected: [{ selector: "#y", tagName: "NAV", text: "nav", react: { componentName: "Nav", ancestry: ["Nav"] } }],
+          selected: [
+            {
+              selector: "#y",
+              tagName: "NAV",
+              text: "nav",
+              react: { componentName: "Nav", ancestry: ["Nav"] },
+            },
+          ],
         }),
       ],
       screenshotPaths: { 1: "/tmp/anno-1.png", 2: null },
@@ -40,7 +54,14 @@ describe("buildClipboardJson", () => {
     expect(o.items[0]).toMatchObject({
       badge: 1,
       kind: "element",
-      selected: [{ selector: "#x", tagName: "H1", text: "t", react: { componentName: "Hero", ancestry: ["Hero"] } }],
+      selected: [
+        {
+          selector: "#x",
+          tagName: "H1",
+          text: "t",
+          react: { componentName: "Hero", ancestry: ["Hero"] },
+        },
+      ],
       comment: "c",
       screenshot: "/tmp/anno-1.png",
     });

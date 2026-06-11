@@ -501,7 +501,12 @@ describe("save/draft (TASK-30)", () => {
       type: "addElement",
       data: {
         selected: [
-          { selector: "#b", tagName: "BUTTON", text: "x", react: { componentName: "Btn", ancestry: ["Btn"] } },
+          {
+            selector: "#b",
+            tagName: "BUTTON",
+            text: "x",
+            react: { componentName: "Btn", ancestry: ["Btn"] },
+          },
         ],
         rect: { x: 0, y: 0, width: 10, height: 10 },
       },
@@ -520,7 +525,12 @@ describe("save/draft (TASK-30)", () => {
       type: "addElement",
       data: {
         selected: [
-          { selector: "#t", tagName: "DIV", text: "y", react: { componentName: "Two", ancestry: ["Two"] } },
+          {
+            selector: "#t",
+            tagName: "DIV",
+            text: "y",
+            react: { componentName: "Two", ancestry: ["Two"] },
+          },
         ],
         rect: { x: 0, y: 0, width: 5, height: 5 },
       },

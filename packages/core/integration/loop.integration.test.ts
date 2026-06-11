@@ -68,7 +68,9 @@ describe("pinpoint clipboard loop on Vite (integration)", () => {
       id: "a1",
       badge: 1,
       kind: "element",
-      selected: [{ selector: sel.selector, tagName: sel.tagName, text: sel.text, react: sel.react }],
+      selected: [
+        { selector: sel.selector, tagName: sel.tagName, text: sel.text, react: sel.react },
+      ],
       rect: sel.rect,
       comment: "make it bigger",
       wantScreenshot: true,

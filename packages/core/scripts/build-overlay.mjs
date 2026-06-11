@@ -27,10 +27,8 @@ if (watch) {
   await ctx.watch();
   console.log("watching overlay ->", distFile);
 } else {
-  // Production: regenerate the .ts string embedded into bin/pinpoint. Minify — the overlay bundle
-  // is sizeable (Lexical editor, TASK-31); minifying ~halves the injected source (dev --watch
-  // stays unminified for debuggability).
-  const result = await build({ ...common, minify: true, write: false });
+  // Production: regenerate the .ts string embedded into bin/pinpoint.
+  const result = await build({ ...common, write: false });
   const code = result.outputFiles[0].text;
   writeFileSync(
     generated,
