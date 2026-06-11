@@ -13,6 +13,15 @@
   "dependencies": {},
   "devDependencies": {
     "esbuild": "^0.28.0",
-    "preact": "^10.24.0"
+    "markdown-it": "^14.2.0",
+    "preact": "^10.24.0",
+    "prosemirror-commands": "^1.7.1",
+    "prosemirror-inputrules": "^1.5.1",
+    "prosemirror-keymap": "^1.2.3",
+    "prosemirror-markdown": "^1.13.4",
+    "prosemirror-model": "^1.25.7",
+    "prosemirror-schema-list": "^1.5.1",
+    "prosemirror-state": "^1.4.4",
+    "prosemirror-view": "^1.41.8"
   }
 }
