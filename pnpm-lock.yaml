@@ -91,6 +91,9 @@ importers:
 
   packages/core:
     devDependencies:
+      '@types/markdown-it':
+        specifier: ^14.1.2
+        version: 14.1.2
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0

@@ -10,8 +10,8 @@
     "build": "node scripts/build-overlay.mjs && tsc -p tsconfig.json",
     "start": "node ./dist/cli.js"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
     "esbuild": "^0.28.0",
     "markdown-it": "^14.2.0",
     "preact": "^10.24.0",
