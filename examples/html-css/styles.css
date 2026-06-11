@@ -1,0 +1,61 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  line-height: 1.5;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+.site-header,
+.site-footer {
+  padding: 12px 24px;
+  background: #f3f4f6;
+}
+
+nav a {
+  margin-right: 16px;
+  color: #2962ff;
+  text-decoration: none;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  gap: 32px;
+}
+
+button {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #2962ff;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+input {
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+}
