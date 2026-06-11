@@ -470,3 +470,44 @@ describe("pick-while-drafting confirm (TASK-30)", () => {
     delete (window as unknown as Record<string, unknown>).__pinpointExtractSelection;
   });
 });
+
+describe("draft badge stays open (TASK-30)", () => {
+  it("clicking a draft's badge does not collapse it (drafts can't minimize)", () => {
+    const originalFromPoint = document.elementFromPoint;
+    const el = document.createElement("button");
+    document.body.appendChild(el);
+    document.elementFromPoint = () => el;
+    (window as unknown as Record<string, unknown>).__pinpointExtractSelection = () => ({
+      componentName: "Draft",
+      ancestry: [],
+      selector: "#d",
+      tagName: "BUTTON",
+      text: "d",
+      rect: { x: 0, y: 0, width: 10, height: 10 },
+    });
+
+    const { container } = setup();
+    openFab(container);
+    act(() => {
+      container
+        .querySelector<HTMLButtonElement>('button[title="Pick an element"]')!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    act(() => {
+      document.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 5, clientY: 5 }));
+    });
+    expect(container.querySelector("textarea")).not.toBeNull(); // draft open
+
+    // Click the badge — a saved card would collapse, but a draft must stay open.
+    act(() => {
+      container
+        .querySelector<HTMLElement>(".pp-badge")!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(container.querySelector("textarea")).not.toBeNull(); // still open
+
+    el.remove();
+    document.elementFromPoint = originalFromPoint;
+    delete (window as unknown as Record<string, unknown>).__pinpointExtractSelection;
+  });
+});

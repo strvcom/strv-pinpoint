@@ -173,7 +173,7 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
     if (!state.items.length) return;
     // TASK-30: "Copy = save this draft, then send" — fold the open draft into the saved set so it's
     // included in the payload (serialize filters to saved), and persist that via saveItem below.
-    const draft = state.items.find((it) => !it.saved && state.open[it.id]);
+    const draft = state.items.find((it) => !it.saved); // at most one draft; include it regardless of open
     const effectiveItems = draft
       ? state.items.map((it) => (it.id === draft.id ? { ...it, saved: true } : it))
       : state.items;
@@ -356,9 +356,15 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
         confirming={state.confirming}
         pressingBadgeRef={pressingBadgeRef}
         registerNode={registerNode}
-        onBadgeToggle={(id) =>
-          dispatch(state.open[id] ? { type: "closeCard", id } : { type: "openCard", id })
-        }
+        onBadgeToggle={(id) => {
+          // TASK-30: a draft can't be collapsed (no minimize) — keep it open; only saved cards toggle.
+          const it = state.items.find((x) => x.id === id);
+          if (it && !it.saved) {
+            dispatch({ type: "openCard", id });
+            return;
+          }
+          dispatch(state.open[id] ? { type: "closeCard", id } : { type: "openCard", id });
+        }}
         onBadgePressStart={(id) => {
           pressingBadgeRef.current = id;
         }}
