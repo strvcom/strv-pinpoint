@@ -1,12 +1,15 @@
 ---
 id: TASK-26
 title: 'Example app: plain HTML/CSS (no framework) for non-React testing'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-06-11 16:14'
+updated_date: '2026-06-11 16:52'
 labels:
   - feature
 dependencies: []
+references:
+  - docs/superpowers/specs/2026-06-11-html-css-example-design.md
 ordinal: 26000
 ---
 
