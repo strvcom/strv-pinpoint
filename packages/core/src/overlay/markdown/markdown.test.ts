@@ -1,49 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { parseMarkdown, serializeMarkdown } from "./markdown.js";
+import { roundTripMarkdown } from "./markdown.js";
 
-describe("markdown round-trip (TASK-31)", () => {
-  it("parses a bullet list into a bullet_list node with the items", () => {
-    const doc = parseMarkdown("- a\n- b");
-    expect(doc.firstChild?.type.name).toBe("bullet_list");
-    expect(doc.firstChild?.childCount).toBe(2);
-    expect(doc.firstChild?.child(0).textContent).toBe("a");
-    expect(doc.firstChild?.child(1).textContent).toBe("b");
+const round = (md: string) => roundTripMarkdown(md).trim();
+
+describe("markdown round-trip (TASK-31, Lexical)", () => {
+  it("preserves a bullet list", () => {
+    expect(round("- a\n- b")).toBe("- a\n- b");
   });
 
-  it("parses an ordered list into an ordered_list node", () => {
-    const doc = parseMarkdown("1. x\n2. y");
-    expect(doc.firstChild?.type.name).toBe("ordered_list");
-    expect(doc.firstChild?.childCount).toBe(2);
-    expect(doc.textContent).toBe("xy");
+  it("preserves an ordered list", () => {
+    expect(round("1. x\n2. y")).toBe("1. x\n2. y");
   });
 
-  it("serialization is idempotent (stable markdown)", () => {
-    for (const md of ["- a\n- b", "1. x\n2. y", "hello world"]) {
-      const once = serializeMarkdown(parseMarkdown(md));
-      const twice = serializeMarkdown(parseMarkdown(once));
-      expect(twice).toBe(once);
+  it("preserves bold, italic, strikethrough, inline code", () => {
+    expect(round("**b**")).toBe("**b**");
+    expect(round("*i*")).toBe("*i*");
+    expect(round("~~s~~")).toBe("~~s~~");
+    expect(round("`c`")).toBe("`c`");
+  });
+
+  it("preserves a fenced code block", () => {
+    expect(round("```\nconst x = 1;\n```")).toBe("```\nconst x = 1;\n```");
+  });
+
+  it("degrades a heading to literal text (no heading node)", () => {
+    expect(round("# h")).toBe("# h");
+  });
+
+  it("round-trip is idempotent", () => {
+    for (const md of ["- a\n- b", "1. x", "**b** and *i*", "`c`", "plain text"]) {
+      const once = roundTripMarkdown(md);
+      expect(roundTripMarkdown(once)).toBe(once);
     }
   });
 
-  it("a heading is NOT a heading node — stays literal paragraph text", () => {
-    const doc = parseMarkdown("# h");
-    expect(doc.firstChild?.type.name).toBe("paragraph");
-    expect(doc.textContent).toBe("# h");
-    // The schema has no heading node at all.
-    expect(mdSchemaHasHeading()).toBe(false);
-  });
-
-  it("a plain paragraph round-trips to the same text", () => {
-    expect(serializeMarkdown(parseMarkdown("hello world")).trim()).toBe("hello world");
-  });
-
   it("empty input yields empty output", () => {
-    expect(serializeMarkdown(parseMarkdown("")).trim()).toBe("");
+    expect(round("")).toBe("");
   });
 });
-
-import { mdSchema } from "./schema.js";
-
-function mdSchemaHasHeading(): boolean {
-  return Object.keys(mdSchema.nodes).includes("heading");
-}

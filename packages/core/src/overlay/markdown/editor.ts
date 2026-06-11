@@ -1,11 +1,13 @@
-import { baseKeymap } from "prosemirror-commands";
-import { inputRules, wrappingInputRule } from "prosemirror-inputrules";
-import { keymap } from "prosemirror-keymap";
-import { liftListItem, sinkListItem, splitListItem } from "prosemirror-schema-list";
-import { EditorState } from "prosemirror-state";
-import { EditorView } from "prosemirror-view";
-import { parseMarkdown, serializeMarkdown } from "./markdown.js";
-import { mdSchema } from "./schema.js";
+import { registerList } from "@lexical/list";
+import {
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+  registerMarkdownShortcuts,
+} from "@lexical/markdown";
+import { registerRichText } from "@lexical/rich-text";
+import { mergeRegister } from "@lexical/utils";
+import { COMMAND_PRIORITY_LOW, createEditor, KEY_ENTER_COMMAND, KEY_ESCAPE_COMMAND } from "lexical";
+import { MD_NODES, MD_TRANSFORMERS } from "./markdown.js";
 
 export interface MarkdownEditorOptions {
   value: string;
@@ -19,60 +21,67 @@ export interface MarkdownEditorHandle {
   focus(): void;
 }
 
-// Type "- " / "* " / "+ " → bullet list; "1. " → ordered list. No toolbar.
-const listInputRules = inputRules({
-  rules: [
-    wrappingInputRule(/^\s*([-*+])\s$/, mdSchema.nodes.bullet_list),
-    wrappingInputRule(
-      /^(\d+)\.\s$/,
-      mdSchema.nodes.ordered_list,
-      (m) => ({ order: +m[1] }),
-      (m, node) => node.childCount + node.attrs.order === +m[1],
-    ),
-  ],
-});
-
 /**
- * Mounts a minimal ProseMirror editor (paragraphs + lists, markdown in/out) into `host`. The view
- * is appended inside `host` (class `.ProseMirror`); ProseMirror resolves its root via getRootNode(),
- * so it works inside the overlay's shadow tree. Vanilla — no Preact binding (TASK-31).
+ * Mounts a minimal Lexical editor into `host`: bold/italic/strikethrough/inline-code marks + bullet/
+ * ordered lists + fenced code blocks, all via keyboard/markdown shortcuts (NO toolbar). The comment
+ * round-trips as Markdown. Shift+Enter saves, Escape discards. Vanilla — no Preact binding (TASK-31).
  */
 export function createMarkdownEditor(
   host: HTMLElement,
   opts: MarkdownEditorOptions,
 ): MarkdownEditorHandle {
-  const li = mdSchema.nodes.list_item;
-  const editorKeymap = keymap({
-    // Save / discard preempt default handling.
-    "Shift-Enter": () => {
-      opts.onSave();
-      return true;
-    },
-    Escape: () => {
-      opts.onDiscard();
-      return true;
-    },
-    Enter: splitListItem(li),
-    Tab: sinkListItem(li),
-    "Shift-Tab": liftListItem(li),
+  const editor = createEditor({
+    namespace: "pp-md",
+    nodes: MD_NODES,
+    onError: (e) => console.error("[pinpoint] markdown editor:", e),
   });
+  editor.setRootElement(host);
 
-  const state = EditorState.create({
-    doc: parseMarkdown(opts.value),
-    plugins: [listInputRules, editorKeymap, keymap(baseKeymap)],
-  });
+  let ready = false; // skip the onChange fired by the initial content load
+  const cleanup = mergeRegister(
+    registerRichText(editor),
+    registerList(editor),
+    registerMarkdownShortcuts(editor, MD_TRANSFORMERS),
+    editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      (e) => {
+        if (e?.shiftKey) {
+          e.preventDefault();
+          opts.onSave();
+          return true;
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerCommand(
+      KEY_ESCAPE_COMMAND,
+      () => {
+        opts.onDiscard();
+        return true;
+      },
+      COMMAND_PRIORITY_LOW,
+    ),
+    editor.registerUpdateListener(({ editorState, dirtyElements, dirtyLeaves }) => {
+      if (!ready || (dirtyElements.size === 0 && dirtyLeaves.size === 0)) return;
+      editorState.read(() => opts.onChange($convertToMarkdownString(MD_TRANSFORMERS)));
+    }),
+  );
 
-  const view = new EditorView(host, {
-    state,
-    dispatchTransaction(tr) {
-      const next = view.state.apply(tr);
-      view.updateState(next);
-      if (tr.docChanged) opts.onChange(serializeMarkdown(next.doc));
+  // Load the initial markdown before marking ready, so init doesn't fire onChange.
+  editor.update(
+    () => {
+      $convertFromMarkdownString(opts.value ?? "", MD_TRANSFORMERS);
     },
-  });
+    { discrete: true },
+  );
+  ready = true;
 
   return {
-    destroy: () => view.destroy(),
-    focus: () => view.focus(),
+    destroy: () => {
+      cleanup();
+      editor.setRootElement(null);
+    },
+    focus: () => editor.focus(),
   };
 }

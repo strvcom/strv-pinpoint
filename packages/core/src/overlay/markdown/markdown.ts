@@ -1,44 +1,44 @@
-import MarkdownIt from "markdown-it";
+import { CodeHighlightNode, CodeNode } from "@lexical/code";
+import { ListItemNode, ListNode } from "@lexical/list";
 import {
-  defaultMarkdownSerializer,
-  MarkdownParser,
-  MarkdownSerializer,
-} from "prosemirror-markdown";
-import type { Node } from "prosemirror-model";
-import { mdSchema } from "./schema.js";
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+  CODE,
+  ORDERED_LIST,
+  TEXT_FORMAT_TRANSFORMERS,
+  UNORDERED_LIST,
+} from "@lexical/markdown";
+import { createEditor, type Klass, type LexicalNode } from "lexical";
 
-// markdown-it "zero" disables ALL rules; enable only what maps to our schema (lists + paragraphs +
-// inline text). Headings/emphasis/etc stay disabled, so unsupported markdown stays literal text.
-const md = MarkdownIt("zero", { html: false }).enable(["list", "paragraph", "text", "newline"]);
+// Nodes the transformers below can create. NO heading/quote (no titles), NO link (TASK-31).
+export const MD_NODES: Array<Klass<LexicalNode>> = [
+  ListNode,
+  ListItemNode,
+  CodeNode,
+  CodeHighlightNode,
+];
 
-// Token → node mapping (only the nodes our schema has).
-const parser = new MarkdownParser(mdSchema, md, {
-  paragraph: { block: "paragraph" },
-  bullet_list: { block: "bullet_list" },
-  ordered_list: {
-    block: "ordered_list",
-    getAttrs: (tok) => ({ order: +(tok.attrGet("start") ?? 1) || 1 }),
-  },
-  list_item: { block: "list_item" },
-});
+// Allowed formatting: bold/italic/strikethrough/inline-code (TEXT_FORMAT) + bullet/ordered lists +
+// fenced code block. NO headings, NO underline (no markdown syntax), NO links/quotes (TASK-31).
+export const MD_TRANSFORMERS = [CODE, UNORDERED_LIST, ORDERED_LIST, ...TEXT_FORMAT_TRANSFORMERS];
 
-// Reuse the official node serializers for just our node set.
-const n = defaultMarkdownSerializer.nodes;
-const serializer = new MarkdownSerializer(
-  {
-    paragraph: n.paragraph,
-    bullet_list: n.bullet_list,
-    ordered_list: n.ordered_list,
-    list_item: n.list_item,
-    text: n.text,
-  },
-  {},
-);
-
-export function parseMarkdown(markdown: string): Node {
-  return parser.parse(markdown ?? "");
-}
-
-export function serializeMarkdown(doc: Node): string {
-  return serializer.serialize(doc);
+/** Headless markdown round-trip (no DOM) — used by tests and to normalize stored comments. */
+export function roundTripMarkdown(md: string): string {
+  const editor = createEditor({
+    nodes: MD_NODES,
+    onError: (e) => {
+      throw e;
+    },
+  });
+  let out = "";
+  editor.update(
+    () => {
+      $convertFromMarkdownString(md ?? "", MD_TRANSFORMERS);
+    },
+    { discrete: true },
+  );
+  editor.getEditorState().read(() => {
+    out = $convertToMarkdownString(MD_TRANSFORMERS);
+  });
+  return out;
 }
