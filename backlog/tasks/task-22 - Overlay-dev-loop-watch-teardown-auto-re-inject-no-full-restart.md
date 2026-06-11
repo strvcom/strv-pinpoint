@@ -1,10 +1,10 @@
 ---
 id: TASK-22
 title: 'Overlay dev loop: watch + teardown + auto re-inject (no full restart)'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-10 14:32'
-updated_date: '2026-06-10 14:58'
+updated_date: '2026-06-11 11:47'
 labels:
   - feature
 dependencies: []
