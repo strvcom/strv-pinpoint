@@ -20,6 +20,15 @@ export interface SelectionFound {
   rect: Rect;
 }
 
+/** v2 annotation identity unit. `react` is null for plain (non-React) DOM.
+ *  Extended additively by TASK-28 (source/identifiers). */
+export interface Selection {
+  selector: string;
+  tagName: string;
+  text: string;
+  react: { componentName: string; ancestry: string[] } | null;
+}
+
 export interface NoSelection {
   status: "none";
   message: string;

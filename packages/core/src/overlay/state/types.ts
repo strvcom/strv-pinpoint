@@ -1,5 +1,12 @@
 export type Mode = "pick" | "screenshot" | null;
 export type Kind = "element" | "screenshot";
+/** Identity unit (wire-mirrored in core types.ts — keep structurally identical). */
+export interface Selection {
+  selector: string;
+  tagName: string;
+  text: string;
+  react: { componentName: string; ancestry: string[] } | null;
+}
 export interface Rect {
   x: number;
   y: number;
