@@ -286,11 +286,18 @@ describe("copy flow (with fake timers)", () => {
       'button[title="Copy annotations to clipboard (then Cmd+Shift+V into Claude)"]',
     )!;
 
-    // Click copy
+    // Click copy — TASK-30: this saves the open draft and COLLAPSES its card to the badge.
     act(() => {
       copyBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     expect(copyBtn.textContent).toContain("Copied");
+
+    // Reopen the now-saved annotation via its badge so we can edit its comment.
+    act(() => {
+      container
+        .querySelector<HTMLElement>(".pp-badge")!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
 
     // Editing the textarea dispatches setComment → dirty → copied=false
     const ta = container.querySelector("textarea");
@@ -384,5 +391,82 @@ describe("clear-all flow", () => {
     });
     // No confirm panel since items.length === 0
     expect(container.textContent).not.toContain("Clear all 0");
+  });
+});
+
+describe("pick-while-drafting confirm (TASK-30)", () => {
+  function activatePick(container: HTMLElement) {
+    openFab(container);
+    act(() => {
+      container
+        .querySelector<HTMLButtonElement>('button[title="Pick an element"]')!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+  }
+
+  it("picking a new element while a draft has text shows the discard confirm and does not add yet", () => {
+    const originalFromPoint = document.elementFromPoint;
+    const el1 = document.createElement("button");
+    el1.textContent = "one";
+    document.body.appendChild(el1);
+    document.elementFromPoint = () => el1;
+    (window as unknown as Record<string, unknown>).__pinpointExtractSelection = () => ({
+      componentName: "DraftA",
+      ancestry: [],
+      selector: "#one",
+      tagName: "BUTTON",
+      text: "one",
+      rect: { x: 0, y: 0, width: 10, height: 10 },
+    });
+
+    const { container } = setup();
+    activatePick(container);
+
+    // First pick → draft A
+    act(() => {
+      document.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 5, clientY: 5 }));
+    });
+    // Type a comment so the draft has text
+    const ta = container.querySelector("textarea")!;
+    act(() => {
+      Object.defineProperty(ta, "value", { value: "make it blue", writable: true });
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    // Second pick (different element) → should be GATED behind the confirm
+    document.elementFromPoint = () => {
+      const el2 = document.createElement("a");
+      el2.textContent = "two";
+      return el2;
+    };
+    (window as unknown as Record<string, unknown>).__pinpointExtractSelection = () => ({
+      componentName: "ElemTwo",
+      ancestry: [],
+      selector: "#two",
+      tagName: "A",
+      text: "two",
+      rect: { x: 0, y: 0, width: 10, height: 10 },
+    });
+    act(() => {
+      document.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 30, clientY: 30 }));
+    });
+
+    // Confirm shown, and the new element is NOT added yet (still showing the draft "DraftA").
+    expect(document.body.textContent).toContain("Discard the unsaved annotation?");
+    expect(container.querySelectorAll(".pp-badge").length).toBe(1);
+
+    // Confirm "Discard & continue" → the gated add proceeds, confirm dismissed.
+    const yes = Array.from(document.querySelectorAll("button")).find(
+      (b) => b.textContent === "Discard & continue",
+    )!;
+    act(() => {
+      yes.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(document.body.textContent).not.toContain("Discard the unsaved annotation?");
+    expect(container.querySelectorAll(".pp-badge").length).toBe(1); // replaced, still one draft
+
+    el1.remove();
+    document.elementFromPoint = originalFromPoint;
+    delete (window as unknown as Record<string, unknown>).__pinpointExtractSelection;
   });
 });

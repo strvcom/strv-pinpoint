@@ -26,6 +26,7 @@ function makeItem(overrides: Partial<Item> = {}): Item {
     rect: { x: 0, y: 0, width: 100, height: 40 },
     comment: "initial comment",
     wantScreenshot: false,
+    saved: true, // TASK-30: default to a saved card so existing tests see the full control set
     ...overrides,
   };
 }
@@ -43,6 +44,7 @@ function setup(item: Item, overrides: Partial<Parameters<typeof Card>[0]> = {}) 
     onToggleScreenshot: vi.fn(),
     onMinimize: vi.fn(),
     onDelete: vi.fn(),
+    onSave: vi.fn(),
     onSetConfirming: vi.fn(),
     onDragDelta: vi.fn(),
     nodeRef: vi.fn(),
@@ -371,5 +373,60 @@ describe("label", () => {
   it("falls back to screenshot when both are null/empty", () => {
     const { card } = setup(makeItem({ componentName: null, tagName: "", kind: "screenshot" }));
     expect(card.textContent).toContain("screenshot");
+  });
+});
+
+// ─── Draft vs saved (TASK-30) ──────────────────────────────────────────────────
+
+describe("draft vs saved card (TASK-30)", () => {
+  it("draft card shows a Save button and no minimize button", () => {
+    const { card } = setup(makeItem({ saved: false }));
+    expect(card.querySelector('button[title="save annotation"]')).not.toBeNull();
+    expect(card.querySelector('button[title="minimize"]')).toBeNull();
+  });
+
+  it("Shift+Enter on a draft saves", () => {
+    const { card, props } = setup(makeItem({ saved: false }));
+    const ta = card.querySelector("textarea")!;
+    act(() => {
+      ta.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true }),
+      );
+    });
+    expect(props.onSave).toHaveBeenCalled();
+  });
+
+  it("Escape on a draft discards (onDelete)", () => {
+    const { card, props } = setup(makeItem({ saved: false }));
+    const ta = card.querySelector("textarea")!;
+    act(() => {
+      ta.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    });
+    expect(props.onDelete).toHaveBeenCalled();
+  });
+
+  it("clicking Save on a draft calls onSave", () => {
+    const { card, props } = setup(makeItem({ saved: false }));
+    const save = card.querySelector<HTMLButtonElement>('button[title="save annotation"]')!;
+    act(() => {
+      save.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(props.onSave).toHaveBeenCalled();
+  });
+
+  it("saved card shows minimize and no Save button", () => {
+    const { card } = setup(makeItem({ saved: true }));
+    expect(card.querySelector('button[title="minimize"]')).not.toBeNull();
+    expect(card.querySelector('button[title="save annotation"]')).toBeNull();
+  });
+
+  it("draft trash discards immediately (no confirm)", () => {
+    const { card, props } = setup(makeItem({ saved: false }));
+    const trash = card.querySelector<HTMLButtonElement>('button[title="discard draft"]')!;
+    act(() => {
+      trash.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(props.onDelete).toHaveBeenCalled();
+    expect(card.querySelector(".pp-confirm")).toBeNull();
   });
 });

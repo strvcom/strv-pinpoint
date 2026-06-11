@@ -10,10 +10,24 @@ import { useUnloadGuard } from "../hooks/useUnloadGuard.js";
 import { createInitialState, reducer } from "../state/reducer.js";
 import { latestSelection, serializeState } from "../state/serialize.js";
 import type { Rect } from "../state/types.js";
+import { ConfirmRow } from "./ConfirmRow.js";
 import { HoverLayer } from "./HoverLayer.js";
 import { MarksLayer } from "./MarksLayer.js";
 import { MarqueeLayer } from "./MarqueeLayer.js";
 import { Toolbar } from "./Toolbar.js";
+
+// TASK-30: a new pick/screenshot, gated behind a "discard unsaved draft?" confirm when needed.
+type AddElementData = {
+  componentName: string | null;
+  ancestry: string[];
+  selector: string;
+  tagName: string;
+  text: string;
+  rect: Rect;
+};
+type AddAction =
+  | { type: "addElement"; data: AddElementData }
+  | { type: "addScreenshot"; rect: Rect; pageX: number; pageY: number };
 
 export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
   const [state, dispatch] = useReducer(reducer, undefined, createInitialState);
@@ -48,6 +62,20 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
   const [hoverRect, setHoverRect] = useState<Rect | null>(null);
   const [marqueeRect, setMarqueeRect] = useState<Rect | null>(null);
 
+  // ─── Pick-while-drafting confirm (TASK-30) ─────────────────────────────────
+  // A new pick/screenshot is gated behind a "discard unsaved draft?" confirm ONLY when the open
+  // draft has comment text; otherwise it's added immediately (the reducer drops the empty draft).
+  const [pendingAdd, setPendingAdd] = useState<AddAction | null>(null);
+
+  function requestAdd(action: AddAction) {
+    const draft = state.items.find((it) => !it.saved);
+    if (draft && draft.comment.trim()) {
+      setPendingAdd(action);
+    } else {
+      dispatch(action);
+    }
+  }
+
   // ─── Picker hook ──────────────────────────────────────────────────────────
   usePicker({
     mode: state.mode,
@@ -64,7 +92,7 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
             rect?: Rect;
           }
         | undefined;
-      dispatch({
+      requestAdd({
         type: "addElement",
         data: {
           componentName: d?.componentName ?? null,
@@ -85,7 +113,7 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
     hostEl,
     onMarquee: setMarqueeRect,
     onCapture: (rect: Rect) => {
-      dispatch({
+      requestAdd({
         type: "addScreenshot",
         rect,
         pageX: rect.x + window.scrollX,
@@ -143,11 +171,18 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
 
   function doCopy() {
     if (!state.items.length) return;
-    dispatch({ type: "markCopied" });
+    // TASK-30: "Copy = save this draft, then send" — fold the open draft into the saved set so it's
+    // included in the payload (serialize filters to saved), and persist that via saveItem below.
+    const draft = state.items.find((it) => !it.saved && state.open[it.id]);
+    const effectiveItems = draft
+      ? state.items.map((it) => (it.id === draft.id ? { ...it, saved: true } : it))
+      : state.items;
     // Inline snapshot with ready=true and bumped batchId (belt-and-suspenders before
     // the effect fires — the effect will also write the globals after re-render).
-    const snapState = { ...state, ready: true, batchId: state.batchId + 1 };
+    const snapState = { ...state, items: effectiveItems, ready: true, batchId: state.batchId + 1 };
     const snap = serializeState(snapState, computeVRect);
+    if (draft) dispatch({ type: "saveItem", id: draft.id });
+    dispatch({ type: "markCopied" });
     (window as unknown as Record<string, unknown>)[ANNOTATIONS_GLOBAL] = snap;
     const link = (window as unknown as Record<string, unknown>).__pinpointLink as
       | { send: (items: unknown) => Promise<string> }
@@ -331,12 +366,31 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
         onToggleScreenshot={(id) => dispatch({ type: "toggleScreenshot", id })}
         onMinimize={(id) => dispatch({ type: "closeCard", id })}
         onDelete={(id) => dispatch({ type: "deleteItem", id })}
+        onSave={(id) => dispatch({ type: "saveItem", id })}
         onSetConfirming={(b) => {
           confirmingRef.current = b;
           dispatch({ type: "setConfirming", confirming: b });
         }}
         onDragDelta={handleCardDragDelta}
       />
+
+      {/* Discard-unsaved-draft confirm before opening a new pick/screenshot (TASK-30) */}
+      {pendingAdd && (
+        <div style="position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.35);pointer-events:auto">
+          <div style="background:#222;border:1px solid #555;border-radius:10px;padding:14px;font:12px system-ui;color:#fff;display:flex;flex-direction:column;gap:10px">
+            <div>Discard the unsaved annotation?</div>
+            <ConfirmRow
+              yesLabel="Discard & continue"
+              onYes={() => {
+                const action = pendingAdd;
+                setPendingAdd(null);
+                if (action) dispatch(action);
+              }}
+              onNo={() => setPendingAdd(null)}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

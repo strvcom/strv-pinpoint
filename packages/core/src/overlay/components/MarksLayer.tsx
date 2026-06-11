@@ -18,6 +18,7 @@ export interface MarksLayerProps {
   onToggleScreenshot: (id: string) => void;
   onMinimize: (id: string) => void;
   onDelete: (id: string) => void;
+  onSave: (id: string) => void;
   onSetConfirming: (b: boolean) => void;
   onDragDelta: (id: string, dx: number, dy: number) => void;
 }
@@ -35,6 +36,7 @@ export function MarksLayer({
   onToggleScreenshot,
   onMinimize,
   onDelete,
+  onSave,
   onSetConfirming,
   onDragDelta,
 }: MarksLayerProps) {
@@ -76,6 +78,7 @@ export function MarksLayer({
                 onToggleScreenshot={() => onToggleScreenshot(item.id)}
                 onMinimize={() => onMinimize(item.id)}
                 onDelete={() => onDelete(item.id)}
+                onSave={() => onSave(item.id)}
                 onSetConfirming={onSetConfirming}
                 onDragDelta={(dx, dy) => onDragDelta(item.id, dx, dy)}
                 nodeRef={(el) => registerNode(item.id, "card", el as HTMLElement | null)}
