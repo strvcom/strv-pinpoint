@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/styles.css" />
+    <title>html-css — pinpoint non-React example</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav aria-label="Primary">
+        <a href="#intro">Home</a>
+        <a href="#signup">Sign up</a>
+        <a href="#gallery">Gallery</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="intro">
+        <h1 id="page-title">Plain HTML &amp; CSS</h1>
+        <p>A framework-free page for testing pinpoint where there is no React fiber to walk.</p>
+        <button type="button" data-testid="primary-action" aria-label="Get started">
+          Get started
+        </button>
+      </section>
+
+      <section id="signup">
+        <h2>Subscribe</h2>
+        <form action="#" method="post">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" placeholder="you@example.com" />
+          <button type="submit" data-testid="subscribe">Subscribe</button>
+        </form>
+      </section>
+
+      <section id="gallery">
+        <h2>Gallery</h2>
+        <img src="/sample.svg" alt="A sample placeholder graphic" width="120" height="80" />
+        <ul>
+          <li>First item</li>
+          <li>Second item</li>
+          <li>Third item</li>
+        </ul>
+      </section>
+
+      <!-- Deep nesting: outermost div.card, innermost button (for screenshot top/bottom tests). -->
+      <div class="card">
+        <section>
+          <article>
+            <h2>Pro plan</h2>
+            <button type="button" role="button" data-testid="buy" aria-label="Buy pro plan">
+              Buy now
+            </button>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <p>Built with plain HTML/CSS — <a href="#page-title">back to top</a>.</p>
+    </footer>
+  </body>
+</html>
