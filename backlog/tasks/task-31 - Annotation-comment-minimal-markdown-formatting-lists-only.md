@@ -1,12 +1,15 @@
 ---
 id: TASK-31
 title: 'Annotation comment: minimal markdown formatting (lists only)'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-06-11 18:09'
+updated_date: '2026-06-11 21:53'
 labels:
   - feature
 dependencies: []
+references:
+  - docs/superpowers/specs/2026-06-11-markdown-comment-design.md
 ordinal: 31000
 ---
 
