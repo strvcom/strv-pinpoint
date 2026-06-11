@@ -234,8 +234,10 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
       dispatch({ type: "setFabOpen", open: false });
       dispatch({ type: "setMode", mode: null });
     } else {
+      // Open with NO tool active (TASK-23 #3) — the user explicitly picks
+      // Pick or Screenshot. Mode is left as-is (null on first open; reset to
+      // null on the close above), so reopening never re-arms a default tool.
       dispatch({ type: "setFabOpen", open: true });
-      dispatch({ type: "setMode", mode: "pick" });
     }
   }
 
