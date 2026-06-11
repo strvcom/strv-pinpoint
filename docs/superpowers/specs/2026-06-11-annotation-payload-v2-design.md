@@ -30,6 +30,9 @@ interface Selection {
 }
 ```
 
+> The serialized/wire item also carries `kind` (`"element"|"screenshot"`) and the item `rect` —
+> these are item-level, not part of `Selection`. `Selection` itself is identity-only:
+
 - **Identity only — no `rect`.** The marked/region rect stays at the *item* level (used for
   badge/card anchoring + the saved screenshot clip); selections describe *what*, not *where*.
 - `react` groups the fiber-derived fields and is **`null` when there is no React fiber** (plain
@@ -82,7 +85,8 @@ Deduped `selected[]` = `[div.card→Card, button→Button, h2]`.
 | `overlay/hooks/usePicker.ts` / `OverlayRoot.tsx` | Pick passes a one-element `selected` to `addElement`; screenshot passes the resolved `selected` to `addScreenshot`. |
 | `overlay/state/types.ts` | `Item` drops flat `componentName/ancestry/selector/tagName/text`; gains `selected: Selection[]`. Keeps `rect`, `pageX/Y`, `comment`, `wantScreenshot`, `cardOffset`. New `Selection` type. Actions carry `selected`. |
 | `overlay/state/reducer.ts` | `addElement` / `addScreenshot` store `selected`. |
-| `overlay/state/serialize.ts` | `SerializedItem` drops flat fields, gains `selected: Selection[]`. **Bump `Snapshot`/payload `version` → 2.** Still no DOM access. |
+| `overlay/state/serialize.ts` | `SerializedItem` drops flat fields, gains `selected: Selection[]` **and `kind`** (`"element"\|"screenshot"`, lifted from `Item.kind`). Still no DOM access. (Payload `version` bump lives in `clipboard-payload.ts`, below.) |
+| `annotations/save-screenshots.ts` | Branch on the new `kind`: **element** → `screenshotElement(selected[0].selector)` (fallback clip `rect`); **screenshot** → clip the region `rect`. Needed because screenshot items now carry selectors in `selected[]`, so the old "selector present?" proxy would wrongly clip the outermost element instead of the dragged region. |
 | `overlay/components/Card.tsx` | Header label uses `item.selected[0]?.react?.componentName ?? item.selected[0]?.tagName ?? "screenshot"`. |
 | `overlay/hooks/usePositioning.ts` | Live-rect lookup uses `item.selected[0]?.selector` (was `item.selector`); same `querySelector`-or-fallback-to-`item.rect` logic. |
 | server `/send` (bridge-server) | Emits `selected[]` per item + `version: 2`; still appends `screenshot` path + `source`/`bridgeUrl`/`sessionId`/`promptId`. |
