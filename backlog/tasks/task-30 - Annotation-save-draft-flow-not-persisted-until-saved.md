@@ -1,12 +1,15 @@
 ---
 id: TASK-30
 title: 'Annotation save/draft flow: not persisted until saved'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-06-11 18:09'
+updated_date: '2026-06-11 18:10'
 labels:
   - feature
 dependencies: []
+references:
+  - docs/superpowers/specs/2026-06-11-annotation-save-draft-design.md
 ordinal: 30000
 ---
 
