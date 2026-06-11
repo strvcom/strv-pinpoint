@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createCdpDriver } from "./cdp-driver.js";
+import { createCdpDriver, pinpointPreamble } from "./cdp-driver.js";
 
 const cfg = { cdpUrl: "http://localhost:9222", profileDir: "/tmp/p" };
 
@@ -75,3 +75,11 @@ describe("createCdpDriver().connect", () => {
 
 // minimal structural type for the fake (kept local to the test)
 type DriverSessionPage = import("../cdp/page.js").BridgePage;
+
+describe("pinpointPreamble", () => {
+  it("builds the __pinpointConfig assignment", () => {
+    expect(pinpointPreamble("http://localhost:7331", "sess-1")).toBe(
+      'window.__pinpointConfig = {"bridgeUrl":"http://localhost:7331","sessionId":"sess-1"};',
+    );
+  });
+});

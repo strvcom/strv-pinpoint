@@ -49,3 +49,36 @@ describe("CdpPage", () => {
     expect(await page.screenshotElement("#missing")).toBeNull();
   });
 });
+
+describe("reinject", () => {
+  it("tears down, swaps the on-new-document script, then evaluates fresh source", async () => {
+    const cdp = new FakeCdp({
+      "Page.addScriptToEvaluateOnNewDocument": { identifier: "id-1" },
+    });
+    const page = new CdpPage(cdp as never);
+    await page.injectBootstrap("BOOT_V1"); // captures id-1
+
+    // Next add returns a new identifier.
+    (cdp as unknown as { results: Record<string, unknown> }).results[
+      "Page.addScriptToEvaluateOnNewDocument"
+    ] = { identifier: "id-2" };
+
+    await page.reinject("PREAMBLE", "OVERLAY_V2");
+
+    const methods = cdp.calls.map((c) => c.method);
+    expect(methods).toEqual([
+      "Page.addScriptToEvaluateOnNewDocument", // from injectBootstrap
+      "Runtime.evaluate", // from injectBootstrap
+      "Runtime.evaluate", // teardown
+      "Page.removeScriptToEvaluateOnNewDocument",
+      "Page.addScriptToEvaluateOnNewDocument",
+      "Runtime.evaluate", // remount
+    ]);
+    const remove = cdp.calls.find((c) => c.method === "Page.removeScriptToEvaluateOnNewDocument");
+    expect(remove?.params).toEqual({ identifier: "id-1" });
+    const teardown = cdp.calls.filter((c) => c.method === "Runtime.evaluate")[1];
+    expect(teardown.params.expression).toContain("__pinpointTeardown");
+    const remount = cdp.calls.filter((c) => c.method === "Runtime.evaluate")[2];
+    expect(remount.params.expression).toBe("PREAMBLE\nOVERLAY_V2");
+  });
+});

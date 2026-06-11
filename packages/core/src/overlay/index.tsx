@@ -7,8 +7,8 @@ import { OVERLAY_CSS } from "./styles.js";
 export function installOverlayApp(): void {
   if ((window as any).__pinpointOverlayInstalled || !document.body) return;
   (window as any).__pinpointOverlayInstalled = true;
-  installSelectionProbe();
-  installBridgeLink();
+  const disposeProbe = installSelectionProbe();
+  const disposeLink = installBridgeLink();
   const host = document.createElement("div");
   host.setAttribute("data-pinpoint", "1"); // C2: the single hideable host for screenshots
   host.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:2147483640";
@@ -20,6 +20,18 @@ export function installOverlayApp(): void {
   const mount = document.createElement("div"); // preact mount point inside the shadow root
   root.appendChild(mount);
   render(<OverlayRoot hostEl={host} />, mount);
+
+  // Dev hot-reload contract: a full, idempotent unmount. Preact render(null) runs every
+  // useEffect cleanup (picker/screenshot/escape/positioning/pointerup/link.init listeners);
+  // the two installer disposers handle the non-Preact globals (extractor fn + SSE EventSource).
+  (window as any).__pinpointTeardown = () => {
+    render(null, mount);
+    host.remove();
+    disposeProbe();
+    disposeLink();
+    delete (window as any).__pinpointOverlayInstalled;
+    delete (window as any).__pinpointTeardown;
+  };
 }
 
 if (document.readyState === "loading") {

@@ -33,6 +33,12 @@ export interface CdpDriverDeps {
   makePage?: (cdp: CdpConnection) => BridgePage;
 }
 
+/** The bootstrap config line injected ahead of the overlay bundle. Shared by connect() and the
+ *  dev overlay watcher so the re-injected bundle keeps the same bridge URL + session id. */
+export function pinpointPreamble(bridgeUrl: string, sessionId: string): string {
+  return `window.__pinpointConfig = ${JSON.stringify({ bridgeUrl, sessionId })};`;
+}
+
 export function createCdpDriver(config: CdpDriverConfig, deps: CdpDriverDeps = {}): Driver {
   const cdpUp = deps.isCdpUp ?? ((u: string) => isCdpUp(u));
   const exists = deps.exists ?? existsSync;
@@ -86,7 +92,7 @@ export function createCdpDriver(config: CdpDriverConfig, deps: CdpDriverDeps = {
       const page = makePage(cdp as unknown as CdpConnection);
 
       const sessionId = randomUUID();
-      const preamble = `window.__pinpointConfig = ${JSON.stringify({ bridgeUrl: opts.bridgeUrl, sessionId })};`;
+      const preamble = pinpointPreamble(opts.bridgeUrl, sessionId);
       await page.injectBootstrap(`${preamble}\n${OVERLAY_SOURCE}`);
 
       return {

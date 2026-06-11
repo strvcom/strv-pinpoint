@@ -1,12 +1,14 @@
-// Attaches window.__pinpointLink — ported verbatim from the old BRIDGE_LINK_FN
-// String.raw block (cdp/bridge-link.ts). Reads window.__pinpointConfig.
-export function installBridgeLink(): void {
+// Attaches window.__pinpointLink — ported from the old BRIDGE_LINK_FN String.raw block.
+// Reads window.__pinpointConfig. Returns a disposer that closes the EventSource (opened by
+// init()) and removes the global, so a dev re-inject leaves no dangling SSE connection.
+export function installBridgeLink(): () => void {
+  let es: EventSource | null = null;
   (window as any).__pinpointLink = (function () {
     var cfg = (window as any).__pinpointConfig || {};
     function init(onStatus: any) {
       if (!cfg.bridgeUrl || !cfg.sessionId) return;
       try {
-        var es = new EventSource(
+        es = new EventSource(
           cfg.bridgeUrl + "/session/" + encodeURIComponent(cfg.sessionId) + "/events",
         );
         es.onmessage = function (e) {
@@ -31,4 +33,11 @@ export function installBridgeLink(): void {
     }
     return { init: init, send: send };
   })();
+  return function disposeBridgeLink() {
+    try {
+      es?.close();
+    } catch (_) {}
+    es = null;
+    delete (window as any).__pinpointLink;
+  };
 }
