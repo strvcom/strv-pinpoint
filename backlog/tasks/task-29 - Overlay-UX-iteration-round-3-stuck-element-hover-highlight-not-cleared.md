@@ -1,10 +1,10 @@
 ---
 id: TASK-29
 title: 'Overlay UX iteration (round 3): stuck element-hover highlight not cleared'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-11 17:25'
-updated_date: '2026-06-11 17:56'
+updated_date: '2026-06-11 17:57'
 labels:
   - bug
 dependencies: []
