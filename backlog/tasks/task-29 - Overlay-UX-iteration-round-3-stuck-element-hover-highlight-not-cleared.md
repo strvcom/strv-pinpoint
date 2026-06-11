@@ -4,7 +4,7 @@ title: 'Overlay UX iteration (round 3): stuck element-hover highlight not cleare
 status: In Progress
 assignee: []
 created_date: '2026-06-11 17:25'
-updated_date: '2026-06-11 17:25'
+updated_date: '2026-06-11 17:56'
 labels:
   - bug
 dependencies: []
@@ -22,4 +22,5 @@ Found live on the vite-plain example: the blue element-hover highlight (HoverLay
 - [ ] #1 Hover highlight disappears immediately when the Pick tool is deselected or the toolbar is closed (mode leaves 'pick')
 - [ ] #2 Hover highlight disappears when the cursor leaves the browser window/tab while picking
 - [ ] #3 usePicker unit test covers the clear-on-mode-change and clear-on-window-leave paths
+- [ ] #4 Closing or refreshing the page while annotations exist triggers the browser's native unload confirmation (beforeunload guard)
 <!-- AC:END -->
