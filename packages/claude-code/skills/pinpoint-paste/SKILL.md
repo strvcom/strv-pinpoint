@@ -12,7 +12,9 @@ The user clicked **Send** in the pinpoint overlay and pasted the resulting JSON.
   "sessionId": "…", "promptId": "…",
   "items": [{ "badge": 1, "kind": "element",
     "selected": [{ "selector": "#hero-heading", "tagName": "H1", "text": "…",
-      "react": { "componentName": "Hero", "ancestry": ["Hero","App"] } }],
+      "identifiers": { "id": "hero-heading" },
+      "react": { "componentName": "Hero", "ancestry": ["Hero","App"],
+        "source": { "file": "/src/App.tsx", "line": 7 } } }],
     "comment": "make it bigger", "screenshot": "/abs/path/anno-1.png" }] }
 ```
 
@@ -28,7 +30,11 @@ The user clicked **Send** in the pinpoint overlay and pasted the resulting JSON.
    (substitute `bridgeUrl`, `sessionId`, `promptId` from the JSON.)
 3. **For each item**, apply its `comment` using its `selected[]` entries:
    - If `screenshot` is a path, **`Read`** it for visual context.
-   - For each entry in `selected`: locate the source by grepping `selected[].react.componentName` (`function <name>`, `const <name> =`, `export default function <name>`); use `react.ancestry` (nearest-first) to disambiguate; if `react` is `null`, fall back to the entry's visible `text` + the CSS `selector`.
+   - For each entry in `selected`, locate the source — cheapest signal first:
+     - **`react.source` (`{ file, line }`)** when present → open that `file` at `line` directly; it's the element's exact source location.
+     - else **`identifiers`** (`id`, `testId`/`data-testid`, `aria-label`, `role`, `name`) → grep these; they pin source fastest.
+     - else grep **`react.componentName`** (`function <name>`, `const <name> =`, `export default function <name>`), disambiguating with `react.ancestry` (nearest-first).
+     - else fall back to the entry's visible `text` + the CSS `selector`.
    - A `kind: "element"` item has exactly one selection (the picked element). A `kind: "screenshot"` item's `selected[]` holds the outermost container(s) plus the innermost leaf elements the region covered (any number of entries) — use them together to find the right component(s).
    - Make the edit; let the dev server hot-reload.
 4. **Summarize** the per-item edits back to the user.

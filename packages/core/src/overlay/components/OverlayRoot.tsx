@@ -81,6 +81,7 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
         selector: d.selector ?? "",
         tagName: d.tagName ?? "",
         text: d.text ?? "",
+        identifiers: d.identifiers ?? {},
         react: d.react ?? null,
       };
       requestAdd({

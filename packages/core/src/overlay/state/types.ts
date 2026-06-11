@@ -5,7 +5,18 @@ export interface Selection {
   selector: string;
   tagName: string;
   text: string;
-  react: { componentName: string; ancestry: string[] } | null;
+  identifiers: {
+    id?: string;
+    testId?: string;
+    ariaLabel?: string;
+    role?: string;
+    name?: string;
+  };
+  react: {
+    componentName: string;
+    ancestry: string[];
+    source?: { file: string; line: number };
+  } | null;
 }
 export interface Rect {
   x: number;
