@@ -7,7 +7,7 @@ import { createCdpDriver } from "../src/driver/cdp-driver.js";
 import type { DriverSession } from "../src/driver/driver.js";
 import { startBridgeServer } from "../src/server/bridge-server.js";
 import { SessionRegistry } from "../src/server/sessions.js";
-import type { SelectionFound } from "../src/types.js";
+import type { Rect, Selection } from "../src/types.js";
 
 /**
  * The full clipboard loop on a live page: inject overlay → build an annotation
@@ -61,10 +61,18 @@ afterAll(async () => {
 
 describe("pinpoint clipboard loop on Vite (integration)", () => {
   it("/send writes a pinpoint clipboard JSON + saves the flagged screenshot", async () => {
-    const sel = await connection.page.evaluate<SelectionFound>(
+    const sel = await connection.page.evaluate<Selection & { rect: Rect }>(
       "window.__pinpointExtractSelection(document.querySelector('#hero-heading'))",
     );
-    const item = { ...sel, id: "a1", badge: 1, comment: "make it bigger", wantScreenshot: true };
+    const item = {
+      id: "a1",
+      badge: 1,
+      kind: "element",
+      selected: [{ selector: sel.selector, tagName: sel.tagName, text: sel.text, react: sel.react }],
+      rect: sel.rect,
+      comment: "make it bigger",
+      wantScreenshot: true,
+    };
 
     const res = await fetch(`${base}/session/s1/send`, {
       method: "POST",
@@ -77,8 +85,10 @@ describe("pinpoint clipboard loop on Vite (integration)", () => {
 
     const payload = JSON.parse(clip.at(-1) as string);
     expect(payload.source).toBe("pinpoint");
+    expect(payload.version).toBe(2);
     expect(payload.items).toHaveLength(1);
-    expect(payload.items[0].componentName).toBe("Hero");
+    expect(payload.items[0].kind).toBe("element");
+    expect(payload.items[0].selected[0].react.componentName).toBe("Hero");
     expect(payload.items[0].comment).toBe("make it bigger");
     expect(payload.items[0].screenshot).toMatch(/anno-1\.png$/);
     expect(existsSync(payload.items[0].screenshot)).toBe(true);
