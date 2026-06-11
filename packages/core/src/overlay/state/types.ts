@@ -19,6 +19,7 @@ export interface Item {
   pageY?: number; // screenshot kind only
   comment: string;
   wantScreenshot: boolean;
+  saved: boolean; // false = unsaved draft (excluded from the serialized payload); true = persisted
   cardOffset?: { x: number; y: number }; // user-dragged card delta
 }
 export interface OverlayState {
@@ -60,4 +61,5 @@ export type Action =
   | { type: "clearCopied" }
   | { type: "setConfirming"; confirming: boolean }
   | { type: "consumeRunning" }
-  | { type: "setCardOffset"; id: string; x: number; y: number };
+  | { type: "setCardOffset"; id: string; x: number; y: number }
+  | { type: "saveItem"; id: string };

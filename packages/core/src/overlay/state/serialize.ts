@@ -35,21 +35,24 @@ export function serializeState(state: OverlayState, vrect: (it: Item) => Rect): 
   return {
     batchId: state.batchId,
     ready: state.ready,
-    items: state.items.map((it, i) => {
-      const r = vrect(it);
-      return {
-        id: it.id,
-        badge: i + 1,
-        componentName: it.componentName,
-        ancestry: it.ancestry,
-        selector: it.selector,
-        tagName: it.tagName,
-        text: it.text,
-        rect: { x: r.x, y: r.y, width: r.width, height: r.height },
-        comment: it.comment,
-        wantScreenshot: it.wantScreenshot,
-      };
-    }),
+    // Only SAVED annotations enter the payload — unsaved drafts are excluded (TASK-30).
+    items: state.items
+      .filter((it) => it.saved)
+      .map((it, i) => {
+        const r = vrect(it);
+        return {
+          id: it.id,
+          badge: i + 1,
+          componentName: it.componentName,
+          ancestry: it.ancestry,
+          selector: it.selector,
+          tagName: it.tagName,
+          text: it.text,
+          rect: { x: r.x, y: r.y, width: r.width, height: r.height },
+          comment: it.comment,
+          wantScreenshot: it.wantScreenshot,
+        };
+      }),
   };
 }
 

@@ -26,6 +26,7 @@ function makeItem(id: string, kind: Item["kind"] = "element"): Item {
     rect: { x: 10, y: 10, width: 80, height: 30 },
     comment: "",
     wantScreenshot: false,
+    saved: true, // TASK-30: saved cards (full controls) for these layout tests
   };
 }
 
@@ -46,6 +47,7 @@ function setup(overrides: Partial<MarksLayerProps> = {}) {
     onToggleScreenshot: vi.fn(),
     onMinimize: vi.fn(),
     onDelete: vi.fn(),
+    onSave: vi.fn(),
     onSetConfirming: vi.fn(),
     onDragDelta: vi.fn(),
     ...overrides,

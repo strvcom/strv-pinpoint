@@ -18,6 +18,7 @@ function makeItem(overrides: Partial<Item> & { id: string }): Item {
     rect: overrides.rect ?? { x: 0, y: 0, width: 0, height: 0 },
     comment: overrides.comment ?? "",
     wantScreenshot: overrides.wantScreenshot ?? true,
+    saved: overrides.saved ?? true, // TASK-30: default saved so existing serialize tests still see items
     cardOffset: overrides.cardOffset,
   };
 }
@@ -195,5 +196,20 @@ describe("componentName null", () => {
     });
     const snap = serializeState(state, vrectStub);
     expect(snap.items[0].componentName).toBeNull();
+  });
+});
+
+describe("serialize excludes drafts (TASK-30)", () => {
+  it("only saved items appear, renumbered over the saved set", () => {
+    const state = makeState({
+      items: [
+        makeItem({ id: "a1", componentName: "A", saved: true }),
+        makeItem({ id: "a2", componentName: "Draft", saved: false }),
+        makeItem({ id: "a3", componentName: "B", saved: true }),
+      ],
+    });
+    const snap = serializeState(state, vrectStub);
+    expect(snap.items.map((i) => i.componentName)).toEqual(["A", "B"]);
+    expect(snap.items.map((i) => i.badge)).toEqual([1, 2]);
   });
 });

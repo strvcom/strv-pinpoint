@@ -93,7 +93,9 @@ describe("addElement", () => {
   it("increments nextId", () => {
     const s0 = createInitialState();
     const s1 = reducer(s0, { type: "addElement", data: elementData });
-    const s2 = reducer(s1, { type: "addElement", data: elementData });
+    // TASK-30: save before adding a 2nd, else the unsaved draft is dropped (one draft at a time)
+    const s1saved = reducer(s1, { type: "saveItem", id: s1.items[0].id });
+    const s2 = reducer(s1saved, { type: "addElement", data: elementData });
     expect(s1.nextId).toBe(2);
     expect(s2.nextId).toBe(3);
     expect(s2.items[0].id).toBe("a1");
@@ -251,7 +253,8 @@ describe("deleteItem", () => {
   it("only removes the specified item", () => {
     const s0 = createInitialState();
     const s1 = reducer(s0, { type: "addElement", data: elementData });
-    const s2 = reducer(s1, {
+    const s1saved = reducer(s1, { type: "saveItem", id: "a1" }); // TASK-30: keep both (one draft rule)
+    const s2 = reducer(s1saved, {
       type: "addElement",
       data: { ...elementData, componentName: "Other" },
     });
@@ -481,5 +484,67 @@ describe("dirty invariant", () => {
       const next = reducer(cleanState, action);
       expect(next.ready, `action ${action.type} should not clear ready`).toBe(true);
     }
+  });
+});
+
+describe("save/draft (TASK-30)", () => {
+  function withElement() {
+    return reducer(createInitialState(), {
+      type: "addElement",
+      data: {
+        componentName: "Btn",
+        ancestry: ["Btn"],
+        selector: "#b",
+        tagName: "BUTTON",
+        text: "x",
+        rect: { x: 0, y: 0, width: 10, height: 10 },
+      },
+    });
+  }
+
+  it("addElement creates an unsaved draft", () => {
+    const s = withElement();
+    expect(s.items).toHaveLength(1);
+    expect(s.items[0].saved).toBe(false);
+    expect(s.open[s.items[0].id]).toBe(true);
+  });
+
+  it("adding a second element drops the existing unsaved draft (one draft at a time)", () => {
+    const s2 = reducer(withElement(), {
+      type: "addElement",
+      data: {
+        componentName: "Two",
+        ancestry: ["Two"],
+        selector: "#t",
+        tagName: "DIV",
+        text: "y",
+        rect: { x: 0, y: 0, width: 5, height: 5 },
+      },
+    });
+    expect(s2.items).toHaveLength(1);
+    expect(s2.items[0].componentName).toBe("Two");
+    expect(s2.items[0].saved).toBe(false);
+  });
+
+  it("saveItem marks saved and collapses the card; a later add keeps the saved one", () => {
+    const s1 = withElement();
+    const id = s1.items[0].id;
+    const saved = reducer(s1, { type: "saveItem", id });
+    expect(saved.items[0].saved).toBe(true);
+    expect(saved.open[id]).toBe(false);
+    const s2 = reducer(saved, {
+      type: "addElement",
+      data: {
+        componentName: "Two",
+        ancestry: ["Two"],
+        selector: "#t",
+        tagName: "DIV",
+        text: "y",
+        rect: { x: 0, y: 0, width: 5, height: 5 },
+      },
+    });
+    expect(s2.items).toHaveLength(2);
+    expect(s2.items[0].saved).toBe(true);
+    expect(s2.items[1].saved).toBe(false);
   });
 });

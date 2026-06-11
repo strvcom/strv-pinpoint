@@ -14,6 +14,7 @@ export function Card({
   onToggleScreenshot,
   onMinimize,
   onDelete,
+  onSave,
   onSetConfirming,
   onDragDelta,
   nodeRef,
@@ -28,6 +29,7 @@ export function Card({
   onToggleScreenshot: () => void;
   onMinimize: () => void;
   onDelete: () => void;
+  onSave: () => void;
   onSetConfirming: (b: boolean) => void;
   onDragDelta: (dx: number, dy: number) => void;
   nodeRef: (el: HTMLDivElement | null) => void;
@@ -56,6 +58,7 @@ export function Card({
     } catch (_) {}
   }, []);
 
+  const isDraft = !item.saved; // TASK-30: drafts have a Save button + no minimize/close
   const color = item.kind === "screenshot" ? "#a855f7" : "#22c55e";
 
   const cardStyle =
@@ -114,6 +117,7 @@ export function Card({
   }
 
   function handleFocusOut(e: FocusEvent) {
+    if (isDraft) return; // TASK-30: drafts never minimize on blur — save or discard explicitly
     // Read pressingBadgeRef LIVE — this fires synchronously with no re-render
     // between badge pointerdown and the card's focusout (TASK-18 #3 / CRITICAL #1).
     if (showConfirm || pressingBadgeRef.current === item.id) return;
@@ -158,27 +162,33 @@ export function Card({
           </button>
         )}
 
-        {/* Minimize button */}
+        {/* Minimize button — saved cards only (drafts must Save or discard) */}
+        {!isDraft && (
+          <button
+            type="button"
+            class="pp-icon"
+            title="minimize"
+            style={iconBtnStyle}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMinimize();
+            }}
+          >
+            <Icon svg={ICON.min} />
+          </button>
+        )}
+
+        {/* Delete/discard button — draft discards immediately (never saved); saved confirms */}
         <button
           type="button"
           class="pp-icon"
-          title="minimize"
+          title={isDraft ? "discard draft" : "delete annotation"}
           style={iconBtnStyle}
           onClick={(e) => {
             e.stopPropagation();
-            onMinimize();
+            if (isDraft) onDelete();
+            else handleDeleteClick(e);
           }}
-        >
-          <Icon svg={ICON.min} />
-        </button>
-
-        {/* Delete button */}
-        <button
-          type="button"
-          class="pp-icon"
-          title="delete annotation"
-          style={iconBtnStyle}
-          onClick={handleDeleteClick}
         >
           <Icon svg={ICON.trash} />
         </button>
@@ -189,7 +199,7 @@ export function Card({
         ref={taRef}
         rows={2}
         value={item.comment}
-        placeholder="What should change?  (Shift+Enter to minimize)"
+        placeholder={isDraft ? "What should change?  (Shift+Enter to save)" : "What should change?"}
         style={taStyle}
         onInput={(e) => onComment((e.target as HTMLTextAreaElement).value)}
         onMouseDown={(e) => e.stopPropagation()}
@@ -197,10 +207,32 @@ export function Card({
         onKeyDown={(e) => {
           if (e.key === "Enter" && e.shiftKey) {
             e.preventDefault();
-            onMinimize();
+            if (isDraft) onSave();
+            else onMinimize();
+          } else if (e.key === "Escape" && isDraft) {
+            e.preventDefault();
+            onDelete(); // discard the draft
           }
         }}
       />
+
+      {/* Save button — drafts only, bottom-right (TASK-30) */}
+      {isDraft && (
+        <div style="display:flex;justify-content:flex-end;margin-top:6px">
+          <button
+            type="button"
+            class="pp-icon pp-active"
+            title="save annotation"
+            style="min-width:56px;height:26px;border-radius:6px;font:600 12px system-ui"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSave();
+            }}
+          >
+            Save
+          </button>
+        </div>
+      )}
 
       {/* Delete confirm overlay */}
       {showConfirm && (
