@@ -1,4 +1,4 @@
-# html-css — pinpoint non-React example
+# vite-plain — pinpoint non-React example
 
 A pure HTML/CSS page (no framework, no JavaScript) served by Vite, used to test pinpoint where
 there is **no React fiber** to walk. Picked elements return DOM-only identity: `componentName` is
@@ -7,7 +7,7 @@ there is **no React fiber** to walk. Picked elements return DOM-only identity: `
 ## Run
 
 ```bash
-pnpm --dir examples/html-css dev   # http://localhost:5174 (strictPort)
+pnpm --dir examples/vite-plain dev   # http://localhost:5174 (strictPort)
 ```
 
 Then, from the pinpoint repo:

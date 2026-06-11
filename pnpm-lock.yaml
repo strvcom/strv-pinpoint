@@ -27,7 +27,7 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.42)(happy-dom@20.10.2)(lightningcss@1.32.0)(terser@5.48.0)
 
-  examples/html-css:
+  examples/vite-plain:
     devDependencies:
       vite:
         specifier: ^8.0.12
