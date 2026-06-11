@@ -86,6 +86,30 @@ describe("FAB open / close", () => {
     expect(pickBtn.classList.contains("pp-active")).toBe(true);
   });
 
+  it("clicking the active tool again deactivates it (TASK-23 #1)", () => {
+    const { container } = setup();
+    openFab(container);
+    const pickBtn = container.querySelector<HTMLButtonElement>('button[title="Pick an element"]')!;
+    act(() => pickBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(pickBtn.classList.contains("pp-active")).toBe(true);
+    act(() => pickBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(pickBtn.classList.contains("pp-active")).toBe(false);
+  });
+
+  it("injects a default-cursor style while a tool is active, removes it when deactivated (TASK-23 #2)", () => {
+    const hasCursorStyle = () =>
+      [...document.head.querySelectorAll("style")].some((s) =>
+        (s.textContent ?? "").includes("cursor:default"),
+      );
+    const { container } = setup();
+    openFab(container);
+    const pickBtn = container.querySelector<HTMLButtonElement>('button[title="Pick an element"]')!;
+    act(() => pickBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(hasCursorStyle()).toBe(true);
+    act(() => pickBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }))); // deactivate
+    expect(hasCursorStyle()).toBe(false);
+  });
+
   it("clicking the orb twice: closes fab and mode returns to null (Pick button loses pp-active)", () => {
     const { container } = setup();
     const orb = openFab(container);
