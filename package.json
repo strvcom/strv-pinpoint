@@ -15,6 +15,7 @@
     "format:check": "biome format .",
     "check": "biome check .",
     "backlog": "npx --yes backlog.md@latest board",
+    "dev:overlay": "node packages/core/scripts/dev-overlay.mjs",
     "prepare": "lefthook install"
   },
   "devDependencies": {
