@@ -3,10 +3,10 @@ id: TASK-23
 title: >-
   Overlay UX iteration (round 2): host-wrapper styles, drag deadzone, no default
   tool
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-11 13:33'
-updated_date: '2026-06-11 15:10'
+updated_date: '2026-06-11 16:21'
 labels:
   - feature
 dependencies: []
