@@ -97,6 +97,21 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
   // ─── Escape hook ──────────────────────────────────────────────────────────
   useEscape(() => dispatch({ type: "setMode", mode: null }));
 
+  // ─── Force a neutral cursor while a selection tool is active (TASK-23) ──────
+  // When picking/screenshotting, the user is selecting elements/regions, not interacting with
+  // the page — so the page's per-element cursors (button → pointer, text → text) are noise.
+  // A light-DOM <style> overrides them with default; it does NOT pierce the shadow root, so the
+  // overlay's own cursors (grip → grab, badges → pointer) are preserved. Cleaned up when the
+  // tool deactivates or the overlay tears down (effect cleanup runs on render(null)).
+  useEffect(() => {
+    if (state.mode !== "pick" && state.mode !== "screenshot") return;
+    const style = document.createElement("style");
+    style.setAttribute("data-pinpoint", "1");
+    style.textContent = "*{cursor:default!important}";
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, [state.mode]);
+
   // ─── Serialize effect ─────────────────────────────────────────────────────
   // Writes the window globals whenever state changes (state is a new object each dispatch).
   useEffect(() => {
@@ -234,8 +249,10 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
       dispatch({ type: "setFabOpen", open: false });
       dispatch({ type: "setMode", mode: null });
     } else {
+      // Open with NO tool active (TASK-23 #3) — the user explicitly picks
+      // Pick or Screenshot. Mode is left as-is (null on first open; reset to
+      // null on the close above), so reopening never re-arms a default tool.
       dispatch({ type: "setFabOpen", open: true });
-      dispatch({ type: "setMode", mode: "pick" });
     }
   }
 
@@ -281,7 +298,7 @@ export function OverlayRoot({ hostEl }: { hostEl: HTMLElement | null }) {
         copied={state.copied}
         clearOpen={clearOpen}
         onOrbClick={handleOrbClick}
-        onSetMode={(m) => dispatch({ type: "setMode", mode: m })}
+        onSetMode={(m) => dispatch({ type: "setMode", mode: state.mode === m ? null : m })}
         onClear={handleClear}
         onCopy={doCopy}
         onOrbPointerDown={orbPointerDown}

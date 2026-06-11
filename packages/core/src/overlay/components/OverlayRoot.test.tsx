@@ -68,12 +68,46 @@ describe("FAB open / close", () => {
     expect(copyBtn!.disabled).toBe(true);
   });
 
-  it("opening the fab sets mode=pick: Pick button has pp-active", () => {
+  it("opening the fab activates NO tool by default: Pick button is not pp-active (TASK-23 #3)", () => {
     const { container } = setup();
     openFab(container);
     const pickBtn = container.querySelector<HTMLButtonElement>('button[title="Pick an element"]');
     expect(pickBtn).not.toBeNull();
-    expect(pickBtn!.classList.contains("pp-active")).toBe(true);
+    expect(pickBtn!.classList.contains("pp-active")).toBe(false);
+  });
+
+  it("clicking Pick after opening activates it: Pick button gains pp-active", () => {
+    const { container } = setup();
+    openFab(container);
+    const pickBtn = container.querySelector<HTMLButtonElement>('button[title="Pick an element"]')!;
+    act(() => {
+      pickBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(pickBtn.classList.contains("pp-active")).toBe(true);
+  });
+
+  it("clicking the active tool again deactivates it (TASK-23 #1)", () => {
+    const { container } = setup();
+    openFab(container);
+    const pickBtn = container.querySelector<HTMLButtonElement>('button[title="Pick an element"]')!;
+    act(() => pickBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(pickBtn.classList.contains("pp-active")).toBe(true);
+    act(() => pickBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(pickBtn.classList.contains("pp-active")).toBe(false);
+  });
+
+  it("injects a default-cursor style while a tool is active, removes it when deactivated (TASK-23 #2)", () => {
+    const hasCursorStyle = () =>
+      [...document.head.querySelectorAll("style")].some((s) =>
+        (s.textContent ?? "").includes("cursor:default"),
+      );
+    const { container } = setup();
+    openFab(container);
+    const pickBtn = container.querySelector<HTMLButtonElement>('button[title="Pick an element"]')!;
+    act(() => pickBtn.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+    expect(hasCursorStyle()).toBe(true);
+    act(() => pickBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }))); // deactivate
+    expect(hasCursorStyle()).toBe(false);
   });
 
   it("clicking the orb twice: closes fab and mode returns to null (Pick button loses pp-active)", () => {
@@ -176,8 +210,13 @@ describe("copy flow (with fake timers)", () => {
 
     const { container } = setup();
 
-    // Open fab → mode = "pick"
+    // Open fab, then explicitly activate Pick (no default tool — TASK-23 #3).
     openFab(container);
+    act(() => {
+      container
+        .querySelector<HTMLButtonElement>('button[title="Pick an element"]')!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
 
     // Dispatch a click to document (usePicker listens on document in capture).
     act(() => {
@@ -233,6 +272,11 @@ describe("copy flow (with fake timers)", () => {
 
     const { container } = setup();
     openFab(container);
+    act(() => {
+      container
+        .querySelector<HTMLButtonElement>('button[title="Pick an element"]')!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
 
     act(() => {
       document.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 20, clientY: 15 }));
