@@ -36,7 +36,7 @@ jobs:
         run: pnpm typecheck && pnpm lint && pnpm test
 
       - name: Build
-        run: pnpm build
+        run: pnpm --filter "@pinpoint/*" build
 
       - name: Bump version + changelog
         id: release
