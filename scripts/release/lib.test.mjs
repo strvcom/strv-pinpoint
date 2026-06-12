@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildChangelogSection, bumpVersion, parseConventional } from "./lib.mjs";
+import { buildChangelogSection, bumpVersion, parseConventional, setVersionInJson } from "./lib.mjs";
 
 describe("bumpVersion", () => {
   it("bumps patch", () => expect(bumpVersion("1.2.3", "patch")).toBe("1.2.4"));
@@ -81,5 +81,16 @@ describe("buildChangelogSection", () => {
       subjects: ["docs: x", "chore: y"],
     });
     expect(out).toContain("_No user-facing changes._");
+  });
+});
+
+describe("setVersionInJson", () => {
+  it("replaces the version value, preserving surrounding text", () => {
+    const src = '{\n  "name": "x",\n  "version": "0.0.0",\n  "private": true\n}\n';
+    const out = setVersionInJson(src, "1.2.3");
+    expect(out).toBe('{\n  "name": "x",\n  "version": "1.2.3",\n  "private": true\n}\n');
+  });
+  it("throws if there is no version field", () => {
+    expect(() => setVersionInJson('{"name":"x"}', "1.0.0")).toThrow();
   });
 });

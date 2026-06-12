@@ -50,3 +50,10 @@ export function buildChangelogSection({ version, date, subjects = [], isFirstRel
   if (!any) lines.push("_No user-facing changes._", "");
   return lines.join("\n");
 }
+
+/** Replace the top-level "version" string in JSON text, leaving all other formatting intact. */
+export function setVersionInJson(jsonText, version) {
+  const re = /("version"\s*:\s*")[^"]*(")/;
+  if (!re.test(jsonText)) throw new Error('no "version" field found');
+  return jsonText.replace(re, `$1${version}$2`);
+}
