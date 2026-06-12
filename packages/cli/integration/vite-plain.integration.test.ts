@@ -1,7 +1,6 @@
+import type { DriverSession, Rect, Selection } from "@pinpoint/core";
+import { createCdpDriver } from "@pinpoint/driver-cdp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createCdpDriver } from "../src/driver/cdp-driver.js";
-import type { DriverSession } from "../src/driver/driver.js";
-import type { Rect, Selection } from "../src/types.js";
 
 /**
  * Proves the identity extractor degrades gracefully on a NON-React page: no fiber → empty React

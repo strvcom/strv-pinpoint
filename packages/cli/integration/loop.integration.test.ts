@@ -2,12 +2,10 @@ import { existsSync } from "node:fs";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { DriverSession, Rect, Selection } from "@pinpoint/core";
+import { SessionRegistry, startBridgeServer } from "@pinpoint/core";
+import { createCdpDriver } from "@pinpoint/driver-cdp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createCdpDriver } from "../src/driver/cdp-driver.js";
-import type { DriverSession } from "../src/driver/driver.js";
-import { startBridgeServer } from "../src/server/bridge-server.js";
-import { SessionRegistry } from "../src/server/sessions.js";
-import type { Rect, Selection } from "../src/types.js";
 
 /**
  * The full clipboard loop on a live page: inject overlay → build an annotation
