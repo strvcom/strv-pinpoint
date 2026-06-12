@@ -9,5 +9,5 @@ dist/
 /.pinpoint/
 /.superpowers/
 
-# built plugin bridge bundle
-packages/claude-code/bin/pinpoint
+# Transient release notes written by the Release workflow (consumed by gh, never committed)
+/RELEASE_NOTES.md

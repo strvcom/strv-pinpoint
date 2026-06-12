@@ -5,7 +5,7 @@ export default defineConfig({
     jsxImportSource: "preact",
   },
   test: {
-    include: ["packages/**/*.test.ts", "packages/**/*.test.tsx"],
+    include: ["packages/**/*.test.ts", "packages/**/*.test.tsx", "scripts/**/*.test.mjs"],
     exclude: ["**/node_modules/**", "**/*.integration.test.ts"],
     environment: "node",
   },
