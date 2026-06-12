@@ -8,6 +8,3 @@ dist/
 # Local runtime artifacts (overlay/bridge session data, skill scratch)
 /.pinpoint/
 /.superpowers/
-
-# built plugin bridge bundle
-packages/claude-code/bin/pinpoint
