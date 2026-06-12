@@ -1,7 +1,6 @@
+import type { DriverSession, Rect, Selection } from "@pinpoint/core";
+import { createCdpDriver } from "@pinpoint/driver-cdp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createCdpDriver } from "../src/driver/cdp-driver.js";
-import type { DriverSession } from "../src/driver/driver.js";
-import type { Rect, Selection } from "../src/types.js";
 
 /**
  * Proves the identity extractor degrades gracefully on a NON-React page: no fiber → empty React
@@ -11,7 +10,7 @@ import type { Rect, Selection } from "../src/types.js";
  *
  *   pnpm --dir examples/vite-plain exec vite --port 5174 --strictPort &
  *   <chrome> --headless=new --remote-debugging-port=9222 about:blank &
- *   pnpm --filter @pinpoint/core exec vitest run --config vitest.integration.config.ts vite-plain
+ *   pnpm --filter @pinpoint/cli exec vitest run --config vitest.integration.config.ts vite-plain
  */
 const APP_URL = process.env.PIN_VITE_PLAIN_URL ?? "http://localhost:5174";
 const CDP_URL = process.env.PIN_CDP_URL ?? "http://localhost:9222";

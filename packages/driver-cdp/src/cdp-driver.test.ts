@@ -74,7 +74,7 @@ describe("createCdpDriver().connect", () => {
 });
 
 // minimal structural type for the fake (kept local to the test)
-type DriverSessionPage = import("../cdp/page.js").BridgePage;
+type DriverSessionPage = import("@pinpoint/core").BridgePage;
 
 describe("pinpointPreamble", () => {
   it("builds the __pinpointConfig assignment", () => {

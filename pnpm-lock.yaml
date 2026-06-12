@@ -81,15 +81,39 @@ importers:
 
   packages/claude-code:
     dependencies:
-      '@pinpoint/core':
+      '@pinpoint/cli':
         specifier: workspace:*
-        version: link:../core
+        version: link:../cli
     devDependencies:
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
 
-  packages/core:
+  packages/cli:
+    dependencies:
+      '@pinpoint/core':
+        specifier: workspace:*
+        version: link:../core
+      '@pinpoint/driver-cdp':
+        specifier: workspace:*
+        version: link:../driver-cdp
+
+  packages/core: {}
+
+  packages/driver-cdp:
+    dependencies:
+      '@pinpoint/core':
+        specifier: workspace:*
+        version: link:../core
+      '@pinpoint/overlay':
+        specifier: workspace:*
+        version: link:../overlay
+
+  packages/overlay:
+    dependencies:
+      '@pinpoint/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       esbuild:
         specifier: ^0.28.0

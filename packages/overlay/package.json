@@ -1,0 +1,19 @@
+{
+  "name": "@pinpoint/overlay",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/source.js",
+  "scripts": {
+    "build": "node scripts/build-overlay.mjs && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "node scripts/build-overlay.mjs --watch"
+  },
+  "dependencies": {
+    "@pinpoint/core": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0",
+    "preact": "^10.24.0"
+  }
+}

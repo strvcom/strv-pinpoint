@@ -4,9 +4,9 @@ import { fileURLToPath } from "node:url";
 import { build, context } from "esbuild";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const entry = join(here, "../src/overlay/index.tsx");
+const entry = join(here, "../src/index.tsx");
 const distFile = join(here, "../dist/overlay.iife.js");
-const generated = join(here, "../src/cdp/overlay-source.generated.ts");
+const generated = join(here, "../src/overlay-source.generated.ts");
 
 const common = {
   entryPoints: [entry],

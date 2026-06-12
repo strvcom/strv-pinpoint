@@ -3,10 +3,8 @@ import { get } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { FakePage, SessionRegistry, startBridgeServer } from "@pinpoint/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { FakePage } from "../src/cdp/fake-page.js";
-import { startBridgeServer } from "../src/server/bridge-server.js";
-import { SessionRegistry } from "../src/server/sessions.js";
 
 const clip: string[] = [];
 const page = new FakePage({ elementPng: { "#h": Buffer.from("PNG-BYTES") } });

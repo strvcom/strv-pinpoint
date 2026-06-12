@@ -11,7 +11,7 @@
       "!.claude",
       "!examples",
       "!**/*.tsbuildinfo",
-      "!packages/core/src/cdp/overlay-source.generated.ts"
+      "!packages/overlay/src/overlay-source.generated.ts"
     ]
   },
   "formatter": {
@@ -35,11 +35,7 @@
   },
   "overrides": [
     {
-      "includes": [
-        "**/*.test.ts",
-        "packages/core/integration/**",
-        "packages/core/src/cdp/fake-page.ts"
-      ],
+      "includes": ["**/*.test.ts", "packages/core/src/driver/fake-page.ts"],
       "linter": {
         "rules": {
           "style": { "noNonNullAssertion": "off" }
@@ -47,16 +43,7 @@
       }
     },
     {
-      "includes": ["packages/core/src/cdp/playwright-page.ts"],
-      "linter": {
-        "rules": {
-          "security": { "noGlobalEval": "off" },
-          "complexity": { "noCommaOperator": "off" }
-        }
-      }
-    },
-    {
-      "includes": ["packages/core/src/overlay/**"],
+      "includes": ["packages/overlay/src/**"],
       "linter": {
         "rules": {
           "suspicious": { "noExplicitAny": "off" },

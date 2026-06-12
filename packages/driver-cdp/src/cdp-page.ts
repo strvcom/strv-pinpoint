@@ -1,6 +1,5 @@
-import type { Rect } from "../types.js";
+import type { BridgePage, Rect } from "@pinpoint/core";
 import type { CdpConnection } from "./cdp-connection.js";
-import type { BridgePage } from "./page.js";
 
 interface EvalResult {
   result?: { value?: unknown };

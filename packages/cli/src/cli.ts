@@ -2,15 +2,17 @@
 import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { systemClipboard } from "./clipboard/write.js";
-import { readPinpointConfig } from "./config/pinpoint-config.js";
-import { resolveProfileDir } from "./config/profile-dir.js";
-import { parseConfig } from "./config.js";
-import { createCdpDriver, pinpointPreamble } from "./driver/cdp-driver.js";
-import type { Driver, DriverSession } from "./driver/driver.js";
-import { startBridgeServer } from "./server/bridge-server.js";
-import { SessionRegistry } from "./server/sessions.js";
-import { runSetup } from "./setup/run-setup.js";
+import type { Driver, DriverSession } from "@pinpoint/core";
+import {
+  parseConfig,
+  readPinpointConfig,
+  resolveProfileDir,
+  runSetup,
+  SessionRegistry,
+  startBridgeServer,
+  systemClipboard,
+} from "@pinpoint/core";
+import { createCdpDriver, pinpointPreamble } from "@pinpoint/driver-cdp";
 
 function buildDriver(cfg: ReturnType<typeof parseConfig>, profileDir: string): Driver {
   return createCdpDriver({ cdpUrl: cfg.cdpUrl, chromePath: cfg.chromePath, profileDir });
@@ -83,11 +85,11 @@ async function start() {
   });
   if (process.env.PIN_DEV) {
     // Dev hot loop: watch the esbuild-built overlay IIFE and re-inject on change.
-    // Default path is repo-relative to the bundled CLI (bin/pinpoint -> ../../core/dist/...).
+    // Default path is repo-relative to the bundled CLI (bin/pinpoint -> ../../overlay/dist/...).
     const here = dirname(fileURLToPath(import.meta.url));
     const overlayFile =
-      process.env.PIN_OVERLAY_FILE ?? resolve(here, "../../core/dist/overlay.iife.js");
-    const { startOverlayWatch } = await import("./dev/overlay-watch.js");
+      process.env.PIN_OVERLAY_FILE ?? resolve(here, "../../overlay/dist/overlay.iife.js");
+    const { startOverlayWatch } = await import("./overlay-watch.js");
     startOverlayWatch({
       page: session.page,
       filePath: overlayFile,

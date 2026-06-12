@@ -2,12 +2,10 @@ import { existsSync } from "node:fs";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { DriverSession, Rect, Selection } from "@pinpoint/core";
+import { SessionRegistry, startBridgeServer } from "@pinpoint/core";
+import { createCdpDriver } from "@pinpoint/driver-cdp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createCdpDriver } from "../src/driver/cdp-driver.js";
-import type { DriverSession } from "../src/driver/driver.js";
-import { startBridgeServer } from "../src/server/bridge-server.js";
-import { SessionRegistry } from "../src/server/sessions.js";
-import type { Rect, Selection } from "../src/types.js";
 
 /**
  * The full clipboard loop on a live page: inject overlay → build an annotation
@@ -17,7 +15,7 @@ import type { Rect, Selection } from "../src/types.js";
  *
  *   pnpm --dir examples/vite-react exec vite --port 5180 --strictPort &
  *   <chrome> --headless=new --remote-debugging-port=9222 about:blank &
- *   pnpm --filter @pinpoint/core exec vitest run --config vitest.integration.config.ts loop
+ *   pnpm --filter @pinpoint/cli exec vitest run --config vitest.integration.config.ts loop
  */
 const APP_URL = process.env.PIN_VITE_URL ?? "http://localhost:5180";
 const CDP_URL = process.env.PIN_CDP_URL ?? "http://localhost:9222";

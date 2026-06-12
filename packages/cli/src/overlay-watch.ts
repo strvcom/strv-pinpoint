@@ -1,6 +1,6 @@
 import { watch } from "node:fs";
 import { readFile } from "node:fs/promises";
-import type { BridgePage } from "../cdp/page.js";
+import type { BridgePage } from "@pinpoint/core";
 
 type Log = (msg: string) => void;
 

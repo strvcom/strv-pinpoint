@@ -10,13 +10,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "pnpm -r build",
-    "typecheck": "tsc -p packages/core/tsconfig.json --noEmit",
+    "typecheck": "pnpm -r typecheck",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "check": "biome check .",
     "backlog": "npx --yes backlog.md@latest board",
-    "dev:overlay": "node packages/core/scripts/dev-overlay.mjs",
+    "dev:overlay": "node packages/overlay/scripts/dev-overlay.mjs",
     "prepare": "lefthook install"
   },
   "devDependencies": {

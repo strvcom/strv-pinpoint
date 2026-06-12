@@ -1,8 +1,8 @@
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { FakePage } from "@pinpoint/core";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { FakePage } from "../cdp/fake-page.js";
 import { reinjectFromFile, startOverlayWatch } from "./overlay-watch.js";
 
 let dir: string;

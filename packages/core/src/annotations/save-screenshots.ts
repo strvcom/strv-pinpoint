@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { BridgePage } from "../cdp/page.js";
+import type { BridgePage } from "../driver/page.js";
 import type { Annotation } from "../types.js";
 
 // Hide/show the injected overlay (anything tagged data-pinpoint) so its badges/cards/outlines

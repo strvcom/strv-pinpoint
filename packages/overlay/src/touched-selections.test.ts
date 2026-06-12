@@ -1,5 +1,5 @@
+import type { Selection } from "@pinpoint/core";
 import { describe, expect, it } from "vitest";
-import type { Selection } from "../types.js";
 import { resolveTouchedSelections } from "./touched-selections.js";
 
 type FakeEl = { id: string; rect: { x: number; y: number; width: number; height: number } };
