@@ -8,3 +8,45 @@ export function bumpVersion(current, level) {
   if (level === "patch") return `${major}.${minor}.${patch + 1}`;
   throw new Error(`invalid bump level: ${level}`);
 }
+
+const TASK_SUFFIX = /\s*\(TASK-\d+\)\s*$/i;
+
+/** Parse a conventional-commit subject; null if it doesn't match. */
+export function parseConventional(subject) {
+  const m = /^(\w+)(?:\(([^)]+)\))?(!)?:\s*(.+)$/.exec(subject);
+  if (!m) return null;
+  const [, type, scope, bang, descRaw] = m;
+  return {
+    type: type.toLowerCase(),
+    scope: scope ?? null,
+    breaking: Boolean(bang),
+    description: descRaw.replace(TASK_SUFFIX, "").trim(),
+  };
+}
+
+const GROUPS = [
+  { type: "feat", heading: "Features" },
+  { type: "fix", heading: "Bug Fixes" },
+  { type: "perf", heading: "Performance" },
+  { type: "revert", heading: "Reverts" },
+];
+
+/** Build one CHANGELOG section (markdown, trailing newline). */
+export function buildChangelogSection({ version, date, subjects = [], isFirstRelease = false }) {
+  const header = `## ${version} — ${date}`;
+  if (isFirstRelease) return `${header}\n\nInitial public release.\n`;
+
+  const parsed = subjects.map(parseConventional).filter(Boolean);
+  const lines = [header, ""];
+  let any = false;
+  for (const { type, heading } of GROUPS) {
+    const entries = parsed.filter((c) => c.type === type);
+    if (entries.length === 0) continue;
+    any = true;
+    lines.push(`### ${heading}`, "");
+    for (const c of entries) lines.push(`- ${c.scope ? `**${c.scope}:** ` : ""}${c.description}`);
+    lines.push("");
+  }
+  if (!any) lines.push("_No user-facing changes._", "");
+  return lines.join("\n");
+}
