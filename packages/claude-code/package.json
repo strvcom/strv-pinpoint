@@ -1,6 +1,6 @@
 {
   "name": "@pinpoint/claude-code",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Claude Code integration for pinpoint: /pinpoint:start command + paste skill + the bundled bridge.",
   "type": "module",

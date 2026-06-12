@@ -1,6 +1,6 @@
 {
   "name": "pinpoint",
   "description": "Click an element in your running dev app, comment, Send, and paste into Claude — it edits the source. CDP-only, zero-dep bridge; no MCP server.",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "author": { "name": "pinpoint" }
 }
