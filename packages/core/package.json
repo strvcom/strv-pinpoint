@@ -2,14 +2,10 @@
   "name": "@pinpoint/core",
   "version": "0.1.0",
   "type": "module",
-  "bin": {
-    "pinpoint": "./dist/cli.js"
-  },
   "main": "./dist/index.js",
   "scripts": {
     "build": "node scripts/build-overlay.mjs && tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "start": "node ./dist/cli.js"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "esbuild": "^0.28.0",
