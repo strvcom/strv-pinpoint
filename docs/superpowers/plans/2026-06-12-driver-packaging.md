@@ -59,7 +59,7 @@
 - [ ] **Step 1: Capture the green baseline**
 
 Run: `export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"; pnpm test`
-Expected: `Test Files 36 passed (36)`, `Tests 263 passed (263)`.
+Expected: `Test Files 37 passed (37)`, `Tests 283 passed (283)`.
 
 Run: `pnpm typecheck && pnpm build`
 Expected: both exit 0; `packages/claude-code/bin/pinpoint` is rewritten.
@@ -143,7 +143,7 @@ Expected: no output.
 - [ ] **Step 5: Typecheck + test**
 
 Run: `pnpm typecheck && pnpm test`
-Expected: typecheck exits 0; `263 passed`.
+Expected: typecheck exits 0; `283 passed`.
 
 - [ ] **Step 6: Commit**
 
@@ -261,7 +261,7 @@ In `packages/core/package.json`, remove the `"bin"` block (the `pinpoint` bin no
 
 Run: `pnpm install` (links the new `@pinpoint/cli` workspace package).
 Run: `pnpm typecheck && pnpm test`
-Expected: typecheck exits 0; `263 passed` (overlay-watch's 3 tests now run under `@pinpoint/cli`).
+Expected: typecheck exits 0; `283 passed` (overlay-watch's 3 tests now run under `@pinpoint/cli`).
 
 - [ ] **Step 8: Commit**
 
@@ -363,7 +363,7 @@ Keep the interface/engine exports (`Driver`, `BridgePage`, `parseConfig`, `start
 - [ ] **Step 7: Install + typecheck + test**
 
 Run: `pnpm install && pnpm typecheck && pnpm test`
-Expected: typecheck exits 0; `263 passed` (cdp tests now under `@pinpoint/driver-cdp`).
+Expected: typecheck exits 0; `283 passed` (cdp tests now under `@pinpoint/driver-cdp`).
 
 - [ ] **Step 8: Verify the graph is acyclic**
 
@@ -502,7 +502,7 @@ In root `package.json`, update `dev:overlay`:
 - [ ] **Step 9: Install + build + typecheck + test**
 
 Run: `pnpm install && pnpm build && pnpm typecheck && pnpm test`
-Expected: build regenerates `packages/overlay/src/overlay-source.generated.ts`; typecheck exits 0; `263 passed`.
+Expected: build regenerates `packages/overlay/src/overlay-source.generated.ts`; typecheck exits 0; `283 passed`.
 
 - [ ] **Step 10: Verify final acyclic graph**
 
@@ -587,7 +587,7 @@ In `packages/claude-code/package.json`, change `dependencies` from `@pinpoint/co
 - [ ] **Step 2: Full clean build + all gates**
 
 Run: `pnpm install && pnpm build && pnpm typecheck && pnpm test && pnpm lint`
-Expected: all exit 0; `263 passed`; `packages/claude-code/bin/pinpoint` is produced as a single esbuilt file (all referenced packages — core, cli, driver-cdp, overlay's `OVERLAY_SOURCE` — bundled in).
+Expected: all exit 0; `283 passed`; `packages/claude-code/bin/pinpoint` is produced as a single esbuilt file (all referenced packages — core, cli, driver-cdp, overlay's `OVERLAY_SOURCE` — bundled in).
 
 - [ ] **Step 3: Smoke-test the bundled bin**
 
@@ -613,7 +613,7 @@ git commit -m "build(claude-code): bundle @pinpoint/cli entry; finalize driver p
 
 ## Done criteria
 
-- `pnpm test` → 263 passing; `pnpm typecheck`, `pnpm lint`, `pnpm build` all green.
+- `pnpm test` → 283 passing; `pnpm typecheck`, `pnpm lint`, `pnpm build` all green.
 - Live-browser integration suite passes (or is explicitly documented as un-run with the reason).
 - Packages exist: `@pinpoint/core` (no internal deps), `@pinpoint/overlay`, `@pinpoint/driver-cdp`, `@pinpoint/cli`, `@pinpoint/claude-code`; the dependency graph matches the target and is acyclic.
 - `packages/claude-code/bin/pinpoint` builds from the `@pinpoint/cli` entry and runs self-contained.
