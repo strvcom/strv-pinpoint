@@ -6,10 +6,12 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-06-12 13:12'
-updated_date: '2026-06-12 13:14'
+updated_date: '2026-06-12 13:21'
 labels:
   - ci
 dependencies: []
+references:
+  - docs/superpowers/specs/2026-06-12-release-ci-design.md
 ordinal: 32000
 ---
 
