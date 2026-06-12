@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "pnpm -r build",
-    "typecheck": "tsc -p packages/core/tsconfig.json --noEmit",
+    "typecheck": "pnpm -r typecheck",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "format:check": "biome format .",
