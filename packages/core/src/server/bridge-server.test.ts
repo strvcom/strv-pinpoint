@@ -1,6 +1,6 @@
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { FakePage } from "../cdp/fake-page.js";
+import { FakePage } from "../driver/fake-page.js";
 import { startBridgeServer } from "./bridge-server.js";
 import { SessionRegistry } from "./sessions.js";
 

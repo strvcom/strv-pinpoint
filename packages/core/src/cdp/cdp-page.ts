@@ -1,6 +1,6 @@
+import type { BridgePage } from "../driver/page.js";
 import type { Rect } from "../types.js";
 import type { CdpConnection } from "./cdp-connection.js";
-import type { BridgePage } from "./page.js";
 
 interface EvalResult {
   result?: { value?: unknown };

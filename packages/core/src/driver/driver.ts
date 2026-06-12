@@ -1,4 +1,4 @@
-import type { BridgePage } from "../cdp/page.js";
+import type { BridgePage } from "./page.js";
 
 /** Per-connection options shared by every driver (driver-agnostic). */
 export interface DriverConnectOptions {

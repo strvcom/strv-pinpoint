@@ -10,8 +10,8 @@ import {
   waitForCdp,
 } from "../cdp/launch-chrome.js";
 import { OVERLAY_SOURCE } from "../cdp/overlay-script.js";
-import type { BridgePage } from "../cdp/page.js";
 import type { Driver, DriverConnectOptions, DriverSession, HealthResult } from "./driver.js";
+import type { BridgePage } from "./page.js";
 
 export interface CdpDriverConfig {
   cdpUrl: string;

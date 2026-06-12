@@ -3,8 +3,8 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { join } from "node:path";
 import { buildClipboardJson } from "../annotations/clipboard-payload.js";
 import { saveScreenshots } from "../annotations/save-screenshots.js";
-import type { BridgePage } from "../cdp/page.js";
 import type { ClipboardWriter } from "../clipboard/write.js";
+import type { BridgePage } from "../driver/page.js";
 import type { Annotation } from "../types.js";
 import type { SessionRegistry } from "./sessions.js";
 

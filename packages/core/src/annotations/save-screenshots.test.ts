@@ -2,7 +2,7 @@ import { existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
-import { FakePage } from "../cdp/fake-page.js";
+import { FakePage } from "../driver/fake-page.js";
 import { saveScreenshots } from "./save-screenshots.js";
 
 const item = (over: Record<string, unknown> = {}) => ({
