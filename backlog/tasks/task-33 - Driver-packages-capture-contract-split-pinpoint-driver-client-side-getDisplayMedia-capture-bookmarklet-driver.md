@@ -3,10 +3,10 @@ id: TASK-33
 title: >-
   Driver packages + capture contract: split @pinpoint/driver-*, client-side
   getDisplayMedia capture, bookmarklet driver
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-12 13:30'
-updated_date: '2026-06-12 13:39'
+updated_date: '2026-06-12 15:54'
 labels:
   - architecture
 dependencies: []
