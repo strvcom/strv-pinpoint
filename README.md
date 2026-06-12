@@ -55,6 +55,12 @@ The tool also ships as a self-contained Claude Code plugin (`packages/claude-cod
 pnpm build      # builds all packages, incl. packages/claude-code/bin/pinpoint
 ```
 
+- **From GitHub (recommended for users):**
+  ```
+  /plugin marketplace add strvcom/strv-pinpoint
+  /plugin install pinpoint@pinpoint
+  ```
+  Then `/pinpoint:setup` (once) and `/pinpoint:start`. Updates: `/plugin marketplace update` + `/reload-plugins`.
 - **Dev loop (live edits, recommended):** from any project, `claude --plugin-dir /path/to/pinpoint/packages/claude-code`, then `/reload-plugins` after editing the plugin. The bin is on the session PATH.
 - **In another project:** `/plugin marketplace add /path/to/pinpoint` then `/plugin install pinpoint@pinpoint` (a cached copy — `/plugin marketplace update` + `/reload-plugins` to refresh).
 - **In this repo's example:** `cd examples/vite-react && claude` — its `.claude/settings.json` registers the repo's local marketplace and enables the plugin. Run `/pinpoint:start`.
