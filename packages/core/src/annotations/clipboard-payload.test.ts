@@ -68,4 +68,33 @@ describe("buildClipboardJson", () => {
     expect(o.items[0]).not.toHaveProperty("componentName");
     expect(o.items[1]).toMatchObject({ badge: 2, kind: "element", screenshot: null });
   });
+
+  it("strips rect from items and from each selection (not needed in the copied JSON)", () => {
+    const json = buildClipboardJson({
+      bridgeUrl: "http://localhost:7331",
+      sessionId: "s1",
+      promptId: "p1",
+      // The overlay's selection probe attaches a runtime `rect` to each selection even though the
+      // Selection type omits it; the copied JSON must carry no rect anywhere.
+      items: [
+        item({
+          selected: [
+            {
+              selector: "#x",
+              tagName: "H1",
+              text: "t",
+              react: { componentName: "Hero", ancestry: ["Hero"] },
+              rect: { x: 5, y: 6, width: 7, height: 8 },
+            },
+          ],
+        }),
+      ],
+      screenshotPaths: { 1: null },
+    });
+    const o = JSON.parse(json);
+    expect(o.items[0]).not.toHaveProperty("rect");
+    expect(o.items[0].selected[0]).not.toHaveProperty("rect");
+    // the rest of the selection survives
+    expect(o.items[0].selected[0]).toMatchObject({ selector: "#x", tagName: "H1" });
+  });
 });
