@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { render } from "preact";
 import { afterEach, expect, it, vi } from "vitest";
-import { Badge } from "./Badge.js";
 import type { Kind } from "../state/types.js";
+import { Badge } from "./Badge.js";
 
 let container: HTMLDivElement;
 

@@ -98,7 +98,22 @@ importers:
         specifier: workspace:*
         version: link:../driver-cdp
 
-  packages/core:
+  packages/core: {}
+
+  packages/driver-cdp:
+    dependencies:
+      '@pinpoint/core':
+        specifier: workspace:*
+        version: link:../core
+      '@pinpoint/overlay':
+        specifier: workspace:*
+        version: link:../overlay
+
+  packages/overlay:
+    dependencies:
+      '@pinpoint/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       esbuild:
         specifier: ^0.28.0
@@ -106,12 +121,6 @@ importers:
       preact:
         specifier: ^10.24.0
         version: 10.29.2
-
-  packages/driver-cdp:
-    dependencies:
-      '@pinpoint/core':
-        specifier: workspace:*
-        version: link:../core
 
 packages:
 

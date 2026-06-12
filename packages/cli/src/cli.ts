@@ -85,10 +85,10 @@ async function start() {
   });
   if (process.env.PIN_DEV) {
     // Dev hot loop: watch the esbuild-built overlay IIFE and re-inject on change.
-    // Default path is repo-relative to the bundled CLI (bin/pinpoint -> ../../core/dist/...).
+    // Default path is repo-relative to the bundled CLI (bin/pinpoint -> ../../overlay/dist/...).
     const here = dirname(fileURLToPath(import.meta.url));
     const overlayFile =
-      process.env.PIN_OVERLAY_FILE ?? resolve(here, "../../core/dist/overlay.iife.js");
+      process.env.PIN_OVERLAY_FILE ?? resolve(here, "../../overlay/dist/overlay.iife.js");
     const { startOverlayWatch } = await import("./overlay-watch.js");
     startOverlayWatch({
       page: session.page,

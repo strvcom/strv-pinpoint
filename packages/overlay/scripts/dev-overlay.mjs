@@ -20,7 +20,7 @@ function run(cmd, args, extraEnv = {}) {
   return child;
 }
 
-// 1. esbuild watch -> packages/core/dist/overlay.iife.js
+// 1. esbuild watch -> packages/overlay/dist/overlay.iife.js
 run("node", [join(here, "build-overlay.mjs"), "--watch"]);
 // 2. the bridge in dev mode (re-injects on each rebuild). bin path resolves from this package.
 const bin = join(here, "../../claude-code/bin/pinpoint");

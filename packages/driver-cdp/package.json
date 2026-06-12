@@ -9,6 +9,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@pinpoint/core": "workspace:*"
+    "@pinpoint/core": "workspace:*",
+    "@pinpoint/overlay": "workspace:*"
   }
 }

@@ -11,7 +11,7 @@
       "!.claude",
       "!examples",
       "!**/*.tsbuildinfo",
-      "!packages/core/src/cdp/overlay-source.generated.ts"
+      "!packages/overlay/src/overlay-source.generated.ts"
     ]
   },
   "formatter": {
@@ -56,7 +56,7 @@
       }
     },
     {
-      "includes": ["packages/core/src/overlay/**"],
+      "includes": ["packages/overlay/src/**"],
       "linter": {
         "rules": {
           "suspicious": { "noExplicitAny": "off" },

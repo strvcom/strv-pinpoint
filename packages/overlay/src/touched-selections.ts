@@ -1,4 +1,4 @@
-import type { Rect, Selection } from "../types.js";
+import type { Rect, Selection } from "@pinpoint/core";
 
 export interface TouchedDeps {
   /** Native hit-test at a viewport point → stack innermost→outermost. */
