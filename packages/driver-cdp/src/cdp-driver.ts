@@ -1,17 +1,22 @@
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { CdpConnection } from "../cdp/cdp-connection.js";
-import { CdpPage } from "../cdp/cdp-page.js";
+import type {
+  BridgePage,
+  Driver,
+  DriverConnectOptions,
+  DriverSession,
+  HealthResult,
+} from "@pinpoint/core";
+import { CdpConnection } from "./cdp-connection.js";
+import { CdpPage } from "./cdp-page.js";
 import {
   discoverPageTarget,
   findChrome,
   isCdpUp,
   launchChrome,
   waitForCdp,
-} from "../cdp/launch-chrome.js";
-import { OVERLAY_SOURCE } from "../cdp/overlay-script.js";
-import type { Driver, DriverConnectOptions, DriverSession, HealthResult } from "./driver.js";
-import type { BridgePage } from "./page.js";
+} from "./launch-chrome.js";
+import { OVERLAY_SOURCE } from "./overlay-script.js";
 
 export interface CdpDriverConfig {
   cdpUrl: string;

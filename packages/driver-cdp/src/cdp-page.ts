@@ -1,5 +1,4 @@
-import type { BridgePage } from "../driver/page.js";
-import type { Rect } from "../types.js";
+import type { BridgePage, Rect } from "@pinpoint/core";
 import type { CdpConnection } from "./cdp-connection.js";
 
 interface EvalResult {

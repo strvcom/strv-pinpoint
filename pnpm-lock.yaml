@@ -94,6 +94,9 @@ importers:
       '@pinpoint/core':
         specifier: workspace:*
         version: link:../core
+      '@pinpoint/driver-cdp':
+        specifier: workspace:*
+        version: link:../driver-cdp
 
   packages/core:
     devDependencies:
@@ -103,6 +106,12 @@ importers:
       preact:
         specifier: ^10.24.0
         version: 10.29.2
+
+  packages/driver-cdp:
+    dependencies:
+      '@pinpoint/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 

@@ -4,9 +4,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Driver, DriverSession } from "@pinpoint/core";
 import {
-  createCdpDriver,
   parseConfig,
-  pinpointPreamble,
   readPinpointConfig,
   resolveProfileDir,
   runSetup,
@@ -14,6 +12,7 @@ import {
   startBridgeServer,
   systemClipboard,
 } from "@pinpoint/core";
+import { createCdpDriver, pinpointPreamble } from "@pinpoint/driver-cdp";
 
 function buildDriver(cfg: ReturnType<typeof parseConfig>, profileDir: string): Driver {
   return createCdpDriver({ cdpUrl: cfg.cdpUrl, chromePath: cfg.chromePath, profileDir });

@@ -13,6 +13,7 @@
     "start": "node ./dist/cli.js"
   },
   "dependencies": {
-    "@pinpoint/core": "workspace:*"
+    "@pinpoint/core": "workspace:*",
+    "@pinpoint/driver-cdp": "workspace:*"
   }
 }
