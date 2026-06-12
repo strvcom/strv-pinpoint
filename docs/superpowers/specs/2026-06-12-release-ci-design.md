@@ -18,7 +18,7 @@ plugin is broken until the binary is committed (Claude Code copies the repo as-i
 | Decision | Choice |
 |---|---|
 | Monorepo versioning | **Lockstep** — one version everywhere |
-| Version input | `workflow_dispatch` input `bump` = `patch \| minor \| major` |
+| Version input | **Auto-derived from conventional commits** since the last tag; `workflow_dispatch` input `bump` = `auto \| patch \| minor \| major` (default `auto`) is an optional override |
 | Changelog scope | **Conventional-commit type filter** — keep `feat` / `fix` / `perf` / `revert` only |
 | Release artifact | **GitHub Release + tag** (`vX.Y.Z`), release notes = the new changelog section |
 | First release | **Single "Initial release" entry**, not a full-history dump |
@@ -38,26 +38,44 @@ and writes the result to **all four** version sites in lockstep:
 
 **Baseline alignment (one-time, part of this task, committed before the first run):** set all four
 to `0.0.0`. plugin.json is currently `0.1.0`; reset it to `0.0.0` so no version is implied to have
-shipped. After this, the first dispatch with `minor` produces `0.1.0` as the first tag/release.
+shipped. After this, the first dispatch auto-derives `minor` (the history is full of `feat:`) and
+produces `0.1.0` as the first tag/release.
+
+## Version derivation
+
+The bump level is **computed from the conventional commits** since the last tag, not chosen by hand:
+
+- any breaking change (`feat!:` / `fix!:` / a `!` before the colon) → **major**
+- otherwise any `feat:` → **minor**
+- otherwise any `fix:` / `perf:` / `revert:` → **patch**
+- otherwise (only `docs`/`chore`/`refactor`/`test`/`ci`/`style`) → **no release** (the workflow
+  no-ops cleanly)
+
+The `bump` input overrides this: `auto` (default) derives; `patch`/`minor`/`major` forces that level
+(an escape hatch, e.g. forcing a `1.0.0` milestone, or releasing when commits don't imply one). A
+**first release always ships**, defaulting to `minor` if derivation yields nothing.
 
 ## Workflow: `.github/workflows/release.yml`
 
-Trigger: `workflow_dispatch` with input `bump` (choice: `patch` | `minor` | `major`, default
-`patch`). `permissions: contents: write` (needs to push commits/tags and create the Release).
+Trigger: `workflow_dispatch` with input `bump` (choice: `auto` | `patch` | `minor` | `major`,
+default `auto`). `permissions: contents: write` (needs to push commits/tags and create the Release).
 
 Steps, in order — **fail-fast; a red step aborts the release before any version is written:**
 
-1. **Checkout** with `fetch-depth: 0` (full history + tags needed for changelog range).
+1. **Checkout** with `fetch-depth: 0` (full history + tags needed for derivation + changelog range).
 2. **Toolchain** — Node 20, pnpm, `pnpm install --frozen-lockfile`.
 3. **Validate** — `pnpm typecheck && pnpm lint && pnpm test`. No release from a red tree.
-4. **Build** — `pnpm build` → produces `packages/claude-code/bin/pinpoint`.
-5. **Compute version** — read root `version`, apply `bump` → `X.Y.Z`.
+4. **Build** — `pnpm --filter "@pinpoint/*" build` → produces `packages/claude-code/bin/pinpoint`
+   (scoped to shipped packages so a broken example can't abort a release).
+5. **Compute version** — derive the level from commits (or honor the `bump` override), apply to the
+   root `version` → `X.Y.Z`. If nothing is releasable, emit `released=false` and stop here.
 6. **Bump in lockstep** — write `X.Y.Z` to the four sites above.
 7. **Changelog** — generate the new section (see below), prepend to `CHANGELOG.md` at repo root
-   (create if absent).
-8. **Commit + tag** — stage the four version files, `bin/pinpoint`, and `CHANGELOG.md`; commit as
-   `chore(release): vX.Y.Z`; create annotated tag `vX.Y.Z`; push commit + tag to `main`.
-9. **GitHub Release** — create a Release for tag `vX.Y.Z`, body = the new changelog section.
+   (create if absent). Also write the section to `RELEASE_NOTES.md` (transient, gitignored).
+8. **Commit + tag** (only when `released=true`) — stage the four version files, `bin/pinpoint`, and
+   `CHANGELOG.md`; commit as `chore(release): vX.Y.Z`; create annotated tag `vX.Y.Z`; push to `main`.
+9. **GitHub Release** (only when `released=true`) — create a Release for tag `vX.Y.Z`, body =
+   `RELEASE_NOTES.md`.
 
 ## Changelog generation
 

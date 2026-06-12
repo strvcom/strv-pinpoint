@@ -607,6 +607,23 @@ git commit -m "docs(release): publish/install instructions + decision row (TASK-
 
 ---
 
+## Amendment (post-review): auto-derive the bump from commits
+
+After the tasks above landed, the design changed: the version bump is **auto-derived from
+conventional commits** rather than picked from a dropdown (the trigger stays manual). Delta on top
+of the tasks above:
+
+- **`scripts/release/lib.mjs`** — added `deriveBump(subjects)` (TDD, tests in `lib.test.mjs`):
+  breaking→`major`, any `feat`→`minor`, any `fix`/`perf`/`revert`→`patch`, else `null`.
+- **`scripts/release/run.mjs`** — first arg is now `auto` (default) | `patch` | `minor` | `major`:
+  `auto` derives via `deriveBump` over the commit range (all history on first release); an explicit
+  level overrides. A first release defaults to `minor` if derivation is `null`. When the level is
+  `null` (nothing releasable, not a first release) the runner prints a skip message, emits
+  `released=false`, and exits 0. On a real release it emits `released=true`/`version`/`tag`.
+- **`.github/workflows/release.yml`** — `bump` input options are `[auto, patch, minor, major]`
+  (default `auto`); the *Commit, tag, push* and *GitHub Release* steps are gated on
+  `if: steps.release.outputs.released == 'true'`.
+
 ## Out of scope (per spec)
 
 - `npm publish` / registry distribution.
@@ -618,6 +635,6 @@ git commit -m "docs(release): publish/install instructions + decision row (TASK-
 ## Post-merge (outside this plan, requires the repo on GitHub)
 
 1. Merge `task-32--release-ci` → `main` via an FYI PR; confirm commits land on `main`.
-2. From the GitHub Actions tab, run **Release** with `bump: minor` → produces `v0.1.0`, the first tag + Release, and a fresh `bin/pinpoint`.
+2. From the GitHub Actions tab, run **Release** with `bump: auto` → derives `minor` from the commit history → produces `v0.1.0`, the first tag + Release, and a fresh `bin/pinpoint`.
 3. Verify `/plugin marketplace add strvcom/strv-pinpoint` + `/plugin install pinpoint@pinpoint` works from another project.
 4. Flip TASK-32 → Done (on `main`, committed) once merged.

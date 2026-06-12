@@ -1,5 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { buildChangelogSection, bumpVersion, parseConventional, setVersionInJson } from "./lib.mjs";
+import {
+  buildChangelogSection,
+  bumpVersion,
+  deriveBump,
+  parseConventional,
+  setVersionInJson,
+} from "./lib.mjs";
+
+describe("deriveBump", () => {
+  it("any breaking change -> major", () => {
+    expect(deriveBump(["feat!: drop v1", "fix: y"])).toBe("major");
+    expect(deriveBump(["fix(api)!: change shape"])).toBe("major");
+  });
+  it("any feat (no breaking) -> minor", () => {
+    expect(deriveBump(["fix: y", "feat(overlay): z", "docs: d"])).toBe("minor");
+  });
+  it("only fix/perf/revert -> patch", () => {
+    expect(deriveBump(["fix: y"])).toBe("patch");
+    expect(deriveBump(["perf: faster"])).toBe("patch");
+    expect(deriveBump(["revert: oops"])).toBe("patch");
+  });
+  it("nothing user-facing -> null", () => {
+    expect(deriveBump(["docs: y", "chore(board): z", "refactor: q", "Merge x"])).toBeNull();
+  });
+  it("empty -> null", () => expect(deriveBump([])).toBeNull());
+});
 
 describe("bumpVersion", () => {
   it("bumps patch", () => expect(bumpVersion("1.2.3", "patch")).toBe("1.2.4"));

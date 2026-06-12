@@ -51,6 +51,21 @@ export function buildChangelogSection({ version, date, subjects = [], isFirstRel
   return lines.join("\n");
 }
 
+/**
+ * Derive the semver bump level from conventional-commit subjects.
+ * Breaking change -> major; any feat -> minor; any fix/perf/revert -> patch.
+ * Returns null when nothing user-facing changed (no release warranted).
+ */
+export function deriveBump(subjects = []) {
+  const parsed = subjects.map(parseConventional).filter(Boolean);
+  if (parsed.some((c) => c.breaking)) return "major";
+  if (parsed.some((c) => c.type === "feat")) return "minor";
+  if (parsed.some((c) => c.type === "fix" || c.type === "perf" || c.type === "revert")) {
+    return "patch";
+  }
+  return null;
+}
+
 /** Replace the top-level "version" string in JSON text, leaving all other formatting intact. */
 export function setVersionInJson(jsonText, version) {
   const re = /("version"\s*:\s*")[^"]*(")/;
