@@ -8,3 +8,6 @@ dist/
 # Local runtime artifacts (overlay/bridge session data, skill scratch)
 /.pinpoint/
 /.superpowers/
+
+# Transient release notes written by the Release workflow (consumed by gh, never committed)
+/RELEASE_NOTES.md
