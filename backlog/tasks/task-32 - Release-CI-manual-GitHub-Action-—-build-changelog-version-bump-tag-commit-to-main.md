@@ -3,10 +3,10 @@ id: TASK-32
 title: >-
   Release CI: manual GitHub Action — build, changelog, version bump, tag, commit
   to main
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-06-12 13:12'
-updated_date: '2026-06-12 13:21'
+updated_date: '2026-06-12 14:28'
 labels:
   - ci
 dependencies: []
