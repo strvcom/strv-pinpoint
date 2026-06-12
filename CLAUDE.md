@@ -42,7 +42,7 @@ The checkboxes in the plan file are the source of truth for progress.
 ## Workflow
 - Commit early and often — one logical change per commit; don't accumulate large diffs.
 - Write tests alongside the change (TDD), not as a final step. Unit tests are colocated
-  (`foo.ts` + `foo.test.ts`); the live-browser loop test is `packages/core/integration/*.integration.test.ts`.
+  (`foo.ts` + `foo.test.ts`); the live-browser loop test is `packages/cli/integration/*.integration.test.ts`.
 - Run validation before calling anything done: `pnpm typecheck && pnpm lint && pnpm test` (+ `pnpm build`).
 - Record non-obvious judgment calls as a one-line row in `docs/decisions.md`.
 

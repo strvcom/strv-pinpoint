@@ -35,11 +35,7 @@
   },
   "overrides": [
     {
-      "includes": [
-        "**/*.test.ts",
-        "packages/core/integration/**",
-        "packages/core/src/driver/fake-page.ts"
-      ],
+      "includes": ["**/*.test.ts", "packages/core/src/driver/fake-page.ts"],
       "linter": {
         "rules": {
           "style": { "noNonNullAssertion": "off" }
