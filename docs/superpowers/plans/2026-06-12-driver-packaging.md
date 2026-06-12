@@ -360,10 +360,10 @@ export * from "./overlay/globals.js";
 ```
 Keep the interface/engine exports (`Driver`, `BridgePage`, `parseConfig`, `startBridgeServer`, etc.).
 
-- [ ] **Step 7: Install + typecheck + test**
+- [ ] **Step 7: Install + typecheck + test + build**
 
-Run: `pnpm install && pnpm typecheck && pnpm test`
-Expected: typecheck exits 0; `283 passed` (cdp tests now under `@pinpoint/driver-cdp`).
+Run: `pnpm install && pnpm typecheck && pnpm test && pnpm build`
+Expected: typecheck exits 0; `283 passed` (cdp tests now under `@pinpoint/driver-cdp`); `pnpm build` exits 0 and rebuilds `packages/claude-code/bin/pinpoint` (the esbuild bundle now pulls cli → core → driver-cdp). The `bin/pinpoint` artifact is **tracked** — its rebuilt version must be committed in Step 9 (`git add -A` covers it).
 
 - [ ] **Step 8: Verify the graph is acyclic**
 
@@ -569,20 +569,17 @@ git commit -m "test: relocate live-browser integration tests to @pinpoint/cli (T
 
 ---
 
-## Task 6: Re-point `@pinpoint/claude-code` build + final verification
+## Task 6: Final verification
 
-**Files:**
-- Modify: `packages/claude-code/package.json` (esbuild entry + dependency)
+**Note:** The `@pinpoint/claude-code` esbuild entry + dependency repoint (originally planned here) was
+pulled forward into **Task 2** (commit `9da0896`) to keep `pnpm build` green at every intermediate
+commit — `packages/claude-code/package.json` already builds `../cli/src/cli.ts` and depends on
+`@pinpoint/cli`. This task is now final whole-branch verification + decision log.
 
-- [ ] **Step 1: Re-point the esbuild entry to the CLI package**
+- [ ] **Step 1: Confirm the claude-code build is already repointed**
 
-In `packages/claude-code/package.json`, change `dependencies` from `@pinpoint/core` to `@pinpoint/cli`, and update the `build` script entry path:
-```json
-"scripts": {
-  "build": "esbuild ../cli/src/cli.ts --bundle --platform=node --format=esm --target=node20 --outfile=bin/pinpoint && chmod +x bin/pinpoint"
-},
-"dependencies": { "@pinpoint/cli": "workspace:*" }
-```
+Run: `grep -n 'cli/src/cli.ts\|@pinpoint/cli' packages/claude-code/package.json`
+Expected: the `build` script references `../cli/src/cli.ts` and the dependency is `@pinpoint/cli` (done in Task 2). If not, apply the change here.
 
 - [ ] **Step 2: Full clean build + all gates**
 
