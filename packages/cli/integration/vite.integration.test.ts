@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
  *
  *   pnpm --dir examples/vite-react exec vite --port 5180 --strictPort &
  *   <chrome> --headless=new --remote-debugging-port=9222 about:blank &
- *   pnpm --filter @pinpoint/core exec vitest run --config vitest.integration.config.ts vite
+ *   pnpm --filter @pinpoint/cli exec vitest run --config vitest.integration.config.ts vite
  */
 const APP_URL = process.env.PIN_VITE_URL ?? "http://localhost:5180";
 const CDP_URL = process.env.PIN_CDP_URL ?? "http://localhost:9222";
