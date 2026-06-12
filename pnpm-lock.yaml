@@ -81,9 +81,9 @@ importers:
 
   packages/claude-code:
     dependencies:
-      '@pinpoint/core':
+      '@pinpoint/cli':
         specifier: workspace:*
-        version: link:../core
+        version: link:../cli
     devDependencies:
       esbuild:
         specifier: ^0.28.0

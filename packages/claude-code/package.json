@@ -5,10 +5,10 @@
   "description": "Claude Code integration for pinpoint: /pinpoint:start command + paste skill + the bundled bridge.",
   "type": "module",
   "scripts": {
-    "build": "esbuild ../core/src/cli.ts --bundle --platform=node --format=esm --target=node20 --outfile=bin/pinpoint && chmod +x bin/pinpoint"
+    "build": "esbuild ../cli/src/cli.ts --bundle --platform=node --format=esm --target=node20 --outfile=bin/pinpoint && chmod +x bin/pinpoint"
   },
   "dependencies": {
-    "@pinpoint/core": "workspace:*"
+    "@pinpoint/cli": "workspace:*"
   },
   "devDependencies": {
     "esbuild": "^0.28.0"
